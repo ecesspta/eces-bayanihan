@@ -956,6 +956,25 @@ body.modal-open {
 .fund-move.in .fund-move-amount b {color:#17513d}
 .fund-move.out .fund-move-amount b {color:#8f2f37}
 
+
+.funds-page .balance-card {background:var(--deep);color:white;border-radius:16px;padding:18px;font-variant-numeric:tabular-nums}
+.balance-card h2 {margin:0;color:#e3ebf7;font-size:15px;line-height:1.4}
+.balance-card>strong {display:block;margin:3px 0 14px;font-size:clamp(26px,8vw,34px);line-height:1.2;overflow-wrap:anywhere}
+.balance-flows {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding-top:12px;border-top:1px solid #64768c;font-size:14px}
+.balance-flows b {display:block;margin-top:2px;font-size:17px;overflow-wrap:anywhere}
+.balance-note,.movement-meta {font-size:14px;line-height:1.45;color:var(--muted)}
+.balance-note {margin:9px 2px 16px}
+.movement-list {margin:0;padding:0;list-style:none;background:white;border:1px solid var(--line);border-radius:14px}
+.movement-row {padding:14px}
+.movement-row+.movement-row {border-top:1px solid var(--line)}
+.movement-heading {display:flex;align-items:baseline;flex-wrap:wrap;gap:3px 12px;font-size:16px;line-height:1.4}
+.movement-heading strong {flex:1 1 9rem;color:var(--navy);overflow-wrap:anywhere}
+.movement-heading b {font-variant-numeric:tabular-nums;overflow-wrap:anywhere;max-width:100%;margin-inline-start:auto}
+.movement-meta {margin-top:4px;overflow-wrap:anywhere}
+.funds-page .fund-split {margin:0 0 10px}
+.funds-page .fund-split span {font-size:14px;line-height:1.35}
+.funds-page .fund-split b {display:block;overflow-wrap:anywhere}
+
 /* SPTA Funds page: section headings on a tinted band */
 .funds-page .portal-section h2 {background:#e3ebf7;color:var(--navy);padding:9px 13px;border-radius:10px;border-left:5px solid var(--gold);margin-bottom:10px}
 
@@ -3442,7 +3461,24 @@ body.modal-open {
       return '<article class="fund-project"><h3>' + esc(titleCase(p.title)) + '</h3><div class="fund-bar"><div style="width:' + Math.max(0, Math.min(100, p.budget ? spent / p.budget * 100 : 0)) + '%"></div></div><div class="money-inline"><span>Allocation <b>' + cash(p.budget) + '</b></span><span>Spent <b>' + cash(spent) + '</b></span><span>Still to pay <b>' + cash(f.need) + '</b></span></div>' + fundCheck(f.need, f.short, 'Covered by SPTA funds') + '</article>';
     }).join('');
     const proposalLines = waiting.map(p => '<article class="fund-project"><h3>' + esc(titleCase(proposalName(p))) + '</h3><div class="entry-meta">' + esc(labels[p.status]) + ' · Proposed allocation ' + cash(p.budget) + '</div>' + proposalFund(p) + '</article>').join('');
-    return '<div class="funds-page">' + notice('These are SPTA funds: voluntary contributions and fundraising handled by the SPTA officers. They are not the school’s funds.') + '<div class="fund-metrics">' + [['Money In', total('in')], ['Money Out', total('out')], ['SPTA Cash Balance', fund.balance]].map(x => '<div><span>' + x[0] + '</span><b>' + cash(x[1]) + '</b></div>').join('') + '</div><div class="fund-split"><div><span>Set Aside for Approved Projects</span><b>' + cash(fund.committed) + '</b></div><div class="' + (fund.available > 0 ? 'ok' : 'short') + '"><span>Available for New Proposals</span><b>' + cash(fund.available) + '</b></div></div>' + section('Project funding', projectLines || empty('No approved SPTA projects are waiting for funds.')) + (proposalLines ? section('Proposals waiting for a decision', proposalLines) : '') + section('Approved fund movements', rows.map(x => '<article class="fund-line"><div><small>' + esc(date(x.date)) + (x.project && name(x.project) ? ' · ' + esc(titleCase(name(x.project))) : '') + '</small><h3>' + esc(titleCase(x.purpose)) + '</h3></div><div class="' + (x.direction === 'in' ? 'cash-in' : 'cash-out') + '"><small>Money ' + (x.direction === 'in' ? 'In' : 'Out') + '</small><b>' + cash(x.cents) + '</b></div></article>').join('') || empty('No approved movements yet.')) + section('SPTA records', btn('Request records inspection', 'dlg:inspection') + (has('resolutions') ? '' : db().resolutions.filter(r => r.published).map(r => card(r.title, para(r.parentSummary), r.id + ' · Version ' + r.version, r.state)).join('')) + (has('records') ? '' : db().minutes.filter(m => m.state === 'filed').map(m => card(m.title, para(m.summary), 'Meeting · ' + date(m.date), 'filed')).join(''))) + '</div>';
+    const movements = rows.map(entry => {
+      const incoming = entry.direction === 'in';
+      const project = entry.project && name(entry.project);
+      const direction = incoming ? 'Money In' : 'Money Out';
+      return '<li class="movement-row"><div class="movement-heading"><strong>' + esc(entry.purpose) +
+        '</strong><b class="' + (incoming ? 'cash-in' : 'cash-out') + '">' +
+        (incoming ? '+' : '−') + cash(entry.cents) + '</b></div><div class="movement-meta">' +
+        direction + ' · ' + esc(date(entry.date)) + (project ? ' · ' + esc(project) : '') + '</div></li>';
+    }).join('');
+    const summary = '<section class="balance-card" aria-label="SPTA Cash Balance"><h2>SPTA Cash Balance</h2><strong>' + cash(fund.balance) +
+      '</strong><div class="balance-flows"><div>Money In<b>' + cash(total('in')) + '</b></div><div>Money Out<b>' +
+      cash(total('out')) + '</b></div></div></section>';
+    const allocations = '<div class="fund-split"><div><span>Set Aside for Approved Projects</span><b>' + cash(fund.committed) +
+      '</b></div><div class="' + (fund.available > 0 ? 'ok' : 'short') + '"><span>Available for New Proposals</span><b>' + cash(fund.available) + '</b></div></div>';
+    return '<div class="funds-page">' + summary + '<p class="balance-note">SPTA officers manage these voluntary contributions and fundraising proceeds.</p>' +
+      section('Approved Transactions', movements ? '<ul class="movement-list">' + movements + '</ul>' : empty('No approved transactions yet.')) +
+      section('Project Funding', allocations + (projectLines || empty('No approved SPTA projects are waiting for funds.'))) +
+      (proposalLines ? section('Proposals Waiting for a Decision', proposalLines) : '') + section('SPTA records', btn('Request records inspection', 'dlg:inspection') + (has('resolutions') ? '' : db().resolutions.filter(r => r.published).map(r => card(r.title, para(r.parentSummary), r.id + ' · Version ' + r.version, r.state)).join('')) + (has('records') ? '' : db().minutes.filter(m => m.state === 'filed').map(m => card(m.title, para(m.summary), 'Meeting · ' + date(m.date), 'filed')).join(''))) + '</div>';
   }
   function finance() {
     const role = me().role,
