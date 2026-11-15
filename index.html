@@ -956,6 +956,9 @@ body.modal-open {
 .fund-move.in .fund-move-amount b {color:#17513d}
 .fund-move.out .fund-move-amount b {color:#8f2f37}
 
+/* SPTA Funds page: section headings on a tinted band */
+.funds-page .portal-section h2 {background:#e3ebf7;color:var(--navy);padding:9px 13px;border-radius:10px;border-left:5px solid var(--gold);margin-bottom:10px}
+
 </style>
       <link rel="manifest" href="manifest.webmanifest" />
     <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
@@ -3425,7 +3428,7 @@ body.modal-open {
     return '<article class="resolution-sheet">' + body + '</article>';
   }
   const has = key => tabs().some(x => x[0] === key);
-  // SPTA Funds page: the balance first, then where it is committed, then each movement.
+  // SPTA Funds page. Sarah prefers this layout; its section headings carry a tinted band.
   function funds() {
     const rows = db().ledger.slice().sort((a, b) => b.date.localeCompare(a.date));
     const total = d => rows.filter(x => x.direction === d).reduce((s, x) => s + x.cents, 0);
@@ -3433,27 +3436,13 @@ body.modal-open {
       name = id => db().projects.find(p => p.id === id)?.title;
     const active = db().projects.filter(p => fund.projects[p.id]),
       waiting = db().proposals.filter(p => E.publicProposal(p) && p.budget > 0 && ['screened', 'voting', 'awaiting_head'].includes(p.status));
-    const chip = short => short > 0 ? '<span class="fund-chip short">' + icon('alert', 'sm') + 'Needs fundraising · short by ' + cash(short) + '</span>' : '<span class="fund-chip ok">' + icon('check', 'sm') + 'Covered by SPTA funds</span>';
-    const hero = '<section class="fund-hero"><span>SPTA Cash Balance</span><b>' + cash(fund.balance) + '</b><div><span>' + icon('arrow', 'sm') + 'Money In <b>' + cash(total('in')) + '</b></span><span>' + icon('arrow', 'sm') + 'Money Out <b>' + cash(total('out')) + '</b></span></div></section>';
-    const setAside = Math.min(fund.committed, Math.max(fund.balance, 0)),
-      share = fund.balance > 0 ? Math.round(setAside / fund.balance * 100) : 100,
-      over = Math.max(0, fund.committed - Math.max(fund.balance, 0));
-    const split = '<section class="fund-use"><div class="fund-use-bar" role="img" aria-label="' + share + '% of the balance is set aside for approved projects"><div style="width:' + share + '%"></div></div><div class="fund-use-key"><div><i class="k-set"></i><span>Set Aside for Approved Projects</span><b>' + cash(fund.committed) + '</b></div><div><i class="k-free"></i><span>Available for New Proposals</span><b>' + cash(fund.available) + '</b></div></div>' + (over > 0 ? '<span class="fund-chip short">' + icon('alert', 'sm') + 'Approved projects need ' + cash(over) + ' more than the balance</span>' : '') + '</section>';
     const projectLines = active.map(p => {
       const spent = E.projectSpend(db(), p.id),
         f = fund.projects[p.id];
-      return '<article class="fund-item"><div class="fund-item-top"><h3>' + esc(titleCase(p.title)) + '</h3><b>' + cash(f.need) + '</b></div><div class="fund-bar"><div style="width:' + Math.max(0, Math.min(100, p.budget ? spent / p.budget * 100 : 0)) + '%"></div></div><div class="fund-item-meta"><span>' + cash(spent) + ' of ' + cash(p.budget) + ' spent</span><span>still to pay</span></div>' + chip(f.short) + '</article>';
+      return '<article class="fund-project"><h3>' + esc(titleCase(p.title)) + '</h3><div class="fund-bar"><div style="width:' + Math.max(0, Math.min(100, p.budget ? spent / p.budget * 100 : 0)) + '%"></div></div><div class="money-inline"><span>Allocation <b>' + cash(p.budget) + '</b></span><span>Spent <b>' + cash(spent) + '</b></span><span>Still to pay <b>' + cash(f.need) + '</b></span></div>' + fundCheck(f.need, f.short, 'Covered by SPTA funds') + '</article>';
     }).join('');
-    const proposalLines = waiting.map(p => {
-      const short = fund.shortFor(p.budget);
-      return '<article class="fund-item"><div class="fund-item-top"><h3>' + esc(titleCase(proposalName(p))) + '</h3><b>' + cash(p.budget) + '</b></div><div class="fund-item-meta"><span>' + esc(labels[p.status]) + '</span><span>proposed</span></div>' + chip(short) + (short > 0 ? '<small class="fund-item-note">SPTA funds available now cover ' + cash(p.budget - short) + ' of ' + cash(p.budget) + '.</small>' : '') + '</article>';
-    }).join('');
-    const moves = rows.map(x => {
-      const isIn = x.direction === 'in';
-      return '<article class="fund-move ' + (isIn ? 'in' : 'out') + '"><span class="fund-move-icon" aria-hidden="true">' + icon(isIn ? 'plus' : 'down', 'sm') + '</span><div><h3>' + esc(titleCase(x.purpose)) + '</h3><small>' + esc(date(x.date)) + (x.project && name(x.project) ? ' · ' + esc(titleCase(name(x.project))) : '') + '</small></div><div class="fund-move-amount"><small>Money ' + (isIn ? 'In' : 'Out') + '</small><b>' + (isIn ? '+' : '−') + cash(x.cents) + '</b></div></article>';
-    }).join('');
-    const records = (has('resolutions') ? '' : db().resolutions.filter(r => r.published).map(r => card(r.title, para(r.parentSummary), r.id + ' · Version ' + r.version, r.state)).join('')) + (has('records') ? '' : db().minutes.filter(m => m.state === 'filed').map(m => card(m.title, para(m.summary), 'Meeting · ' + date(m.date), 'filed')).join(''));
-    return '<p class="page-lead">Voluntary contributions and fundraising handled by the SPTA officers. They are not the school’s funds.</p>' + hero + split + section('Project funding', projectLines || empty('No approved SPTA projects are waiting for funds.')) + (proposalLines ? section('Proposals waiting for a decision', proposalLines) : '') + section('Approved fund movements', moves ? '<div class="fund-moves">' + moves + '</div>' : empty('No approved movements yet.')) + section('SPTA records', btn('Request records inspection', 'dlg:inspection') + records);
+    const proposalLines = waiting.map(p => '<article class="fund-project"><h3>' + esc(titleCase(proposalName(p))) + '</h3><div class="entry-meta">' + esc(labels[p.status]) + ' · Proposed allocation ' + cash(p.budget) + '</div>' + proposalFund(p) + '</article>').join('');
+    return '<div class="funds-page">' + notice('These are SPTA funds: voluntary contributions and fundraising handled by the SPTA officers. They are not the school’s funds.') + '<div class="fund-metrics">' + [['Money In', total('in')], ['Money Out', total('out')], ['SPTA Cash Balance', fund.balance]].map(x => '<div><span>' + x[0] + '</span><b>' + cash(x[1]) + '</b></div>').join('') + '</div><div class="fund-split"><div><span>Set Aside for Approved Projects</span><b>' + cash(fund.committed) + '</b></div><div class="' + (fund.available > 0 ? 'ok' : 'short') + '"><span>Available for New Proposals</span><b>' + cash(fund.available) + '</b></div></div>' + section('Project funding', projectLines || empty('No approved SPTA projects are waiting for funds.')) + (proposalLines ? section('Proposals waiting for a decision', proposalLines) : '') + section('Approved fund movements', rows.map(x => '<article class="fund-line"><div><small>' + esc(date(x.date)) + (x.project && name(x.project) ? ' · ' + esc(titleCase(name(x.project))) : '') + '</small><h3>' + esc(titleCase(x.purpose)) + '</h3></div><div class="' + (x.direction === 'in' ? 'cash-in' : 'cash-out') + '"><small>Money ' + (x.direction === 'in' ? 'In' : 'Out') + '</small><b>' + cash(x.cents) + '</b></div></article>').join('') || empty('No approved movements yet.')) + section('SPTA records', btn('Request records inspection', 'dlg:inspection') + (has('resolutions') ? '' : db().resolutions.filter(r => r.published).map(r => card(r.title, para(r.parentSummary), r.id + ' · Version ' + r.version, r.state)).join('')) + (has('records') ? '' : db().minutes.filter(m => m.state === 'filed').map(m => card(m.title, para(m.summary), 'Meeting · ' + date(m.date), 'filed')).join(''))) + '</div>';
   }
   function finance() {
     const role = me().role,
