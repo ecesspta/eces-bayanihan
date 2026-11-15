@@ -868,6 +868,33 @@ body.modal-open {
 .mobile-wordmark small {overflow:hidden;text-overflow:ellipsis}
 @media (max-width:389px) {.mobile-wordmark small {font-size:10.5px}}
 
+/* SPTA Projects page */
+.page-lead {margin:0 0 12px;color:var(--muted);line-height:1.5}
+.proj-summary {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:6px}
+.proj-summary>div {padding:11px 10px;border:1px solid var(--line);border-radius:13px;background:#fff;text-align:center;min-width:0}
+.proj-summary b {display:block;font-size:17px;color:var(--navy);font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.proj-summary span {font-size:12px;color:var(--muted)}
+.proj {padding:14px;border:1px solid var(--line);border-radius:16px;background:#fff;margin-bottom:10px}
+.proj.is-cancelled {background:#fbfbfc}
+.proj-top {display:flex;gap:11px;align-items:flex-start}
+.proj-top>div {flex:1;min-width:0}
+.proj-top h3 {margin:0;font-size:16px;line-height:1.25;color:var(--navy);overflow-wrap:anywhere}
+.proj-top small {display:block;margin-top:2px;color:var(--muted)}
+.proj-top .badge {flex:none}
+.proj-bar {height:9px;border-radius:99px;background:#e6ecf4;overflow:hidden;margin:12px 0 6px}
+.proj-bar div {height:100%;border-radius:99px;background:var(--green)}
+.proj-nums {display:flex;justify-content:space-between;gap:10px;color:var(--muted);font-size:13px}
+.proj-nums b {color:var(--navy);font-variant-numeric:tabular-nums}
+.proj .fund-check,.proj .cancel-note {margin:10px 0 0}
+.proj-details {margin-top:10px;border-top:1px solid var(--line);padding-top:8px}
+.proj-details summary {cursor:pointer;font-weight:700;color:var(--navy3);padding:4px 0;min-height:32px}
+.proj-details p {margin:6px 0 8px}
+.proj-row {display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-top:1px solid var(--line)}
+.proj-row span {color:var(--muted)}
+.proj-row b {color:var(--navy);text-align:right;overflow-wrap:anywhere}
+.proj-details .entry-actions {margin-top:8px}
+.proj .cancel-note {font-size:13px}
+
 </style>
       <link rel="manifest" href="manifest.webmanifest" />
     <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
@@ -3136,16 +3163,33 @@ body.modal-open {
   function ownCases() {
     return db().cases.filter(c => E.canSeeCase(me(), c));
   }
+  // SPTA Projects page: a short summary, then projects grouped by where they stand.
+  // Each card shows the few things people look for first; the rest opens under Details.
+  function projectCard(p, fund) {
+    const spent = E.projectSpend(db(), p.id),
+      done = Math.max(0, Math.min(100, Number(p.progress) || 0)),
+      active = ['approved', 'in_progress'].includes(p.status),
+      cancelled = p.status === 'cancelled',
+      f = fund.projects[p.id];
+    const row = (k, v) => '<div class="proj-row"><span>' + esc(k) + '</span><b>' + esc(v) + '</b></div>';
+    let buttons = '';
+    if (onRole(E.leaders) && active) buttons += btn('Update progress', 'dlg:project', p.id);
+    if (me().role === 'head' && active) buttons += btn('Cancel project', 'dlg:cancel', p.id, 'danger');
+    const top = '<div class="proj-top"><span class="project-symbol">' + icon(p.icon || 'sprout') + '</span><div><h3>' + esc(titleCase(p.title)) + '</h3><small>' + esc(cancelled ? 'Cancelled' : p.phase || labels[p.status]) + '</small></div>' + badge(p.status) + '</div>';
+    const progress = cancelled ? '' : '<div class="proj-bar" role="img" aria-label="' + done + '% done"><div style="width:' + done + '%"></div></div><div class="proj-nums"><span><b>' + done + '%</b> done</span><span><b>' + cash(spent) + '</b> of ' + cash(p.budget) + ' spent</span></div>';
+    const cancel = cancelled ? '<div class="cancel-note"><b>Why It Was Cancelled</b>' + para(p.reason) + '<b>Unused Funds</b>' + para(p.remainder) + '</div>' : '';
+    const flag = f?.short > 0 ? fundCheck(f.need, f.short) : '';
+    const details = '<details class="proj-details"><summary>Details</summary>' + para(p.text) + row('Project lead', n(p.owner)) + row('SPTA allocation', cash(p.budget)) + row(cancelled ? 'Spent by cancellation' : 'Spent so far', cash(cancelled ? p.spentAtCancellation ?? spent : spent)) + (cancelled ? '' : row('Not yet spent', cash(p.budget - spent))) + (f && !f.short ? row('Funding', 'Covered by SPTA funds') : '') + row('Reference', p.id + ' · updated ' + date(p.changed)) + (buttons ? '<div class="entry-actions">' + buttons + '</div>' : '') + '</details>';
+    return '<article class="proj' + (cancelled ? ' is-cancelled' : '') + '">' + top + progress + flag + cancel + details + '</article>';
+  }
   function projects() {
-    const fund = E.funding(db());
-    return db().projects.map(p => {
-      const spent = E.projectSpend(db(), p.id);
-      const info = p.status === 'cancelled' ? '<div class="cancel-note"><b>Why It Was Cancelled</b>' + para(p.reason) + para('Spent by cancellation: ' + cash(p.spentAtCancellation ?? spent)) + '<b>Unused Funds</b>' + para(p.remainder) + '</div>' : '<div class="project-progress"><div style="width:' + Math.max(0, Math.min(100, Number(p.progress) || 0)) + '%"></div></div>' + para(p.phase);
-      let buttons = '';
-      if (onRole(E.leaders) && !['completed', 'cancelled'].includes(p.status)) buttons += btn('Update progress', 'dlg:project', p.id);
-      if (me().role === 'head' && !['completed', 'cancelled'].includes(p.status)) buttons += btn('Cancel project', 'dlg:cancel', p.id, 'danger');
-      return card(p.title, para(p.text) + info + para('Project lead: ' + n(p.owner)) + '<div class="money-inline"><span>SPTA allocation <b>' + cash(p.budget) + '</b></span><span>Spent <b>' + cash(spent) + '</b></span><span>Unused <b>' + cash(p.budget - spent) + '</b></span></div>' + (fund.projects[p.id] ? fundCheck(fund.projects[p.id].need, fund.projects[p.id].short, 'Remaining allocation is covered by SPTA funds') : ''), p.id + ' · ' + date(p.changed), p.status, buttons);
-    }).join('') || empty('Approved SPTA projects will appear here.');
+    const all = db().projects,
+      fund = E.funding(db());
+    if (!all.length) return empty('Approved SPTA projects will appear here.');
+    const groups = [['Ongoing', all.filter(p => ['approved', 'in_progress'].includes(p.status))], ['Completed', all.filter(p => p.status === 'completed')], ['Cancelled', all.filter(p => p.status === 'cancelled')]];
+    const spent = all.reduce((sum, p) => sum + E.projectSpend(db(), p.id), 0);
+    const summary = '<div class="proj-summary"><div><b>' + groups[0][1].length + '</b><span>Ongoing</span></div><div><b>' + groups[1][1].length + '</b><span>Completed</span></div><div><b>' + cash(spent) + '</b><span>Spent so far</span></div></div>';
+    return summary + groups.filter(g => g[1].length).map(([name, list]) => section(name + ' (' + list.length + ')', list.map(p => projectCard(p, fund)).join(''))).join('');
   }
   const proposalName = p => p.publicTitle || p.title;
   const lead = () => onRole(E.leaders);
@@ -3388,7 +3432,7 @@ body.modal-open {
     home,
     more,
     proposals,
-    projects: () => notice('These are SPTA projects: proposed by parents, approved by the SPTA officers and the school head, and paid for from SPTA funds. They are separate from the school’s own budget.') + section('Approved SPTA projects', projects()),
+    projects: () => '<p class="page-lead">Proposed by parents and paid for from SPTA funds. These are separate from the school’s own budget.</p>' + projects(),
     funds,
     updates,
     cases: assignedCases,
