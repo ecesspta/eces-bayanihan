@@ -4484,14 +4484,55 @@ body.modal-open {
       tx.onabort = () => no(tx.error || Error('Changes could not be saved.'));
     });
   }
+  // Hosted mode: the page names the server (and its public key) in two meta tags, and the sign-in token lives on this phone.
+  const tag = n => document.querySelector('meta[name="' + n + '"]')?.content || '';
+  let apiBase = '';
+  const keep = {
+    get(k) {
+      try {
+        return localStorage.getItem(k) || '';
+      } catch (_) {
+        return '';
+      }
+    },
+    set(k, v) {
+      try {
+        v ? localStorage.setItem(k, v) : localStorage.removeItem(k);
+      } catch (_) {}
+    }
+  };
+  function liveDevice() {
+    let d = keep.get('eces-live-device');
+    if (!/^[a-f0-9]{32}$/.test(d)) {
+      d = Array.from(crypto.getRandomValues(new Uint8Array(16)), b => b.toString(16).padStart(2, '0')).join('');
+      keep.set('eces-live-device', d);
+    }
+    return d;
+  }
+  function liveHeaders(extra = {}) {
+    if (!apiBase) return extra;
+    const h = {
+      ...extra,
+      'x-eces-device': liveDevice()
+    };
+    const key = tag('eces-key');
+    if (key) {
+      h.apikey = key;
+      h.Authorization = 'Bearer ' + key;
+    }
+    const t = keep.get('eces-live-token');
+    if (t) h['x-eces-token'] = t;
+    return h;
+  }
+  const endpoint = p => (apiBase || '') + '/api/' + p;
   async function api(path, body) {
-    const response = await fetch('/api/' + path, {
+    const response = await fetch(endpoint(path), {
       method: body ? 'POST' : 'GET',
       cache: 'no-store',
-      credentials: 'same-origin',
-      headers: body ? {
+      credentials: apiBase ? 'omit' : 'same-origin',
+      headers: liveHeaders(body ? {
         'Content-Type': 'application/json'
-      } : {},
+      } : {}),
       body: body ? JSON.stringify(body) : undefined
     });
     const data = await response.json();
@@ -4499,12 +4540,14 @@ body.modal-open {
     return data;
   }
   function session(v) {
+    if (apiBase && v.token) keep.set('eces-live-token', v.token);
     current = v.db;
     actorId = v.me || '';
     return current;
   }
   async function init() {
-    shared = document.querySelector('meta[name="eces-mode"]')?.content === 'shared';
+    apiBase = tag('eces-api').replace(/\/$/, '');
+    shared = tag('eces-mode') === 'shared' || !!apiBase;
     if (shared) {
       await refresh();
       return;
@@ -4766,7 +4809,11 @@ body.modal-open {
   }
   async function logout() {
     if (shared) {
-      session(await api('logout', {}));
+      try {
+        session(await api('logout', {}));
+      } finally {
+        if (apiBase) keep.set('eces-live-token', '');
+      }
       return;
     }
     actorId = '';
@@ -4791,13 +4838,13 @@ body.modal-open {
     const valid = meta.type === 'image/jpeg' ? starts([255, 216, 255]) : meta.type === 'image/png' ? starts([137, 80, 78, 71, 13, 10, 26, 10]) : meta.type === 'application/pdf' ? starts([37, 80, 68, 70, 45]) : starts([82, 73, 70, 70]) && String.fromCharCode(...s.slice(8, 12)) === 'WEBP';
     if (!valid) throw Error('The file contents do not match its type.');
     if (shared) {
-      const res = await fetch('/api/files', {
+      const res = await fetch(endpoint('files'), {
         method: 'POST',
-        credentials: 'same-origin',
-        headers: {
+        credentials: apiBase ? 'omit' : 'same-origin',
+        headers: liveHeaders({
           'Content-Type': meta.type,
           'X-Filename': encodeURIComponent(meta.name)
-        },
+        }),
         body: f
       });
       const data = await res.json();
@@ -4816,8 +4863,10 @@ body.modal-open {
   }
   async function fileURL(meta) {
     if (shared) {
-      const r = await fetch('/api/files/' + encodeURIComponent(meta.key), {
-        cache: 'no-store'
+      const r = await fetch(endpoint('files/' + encodeURIComponent(meta.key)), {
+        cache: 'no-store',
+        credentials: apiBase ? 'omit' : 'same-origin',
+        headers: liveHeaders()
       });
       if (!r.ok) throw Error('Access to this attachment is unavailable.');
       return URL.createObjectURL(await r.blob());
