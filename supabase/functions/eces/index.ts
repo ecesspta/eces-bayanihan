@@ -2101,7 +2101,11 @@ function visible(db, me) {
   const out = {
     version: 3,
     revision: db.revision,
-    settings: db.settings,
+    // The real school record has no fictional sample accounts. Everyone, signed in or not, is told which record this is.
+    settings: {
+      ...db.settings,
+      live: !!db.settings?.live || db.accounts.length > 0 && db.accounts.every(a => !a.demo)
+    },
     opening: db.opening,
     actingVice: E.hasDelegation(db),
     actingUntil: db.actingUntil,
