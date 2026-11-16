@@ -475,6 +475,88 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
   function readableProposal(p, a) {
     return leaders.includes(a.role) || p.owner === a.id || publicProposal(p);
   }
+  // The real school record: no sample content, only the officers, each waiting for a one-time invite.
+  const liveRoles = ['head', 'chair', 'vice', 'secretary', 'treasurer', 'collector'];
+  function createLive(officers) {
+    const seen = new Set();
+    const accounts = officers.map(o => {
+      check(liveRoles.includes(o.role), 'Choose an officer role.');
+      check(!seen.has(o.role), 'Each officer role can be used once.');
+      seen.add(o.role);
+      return {
+        id: o.role,
+        role: o.role,
+        name: words(o.name, 'Officer name', 2, 75),
+        active: true,
+        boardSeat: boardRoles.includes(o.role),
+        login: 'pending-' + o.role,
+        demo: false,
+        invite: o.invite
+      };
+    });
+    return {
+      version: 3,
+      revision: 0,
+      seq: {
+        P: 100,
+        C: 100,
+        S: 100,
+        F: 100,
+        R: 100,
+        A: 100,
+        M: 100,
+        B: 100,
+        H: 100
+      },
+      accounts,
+      requests: [],
+      proposals: [],
+      projects: [],
+      ledger: [],
+      opening: 0,
+      ballots: [],
+      resolutions: [],
+      cases: [],
+      announcements: [{
+        id: 'A-1',
+        title: 'Welcome to ECES Bayanihan',
+        body: 'Parents and guardians can submit a project proposal, share a suggestion or report a concern privately from the parent desk.',
+        author: 'secretary',
+        audience: 'everyone',
+        date: today()
+      }],
+      minutes: [],
+      batches: [],
+      remittances: [],
+      notes: [],
+      audit: [],
+      actingVice: false,
+      settings: {
+        ack: true,
+        reminders: true
+      },
+      legacy: null,
+      receipts: []
+    };
+  }
+  // An officer opens the app with the invite code and sets up their own sign-in.
+  function officerJoin(db, v, device) {
+    const a = db.accounts.find(x => x.invite && x.invite === v.invite);
+    check(a, 'That invite code is not valid. Ask the chairperson for a new one.');
+    check(v.consent === true, 'Please read the Privacy Notice and tick the box to agree.');
+    const login = mobileNumber(v.mobile);
+    check(!db.accounts.some(x => x.login === login && x !== a), 'An account already uses this mobile number.');
+    a.login = login;
+    delete a.invite;
+    a.consent = {
+      at: at(),
+      version: '2026-11'
+    };
+    seenOn(db, a.id, device);
+    audit(db, a, 'Officer account set up', a.id);
+    db.revision = (db.revision || 0) + 1;
+    return a.id;
+  }
   function create(old = null) {
     const b = old && Array.isArray(old.proposals) && Array.isArray(old.projects) ? old : duplicate(examples);
     const profile = (id, role, name, extra = {}) => ({
@@ -1932,6 +2014,9 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
     expire,
     resetCheck,
     seenOn,
+    createLive,
+    officerJoin,
+    liveRoles,
     loginKey,
     eligible,
     publicProposal,
@@ -2158,6 +2243,14 @@ function visible(db, me) {
 }
 
 const SAMPLE_IDS = sampleId;
+// One-time invite codes for real officers. Only a hash is stored.
+const CODE_CHARS = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+const newCode = () => {
+  const b = randomBytes(12);
+  const c = Array.from(b, x => CODE_CHARS[x % CODE_CHARS.length]).join('');
+  return c.slice(0, 4) + '-' + c.slice(4, 8) + '-' + c.slice(8, 12);
+};
+const inviteHash = code => createHash('sha256').update('invite:' + String(code || '').toUpperCase().replace(/[^A-Z0-9]/g, '')).digest('hex');
 const enc = s => Buffer.from(s);
 class HttpError extends Error {
   constructor(status, message) {
@@ -2270,6 +2363,61 @@ function createApi(store, config = {}) {
             credentials
           });
         }
+        if (route === '/api/admin/start-live' && req.method === 'POST') {
+          // Replaces the fictional rehearsal record with an empty school record and the real officers. Refused once real data exists.
+          const v = JSON.parse((req.body || Buffer.alloc(0)).toString() || '{}');
+          if (!Array.isArray(v.officers) || !v.officers.length || v.officers.length > 6) throw new HttpError(400, 'Send between one and six officers.');
+          const codes = [];
+          const officers = v.officers.map(o => {
+            const code = newCode();
+            codes.push([o.role, code]);
+            return {
+              role: o.role,
+              name: o.name,
+              invite: inviteHash(code)
+            };
+          });
+          await store.atomic(async tx => {
+            const cur = await tx.load();
+            if (cur && cur.accounts.some(a => !a.demo)) throw new HttpError(409, 'Real data already exists. Nothing was changed.');
+            const fresh = E.createLive(officers);
+            await tx.wipe();
+            await tx.save(fresh);
+          });
+          return send(201, {
+            note: 'One-time invite codes. Give each officer their own code privately.',
+            codes
+          });
+        }
+        if (route === '/api/admin/officer' && req.method === 'POST') {
+          // Adds an officer, or gives an existing officer a fresh code (a lost phone or forgotten sign-in).
+          const v = JSON.parse((req.body || Buffer.alloc(0)).toString() || '{}');
+          const code = newCode();
+          await store.atomic(async tx => {
+            const fresh = await tx.load();
+            if (!fresh || fresh.accounts.every(a => a.demo)) throw new HttpError(409, 'Start the real record first.');
+            let a = fresh.accounts.find(x => x.role === v.role && !x.demo);
+            if (!a) {
+              if (!E.liveRoles.includes(v.role)) throw new HttpError(400, 'Choose an officer role.');
+              const next = E.createLive([{
+                role: v.role,
+                name: v.name,
+                invite: inviteHash(code)
+              }]).accounts[0];
+              fresh.accounts.push(next);
+            } else {
+              a.invite = inviteHash(code);
+              a.login = 'pending-' + a.role;
+              await tx.delAuth(a.id);
+              await tx.delSessionsOf(a.id);
+            }
+            await tx.save(fresh);
+          });
+          return send(201, {
+            role: v.role,
+            code
+          });
+        }
         if (route === '/api/admin/export' && req.method === 'GET') {
           return send(200, await store.load());
         }
@@ -2364,6 +2512,32 @@ function createApi(store, config = {}) {
         return send(200, {
           ...state(db, E.account(db, id)),
           token: t,
+          device
+        });
+      }
+      if (route === '/api/join') {
+        await limit();
+        if (!passOk(v.password)) throw new HttpError(400, 'Use a password of 10–128 characters.');
+        const result = await store.atomic(async tx => {
+          const fresh = await tx.load();
+          const id = E.officerJoin(fresh, {
+            invite: inviteHash(v.code),
+            mobile: v.mobile,
+            consent: v.consent
+          }, device);
+          await tx.save(fresh);
+          await tx.delAuth(id);
+          await addCredential(tx, id, v.password);
+          const t = await setLogin(tx, id, 8);
+          return {
+            fresh,
+            id,
+            t
+          };
+        });
+        return send(201, {
+          ...state(result.fresh, E.account(result.fresh, result.id)),
+          token: result.t,
           device
         });
       }
@@ -2473,6 +2647,13 @@ function postgresStore(sql) {
   const ops = (q, locking) => ({
     async hasSchool() {
       return (await q`select 1 from school where id = 1`).length > 0;
+    },
+    async wipe() {
+      await q`delete from school`;
+      await q`delete from auth`;
+      await q`delete from sessions`;
+      await q`delete from files`;
+      await q`delete from evidence_views`;
     },
     async load() {
       const rows = locking ? await q`select body from school where id = 1 for update` : await q`select body from school where id = 1`;

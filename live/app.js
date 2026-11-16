@@ -1447,6 +1447,7 @@
     announceBaseline();
     ECESLang.start(render);
     render();
+    if (location.hash === '#privacy') openDialog('privacy', '');
     if (S.shared) setInterval(() => {
       if (!document.hidden) refresh();
     }, 15000);

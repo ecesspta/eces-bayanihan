@@ -6,6 +6,13 @@ function postgresStore(sql) {
     async hasSchool() {
       return (await q`select 1 from school where id = 1`).length > 0;
     },
+    async wipe() {
+      await q`delete from school`;
+      await q`delete from auth`;
+      await q`delete from sessions`;
+      await q`delete from files`;
+      await q`delete from evidence_views`;
+    },
     async load() {
       const rows = locking ? await q`select body from school where id = 1 for update` : await q`select body from school where id = 1`;
       if (!rows.length) return null;

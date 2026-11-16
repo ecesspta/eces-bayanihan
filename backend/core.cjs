@@ -196,6 +196,14 @@ function visible(db, me) {
 }
 
 const SAMPLE_IDS = sampleId;
+// One-time invite codes for real officers. Only a hash is stored.
+const CODE_CHARS = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+const newCode = () => {
+  const b = randomBytes(12);
+  const c = Array.from(b, x => CODE_CHARS[x % CODE_CHARS.length]).join('');
+  return c.slice(0, 4) + '-' + c.slice(4, 8) + '-' + c.slice(8, 12);
+};
+const inviteHash = code => createHash('sha256').update('invite:' + String(code || '').toUpperCase().replace(/[^A-Z0-9]/g, '')).digest('hex');
 const enc = s => Buffer.from(s);
 class HttpError extends Error {
   constructor(status, message) {
@@ -308,6 +316,61 @@ function createApi(store, config = {}) {
             credentials
           });
         }
+        if (route === '/api/admin/start-live' && req.method === 'POST') {
+          // Replaces the fictional rehearsal record with an empty school record and the real officers. Refused once real data exists.
+          const v = JSON.parse((req.body || Buffer.alloc(0)).toString() || '{}');
+          if (!Array.isArray(v.officers) || !v.officers.length || v.officers.length > 6) throw new HttpError(400, 'Send between one and six officers.');
+          const codes = [];
+          const officers = v.officers.map(o => {
+            const code = newCode();
+            codes.push([o.role, code]);
+            return {
+              role: o.role,
+              name: o.name,
+              invite: inviteHash(code)
+            };
+          });
+          await store.atomic(async tx => {
+            const cur = await tx.load();
+            if (cur && cur.accounts.some(a => !a.demo)) throw new HttpError(409, 'Real data already exists. Nothing was changed.');
+            const fresh = E.createLive(officers);
+            await tx.wipe();
+            await tx.save(fresh);
+          });
+          return send(201, {
+            note: 'One-time invite codes. Give each officer their own code privately.',
+            codes
+          });
+        }
+        if (route === '/api/admin/officer' && req.method === 'POST') {
+          // Adds an officer, or gives an existing officer a fresh code (a lost phone or forgotten sign-in).
+          const v = JSON.parse((req.body || Buffer.alloc(0)).toString() || '{}');
+          const code = newCode();
+          await store.atomic(async tx => {
+            const fresh = await tx.load();
+            if (!fresh || fresh.accounts.every(a => a.demo)) throw new HttpError(409, 'Start the real record first.');
+            let a = fresh.accounts.find(x => x.role === v.role && !x.demo);
+            if (!a) {
+              if (!E.liveRoles.includes(v.role)) throw new HttpError(400, 'Choose an officer role.');
+              const next = E.createLive([{
+                role: v.role,
+                name: v.name,
+                invite: inviteHash(code)
+              }]).accounts[0];
+              fresh.accounts.push(next);
+            } else {
+              a.invite = inviteHash(code);
+              a.login = 'pending-' + a.role;
+              await tx.delAuth(a.id);
+              await tx.delSessionsOf(a.id);
+            }
+            await tx.save(fresh);
+          });
+          return send(201, {
+            role: v.role,
+            code
+          });
+        }
         if (route === '/api/admin/export' && req.method === 'GET') {
           return send(200, await store.load());
         }
@@ -402,6 +465,32 @@ function createApi(store, config = {}) {
         return send(200, {
           ...state(db, E.account(db, id)),
           token: t,
+          device
+        });
+      }
+      if (route === '/api/join') {
+        await limit();
+        if (!passOk(v.password)) throw new HttpError(400, 'Use a password of 10–128 characters.');
+        const result = await store.atomic(async tx => {
+          const fresh = await tx.load();
+          const id = E.officerJoin(fresh, {
+            invite: inviteHash(v.code),
+            mobile: v.mobile,
+            consent: v.consent
+          }, device);
+          await tx.save(fresh);
+          await tx.delAuth(id);
+          await addCredential(tx, id, v.password);
+          const t = await setLogin(tx, id, 8);
+          return {
+            fresh,
+            id,
+            t
+          };
+        });
+        return send(201, {
+          ...state(result.fresh, E.account(result.fresh, result.id)),
+          token: result.t,
           device
         });
       }

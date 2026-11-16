@@ -12,6 +12,9 @@ function sqliteStore(file = ':memory:') {
     async hasSchool() {
       return !!sql.prepare('SELECT id FROM school LIMIT 1').get();
     },
+    async wipe() {
+      sql.exec('DELETE FROM school; DELETE FROM auth; DELETE FROM sessions; DELETE FROM files; DELETE FROM evidence_views');
+    },
     async load() {
       const r = sql.prepare('SELECT body FROM school WHERE id=1').get();
       return r ? JSON.parse(r.body) : null;

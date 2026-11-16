@@ -414,6 +414,88 @@
   function readableProposal(p, a) {
     return leaders.includes(a.role) || p.owner === a.id || publicProposal(p);
   }
+  // The real school record: no sample content, only the officers, each waiting for a one-time invite.
+  const liveRoles = ['head', 'chair', 'vice', 'secretary', 'treasurer', 'collector'];
+  function createLive(officers) {
+    const seen = new Set();
+    const accounts = officers.map(o => {
+      check(liveRoles.includes(o.role), 'Choose an officer role.');
+      check(!seen.has(o.role), 'Each officer role can be used once.');
+      seen.add(o.role);
+      return {
+        id: o.role,
+        role: o.role,
+        name: words(o.name, 'Officer name', 2, 75),
+        active: true,
+        boardSeat: boardRoles.includes(o.role),
+        login: 'pending-' + o.role,
+        demo: false,
+        invite: o.invite
+      };
+    });
+    return {
+      version: 3,
+      revision: 0,
+      seq: {
+        P: 100,
+        C: 100,
+        S: 100,
+        F: 100,
+        R: 100,
+        A: 100,
+        M: 100,
+        B: 100,
+        H: 100
+      },
+      accounts,
+      requests: [],
+      proposals: [],
+      projects: [],
+      ledger: [],
+      opening: 0,
+      ballots: [],
+      resolutions: [],
+      cases: [],
+      announcements: [{
+        id: 'A-1',
+        title: 'Welcome to ECES Bayanihan',
+        body: 'Parents and guardians can submit a project proposal, share a suggestion or report a concern privately from the parent desk.',
+        author: 'secretary',
+        audience: 'everyone',
+        date: today()
+      }],
+      minutes: [],
+      batches: [],
+      remittances: [],
+      notes: [],
+      audit: [],
+      actingVice: false,
+      settings: {
+        ack: true,
+        reminders: true
+      },
+      legacy: null,
+      receipts: []
+    };
+  }
+  // An officer opens the app with the invite code and sets up their own sign-in.
+  function officerJoin(db, v, device) {
+    const a = db.accounts.find(x => x.invite && x.invite === v.invite);
+    check(a, 'That invite code is not valid. Ask the chairperson for a new one.');
+    check(v.consent === true, 'Please read the Privacy Notice and tick the box to agree.');
+    const login = mobileNumber(v.mobile);
+    check(!db.accounts.some(x => x.login === login && x !== a), 'An account already uses this mobile number.');
+    a.login = login;
+    delete a.invite;
+    a.consent = {
+      at: at(),
+      version: '2026-11'
+    };
+    seenOn(db, a.id, device);
+    audit(db, a, 'Officer account set up', a.id);
+    db.revision = (db.revision || 0) + 1;
+    return a.id;
+  }
   function create(old = null) {
     const b = old && Array.isArray(old.proposals) && Array.isArray(old.projects) ? old : duplicate(examples);
     const profile = (id, role, name, extra = {}) => ({
@@ -1871,6 +1953,9 @@
     expire,
     resetCheck,
     seenOn,
+    createLive,
+    officerJoin,
+    liveRoles,
     loginKey,
     eligible,
     publicProposal,
