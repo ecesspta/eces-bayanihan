@@ -2217,6 +2217,7 @@ body.modal-open {
  "Project allocation restored to an amount the officers approved": "Ibinalik ang alokasyon ng proyekto sa halagang inaprubahan ng mga opisyal",
  "Change history": "Kasaysayan ng mga Pagbabago",
  "Everything": "Lahat",
+ "All": "Lahat",
  "Money": "Pera",
  "Resolutions and minutes": "Mga resolusyon at minuto",
  "People and access": "Mga tao at access",
@@ -5627,7 +5628,7 @@ body.modal-open {
     const f = ui.historyFilter || 'all',
       all = (db().audit || []).slice().reverse(),
       shown = all.filter(x => f === 'all' || (f === 'retracted' ? isRetraction(x) : (HISTORY_AREAS[f] || []).includes(x.action)));
-    const chips = [['all', 'Everything'], ['money', 'Money'], ['projects', 'Projects'], ['proposals', 'Proposals'], ['records', 'Resolutions and minutes'], ['people', 'People and access'], ['retracted', 'Withdrawn or returned']].map(([key, label]) => '<button type="button" class="chip' + (f === key ? ' on' : '') + '" data-do="histfilter" data-id="' + key + '"' + (f === key ? ' aria-pressed="true"' : ' aria-pressed="false"') + '>' + esc(label) + '</button>').join('');
+    const chips = [['all', 'All'], ['money', 'Money'], ['projects', 'Projects'], ['proposals', 'Proposals'], ['records', 'Resolutions and minutes'], ['people', 'People and access'], ['retracted', 'Withdrawn or returned']].map(([key, label]) => '<button type="button" class="chip' + (f === key ? ' on' : '') + '" data-do="histfilter" data-id="' + key + '"' + (f === key ? ' aria-pressed="true"' : ' aria-pressed="false"') + '>' + esc(label) + '</button>').join('');
     const when = at => {
       try {
         return new Intl.DateTimeFormat('en-PH', {dateStyle: 'medium', timeStyle: 'short'}).format(new Date(at));
