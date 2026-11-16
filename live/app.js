@@ -49,7 +49,7 @@
   const badgeText = s => '<span class="badge">' + esc(s) + '</span>';
   const t = () => E.today();
   // The real school record carries a flag; the fictional rehearsal does not. Wording and the practice reader follow it.
-  const isLive = () => !!db()?.settings?.live || !!db()?.accounts?.length && db().accounts.every(a => !a.demo);
+  const isLive = () => !!db()?.settings?.live;
   const onRole = roles => roles.includes(me()?.role);
   const canChair = () => E.isChair(db(), me());
   const canPrint = () => onRole(E.printers);
@@ -604,7 +604,7 @@
   }
   function roster() {
     const requests = db().requests.filter(q => q.status === 'pending');
-    return section('BOD account requests', requests.map(q => card(q.name || n(q.user), para(q.homeroom), q.id, 'pending', btn('Review request', 'dlg:roster', q.id, 'primary'))).join('') || empty('No BOD requests awaiting review.')) + section('Current board roster', para('All verified HPTA presidents can review screened proposals. Voting seats are recorded per person. New votes use the current roster.') + db().accounts.filter(a => a.active && E.boardRoles.includes(a.role)).map(a => '<div class="list-line"><span><b>' + esc(a.name) + '</b><small>' + esc(a.homeroom || roleName(a)) + ' · ' + (a.boardSeat ? 'Voting seat' : 'Review access') + '</small></span>' + btn('Edit', 'dlg:seat', a.id) + '</div>').join('')) + (me().role === 'head' ? section('Acting chairperson', para(E.hasDelegation(db()) ? 'Acting Vice-Chairperson through ' + date(db().actingUntil) + ' · ' + db().actingReference : 'Chairperson holds posting and meeting authority.') + btn(E.hasDelegation(db()) ? 'End assignment' : 'Assign Vice-Chairperson', 'dlg:acting')) : '');
+    return section('BOD account requests', requests.map(q => card(q.name || n(q.user), para(q.homeroom), q.id, 'pending', btn('Review request', 'dlg:roster', q.id, 'primary'))).join('') || empty('No BOD requests awaiting review.')) + section('Current board roster', para('All verified HPTA presidents can review screened proposals. Voting seats are recorded per person. New votes use the current roster.') + db().accounts.filter(a => a.active && !a.vacant && E.boardRoles.includes(a.role)).map(a => '<div class="list-line"><span><b>' + esc(a.name) + '</b><small>' + esc(a.homeroom || roleName(a)) + ' · ' + (a.boardSeat ? 'Voting seat' : 'Review access') + '</small></span>' + btn('Edit', 'dlg:seat', a.id) + '</div>').join('')) + (me().role === 'head' ? section('Acting chairperson', para(E.hasDelegation(db()) ? 'Acting Vice-Chairperson through ' + date(db().actingUntil) + ' · ' + db().actingReference : 'Chairperson holds posting and meeting authority.') + btn(E.hasDelegation(db()) ? 'End assignment' : 'Assign Vice-Chairperson', 'dlg:acting')) : '');
   }
   function accountView() {
     const a = me(),

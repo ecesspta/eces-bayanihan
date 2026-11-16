@@ -23,7 +23,8 @@ const safeAccount = a => ({
   homeroom: a.homeroom,
   endedAt: a.endedAt,
   claimed: a.claimed,
-  seatKey: a.seatKey
+  seatKey: a.seatKey,
+  vacant: a.vacant
 });
 // A guest reads the public pages. Sending anything needs a signed-in account.
 const guest = {
@@ -48,7 +49,7 @@ function visible(db, me) {
     // The real school record has no fictional sample accounts. Everyone, signed in or not, is told which record this is.
     settings: {
       ...db.settings,
-      live: !!db.settings?.live || db.accounts.length > 0 && db.accounts.every(a => !a.demo)
+      live: !!db.settings?.live || db.accounts.some(a => !a.demo && E.liveRoles.includes(a.role))
     },
     opening: db.opening,
     actingVice: E.hasDelegation(db),
@@ -59,7 +60,7 @@ function visible(db, me) {
   };
   const governance = board || me.role === 'head';
   const verifier = ['head', 'chair'].includes(me.role);
-  out.accounts = (governance ? db.accounts.filter(x => x.active && (E.boardRoles.includes(x.role) || lead && x.role === 'head' || x.id === me.id || verifier && x.endedAt && !x.claimed)) : []).map(safeAccount);
+  out.accounts = (governance ? db.accounts.filter(x => x.active && (!x.vacant || verifier) && (E.boardRoles.includes(x.role) || lead && x.role === 'head' || x.id === me.id || verifier && x.endedAt && !x.claimed)) : []).map(safeAccount);
   if (!me.guest && !out.accounts.some(x => x.id === me.id)) out.accounts.push({
     ...safeAccount(me),
     login: me.login
@@ -398,6 +399,21 @@ function createApi(store, config = {}) {
           return send(201, {
             role: v.role,
             code
+          });
+        }
+        if (route === '/api/admin/seats' && req.method === 'POST') {
+          // The school's HPTA presidents, one vacant seat per section. Running it again only adds sections that are missing.
+          const v = JSON.parse((req.body || Buffer.alloc(0)).toString() || '{}');
+          const added = await store.atomic(async tx => {
+            const fresh = await tx.load();
+            if (!fresh || !fresh.accounts.some(a => !a.demo && E.liveRoles.includes(a.role))) throw new HttpError(409, 'Start the real record first.');
+            const n = E.addSeats(fresh, v.seats);
+            await tx.save(fresh);
+            return n;
+          });
+          await logAdmin('HPTA president seats added', String(added));
+          return send(201, {
+            added
           });
         }
         if (route === '/api/admin/export' && req.method === 'GET') {

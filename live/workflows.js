@@ -414,6 +414,35 @@
   function readableProposal(p, a) {
     return leaders.includes(a.role) || p.owner === a.id || publicProposal(p);
   }
+  // The school's list of HPTA presidents, one seat per section. A seat waits, vacant, until that president registers and is matched to it
+  // by the School Head or chairperson. A vacant seat never votes, signs or counts toward a quorum.
+  function addSeats(db, list) {
+    check(Array.isArray(list) && list.length && list.length <= 80, 'Send between 1 and 80 seats.');
+    let n = db.accounts.filter(x => /^bod-\d+$/.test(x.id)).length;
+    const have = new Set(db.accounts.filter(x => x.role === 'bod').map(x => homeroomKey(x.homeroom)));
+    let added = 0;
+    for (const o of list) {
+      const homeroom = words(o.homeroom, 'Grade and section', 3, 80),
+        name = words(o.name, 'President name', 2, 75);
+      if (have.has(homeroomKey(homeroom))) continue;
+      have.add(homeroomKey(homeroom));
+      n++;
+      db.accounts.push({
+        id: 'bod-' + n,
+        role: 'bod',
+        name,
+        homeroom,
+        seatKey: 'bod-' + n,
+        login: 'seat-' + n,
+        active: true,
+        boardSeat: false,
+        vacant: true,
+        demo: true
+      });
+      added++;
+    }
+    return added;
+  }
   // The real school record: no sample content, only the officers, each waiting for a one-time invite.
   const liveRoles = ['head', 'chair', 'vice', 'secretary', 'treasurer', 'collector'];
   function createLive(officers) {
@@ -1264,7 +1293,7 @@
               } : null,
               approved: p.approved,
               created: at(),
-              signers: db.accounts.filter(x => x.active && boardRoles.includes(x.role)).map(x => ({
+              signers: db.accounts.filter(x => x.active && !x.vacant && boardRoles.includes(x.role)).map(x => ({
                 id: x.id,
                 name: x.name,
                 role: x.role,
@@ -1966,6 +1995,7 @@
     resetCheck,
     seenOn,
     createLive,
+    addSeats,
     officerJoin,
     liveRoles,
     loginKey,

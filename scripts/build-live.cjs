@@ -80,6 +80,10 @@ button.alt{background:#fff;color:#102b59;border:1px solid #102b59}pre{white-spac
 <p class="note">This replaces the fictional rehearsal with an empty school record and the officers below. It is refused once real data exists. One officer per line, as <b>role: Full Name</b>. Roles: head, chair, vice, secretary, treasurer, collector.</p>
 <textarea id="officers" rows="6" style="width:100%;padding:10px;font-size:16px;border:1px solid #9aa9c4;border-radius:8px;box-sizing:border-box" placeholder="chair: Full Name"></textarea>
 <button id="start">Start real record</button>
+<h2 style="font-size:18px;margin-top:28px">Add the HPTA presidents</h2>
+<p class="note">One section per line, as <b>Grade · Section | President's name</b>, for example <b>Grade 1 · Ramos | Full Name</b>. For kindergarten write <b>Kindergarten · Biala A.M. | Full Name</b>. Running it again only adds sections that are missing.</p>
+<textarea id="seats" rows="8" style="width:100%;padding:10px;font-size:16px;border:1px solid #9aa9c4;border-radius:8px;box-sizing:border-box" placeholder="Grade 1 · Ramos | Full Name"></textarea>
+<button id="addseats">Add presidents</button>
 <h2 style="font-size:18px;margin-top:28px">New code for one officer</h2>
 <p class="note">For a lost phone or forgotten sign-in, or to add the collecting officer later. Add the name only for a new officer.</p>
 <label for="orole">Role</label><input id="orole" placeholder="collector"><label for="oname">Name (new officer only)</label><input id="oname">
@@ -99,6 +103,9 @@ document.getElementById('start').onclick=function(){var list=document.getElement
  if(!list.length||list.some(function(o){return !o.role||!o.name})){say('Write one officer per line as role: Full Name.');return}
  if(!confirm('Replace the fictional rehearsal with the real record? This cannot be undone.'))return;say('Working…');call('POST','/api/admin/start-live',{officers:list}).then(codes).catch(function(e){if(e)say(e.message)})};
 document.getElementById('reissue').onclick=function(){say('Working…');call('POST','/api/admin/officer',{role:document.getElementById('orole').value.trim().toLowerCase(),name:document.getElementById('oname').value.trim()}).then(function(d){var t=d.role+'  '+d.code;out.hidden=false;out.textContent=t;say('Done. Give this code only to that officer. It is shown once.')}).catch(function(e){if(e)say(e.message)})};
+document.getElementById('addseats').onclick=function(){var seats=document.getElementById('seats').value.split('\\n').map(function(l){return l.trim()}).filter(Boolean).map(function(l){var i=l.lastIndexOf('|');return{homeroom:l.slice(0,i).trim(),name:l.slice(i+1).trim()}});
+ if(!seats.length||seats.some(function(o){return !o.homeroom||!o.name})){say('Write one section per line as Grade · Section | Name.');return}
+ say('Working…');call('POST','/api/admin/seats',{seats:seats}).then(function(d){say('Done. '+d.added+' seat'+(d.added===1?'':'s')+' added.')}).catch(function(e){if(e)say(e.message)})};
 document.getElementById('backup').onclick=function(){say('Working…');call('GET','/api/admin/export').then(function(d){save('eces-backup-'+new Date().toISOString().slice(0,10)+'.json',JSON.stringify(d));say('Backup downloaded. Keep it somewhere private.')}).catch(function(e){if(e)say(e.message)})};
 </script></body></html>`);
 

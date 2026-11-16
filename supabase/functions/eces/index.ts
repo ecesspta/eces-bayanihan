@@ -475,6 +475,35 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
   function readableProposal(p, a) {
     return leaders.includes(a.role) || p.owner === a.id || publicProposal(p);
   }
+  // The school's list of HPTA presidents, one seat per section. A seat waits, vacant, until that president registers and is matched to it
+  // by the School Head or chairperson. A vacant seat never votes, signs or counts toward a quorum.
+  function addSeats(db, list) {
+    check(Array.isArray(list) && list.length && list.length <= 80, 'Send between 1 and 80 seats.');
+    let n = db.accounts.filter(x => /^bod-\d+$/.test(x.id)).length;
+    const have = new Set(db.accounts.filter(x => x.role === 'bod').map(x => homeroomKey(x.homeroom)));
+    let added = 0;
+    for (const o of list) {
+      const homeroom = words(o.homeroom, 'Grade and section', 3, 80),
+        name = words(o.name, 'President name', 2, 75);
+      if (have.has(homeroomKey(homeroom))) continue;
+      have.add(homeroomKey(homeroom));
+      n++;
+      db.accounts.push({
+        id: 'bod-' + n,
+        role: 'bod',
+        name,
+        homeroom,
+        seatKey: 'bod-' + n,
+        login: 'seat-' + n,
+        active: true,
+        boardSeat: false,
+        vacant: true,
+        demo: true
+      });
+      added++;
+    }
+    return added;
+  }
   // The real school record: no sample content, only the officers, each waiting for a one-time invite.
   const liveRoles = ['head', 'chair', 'vice', 'secretary', 'treasurer', 'collector'];
   function createLive(officers) {
@@ -1325,7 +1354,7 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
               } : null,
               approved: p.approved,
               created: at(),
-              signers: db.accounts.filter(x => x.active && boardRoles.includes(x.role)).map(x => ({
+              signers: db.accounts.filter(x => x.active && !x.vacant && boardRoles.includes(x.role)).map(x => ({
                 id: x.id,
                 name: x.name,
                 role: x.role,
@@ -2027,6 +2056,7 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
     resetCheck,
     seenOn,
     createLive,
+    addSeats,
     officerJoin,
     liveRoles,
     loginKey,
@@ -2082,7 +2112,8 @@ const safeAccount = a => ({
   homeroom: a.homeroom,
   endedAt: a.endedAt,
   claimed: a.claimed,
-  seatKey: a.seatKey
+  seatKey: a.seatKey,
+  vacant: a.vacant
 });
 // A guest reads the public pages. Sending anything needs a signed-in account.
 const guest = {
@@ -2107,7 +2138,7 @@ function visible(db, me) {
     // The real school record has no fictional sample accounts. Everyone, signed in or not, is told which record this is.
     settings: {
       ...db.settings,
-      live: !!db.settings?.live || db.accounts.length > 0 && db.accounts.every(a => !a.demo)
+      live: !!db.settings?.live || db.accounts.some(a => !a.demo && E.liveRoles.includes(a.role))
     },
     opening: db.opening,
     actingVice: E.hasDelegation(db),
@@ -2118,7 +2149,7 @@ function visible(db, me) {
   };
   const governance = board || me.role === 'head';
   const verifier = ['head', 'chair'].includes(me.role);
-  out.accounts = (governance ? db.accounts.filter(x => x.active && (E.boardRoles.includes(x.role) || lead && x.role === 'head' || x.id === me.id || verifier && x.endedAt && !x.claimed)) : []).map(safeAccount);
+  out.accounts = (governance ? db.accounts.filter(x => x.active && (!x.vacant || verifier) && (E.boardRoles.includes(x.role) || lead && x.role === 'head' || x.id === me.id || verifier && x.endedAt && !x.claimed)) : []).map(safeAccount);
   if (!me.guest && !out.accounts.some(x => x.id === me.id)) out.accounts.push({
     ...safeAccount(me),
     login: me.login
@@ -2457,6 +2488,21 @@ function createApi(store, config = {}) {
           return send(201, {
             role: v.role,
             code
+          });
+        }
+        if (route === '/api/admin/seats' && req.method === 'POST') {
+          // The school's HPTA presidents, one vacant seat per section. Running it again only adds sections that are missing.
+          const v = JSON.parse((req.body || Buffer.alloc(0)).toString() || '{}');
+          const added = await store.atomic(async tx => {
+            const fresh = await tx.load();
+            if (!fresh || !fresh.accounts.some(a => !a.demo && E.liveRoles.includes(a.role))) throw new HttpError(409, 'Start the real record first.');
+            const n = E.addSeats(fresh, v.seats);
+            await tx.save(fresh);
+            return n;
+          });
+          await logAdmin('HPTA president seats added', String(added));
+          return send(201, {
+            added
           });
         }
         if (route === '/api/admin/export' && req.method === 'GET') {
