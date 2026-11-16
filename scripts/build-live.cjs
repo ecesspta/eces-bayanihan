@@ -97,35 +97,6 @@ document.getElementById('reissue').onclick=function(){say('Working…');call('PO
 document.getElementById('backup').onclick=function(){say('Working…');call('GET','/api/admin/export').then(function(d){save('eces-backup-'+new Date().toISOString().slice(0,10)+'.json',JSON.stringify(d));say('Backup downloaded. Keep it somewhere private.')}).catch(function(e){if(e)say(e.message)})};
 </script></body></html>`);
 
-fs.writeFileSync(path.join(out, 'join.html'), `<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="robots" content="noindex"><title>ECES Bayanihan · Officer sign-up</title>
-<script src="connection.js"></script>
-<style>body{font:16px system-ui,sans-serif;max-width:480px;margin:0 auto;padding:16px;color:#102b59;background:#f6f8fc}
-h1{font-size:22px}label{display:block;margin:14px 0 4px;font-weight:600}input[type=text],input[type=tel],input[type=password]{width:100%;padding:11px;font-size:16px;border:1px solid #9aa9c4;border-radius:8px;box-sizing:border-box}
-button{margin-top:18px;padding:12px 18px;font-size:16px;border:0;border-radius:8px;background:#102b59;color:#fff;width:100%}
-.row{display:flex;gap:10px;align-items:flex-start;margin-top:16px}.row input{margin-top:4px;width:20px;height:20px}#msg{color:#9b1c1c;font-weight:600}</style></head><body>
-<h1>ECES Bayanihan · Officer sign-up</h1>
-<p>Use the invite code the chairperson gave you. Choose your own mobile number and password. Nobody else will know your password.</p>
-<label for="code">Invite code</label><input id="code" type="text" autocomplete="off" autocapitalize="characters" placeholder="XXXX-XXXX-XXXX">
-<label for="mobile">Mobile number</label><input id="mobile" type="tel" placeholder="0917 123 4567">
-<label for="pw">Password (at least 10 characters)</label><input id="pw" type="password" autocomplete="new-password">
-<label for="pw2">Type the password again</label><input id="pw2" type="password" autocomplete="new-password">
-<div class="row"><input id="ok" type="checkbox"><label for="ok" style="margin:0;font-weight:400">I have read the <a href="./#privacy" target="_blank">Privacy Notice</a>. I agree that the SPTA may collect and use my information as described.</label></div>
-<button id="go">Set up my account</button><p id="msg"></p>
-<script>
-var api=(document.querySelector('meta[name="eces-api"]')||{}).content||'';
-function dev(){var d='';try{d=localStorage.getItem('eces-live-device')||''}catch(e){}if(!/^[a-f0-9]{32}$/.test(d)){d=Array.from(crypto.getRandomValues(new Uint8Array(16)),function(b){return b.toString(16).padStart(2,'0')}).join('');try{localStorage.setItem('eces-live-device',d)}catch(e){}}return d}
-document.getElementById('go').onclick=function(){var m=document.getElementById('msg');m.textContent='';
- var pw=document.getElementById('pw').value;
- if(pw!==document.getElementById('pw2').value){m.textContent='The two passwords are not the same.';return}
- if(!document.getElementById('ok').checked){m.textContent='Please read the Privacy Notice and tick the box to agree.';return}
- if(!api){m.textContent='This page is not connected to a server yet.';return}
- fetch(api+'/api/join',{method:'POST',headers:{'Content-Type':'application/json','x-eces-device':dev()},body:JSON.stringify({code:document.getElementById('code').value,mobile:document.getElementById('mobile').value,password:pw,consent:true})})
- .then(function(r){return r.json().then(function(d){if(!r.ok)throw Error(d.error||'Something went wrong.');return d})})
- .then(function(d){try{localStorage.setItem('eces-live-token',d.token)}catch(e){}location.href='./'})
- .catch(function(e){m.textContent=e.message})};
-</script></body></html>`);
 const index = path.join(out, 'index.html');
 let html = fs.readFileSync(index, 'utf8');
 html = html.replace('<head>', '<head>\n    <script src="connection.js"></script>\n    <link rel="manifest" href="manifest.webmanifest" />\n    <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />');

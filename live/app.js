@@ -197,7 +197,7 @@
     const who = item.replyBy ? E.recipients[item.replyBy] || E.roles[item.replyBy] : 'reviewer';
     return '<ol class="tracker" aria-label="Status: ' + esc(stop || steps[at]) + '">' + list + '</ol><div class="auto-reply"><small>Automated response</small>' + para(E.autoReply(item)) + '</div>' + (item.reply ? '<div class="portal-note personal"><b>Personal Reply from the ' + esc(titleCase(who)) + '</b>' + para(item.reply) + (item.replyAt ? '<small>' + esc(date(item.replyAt)) + '</small>' : '') + '</div>' : '');
   }
-  const signInPrompt = text => '<div class="sign-prompt">' + para(text) + '<div class="entry-actions">' + btn('Sign in', 'dlg:login', '', 'primary') + btn('Create account', 'dlg:register') + '</div></div>';
+  const signInPrompt = text => '<div class="sign-prompt">' + para(text) + '<div class="entry-actions">' + btn('Sign in', 'dlg:login', '', 'primary') + btn('Create account', 'dlg:register') + (S.shared ? btn('I am an officer with an invite code', 'dlg:join', '', 'text') : '') + '</div></div>';
   const fromLine = x => x.sender?.name ? '<div class="entry-meta">From ' + esc(x.sender.name) + (x.sender.homeroom ? ' · ' + esc(x.sender.homeroom) : '') + '</div>' : '';
   function ownCases() {
     return db().cases.filter(c => E.canSeeCase(me(), c) || standIn() && c.assigned === standIn());
@@ -797,6 +797,7 @@
       if (kind === 'announceRemove') return ['Remove announcement', '<h3>' + esc(titleCase(x.title)) + '</h3>' + notice('Removing takes it off every phone. It cannot be undone.') + form('announceRemove', ck('confirm', 'Yes, remove this announcement.', true), 'Remove', id)];
       return ['Edit announcement', form('announceEdit', input('title', 'Announcement title', x.title) + area('body', 'Complete message', x.body, 'required minlength="6" maxlength="1600"') + select('audience', 'Audience', [['everyone', 'All parents and officers'], ['officers', 'Officers only']], x.audience) + input('until', 'Show until (optional)', x.until || '', 'date', ''), 'Save changes', id)];
     }
+    if (kind === 'join') return ['Officer sign-up', para('Use the invite code the chairperson gave you. Choose your own mobile number and password. Nobody else will know your password.') + form('join', input('code', 'Invite code', '', 'text', 'required autocomplete="off" autocapitalize="characters" placeholder="XXXX-XXXX-XXXX"') + input('mobile', 'Mobile number', '', 'tel', 'required autocomplete="tel" placeholder="0917 123 4567"') + input('password', 'Password (10 or more characters)', '', 'password', 'required minlength="10" maxlength="128" autocomplete="new-password"') + '<details class="privacy-notice"><summary>Read the Privacy Notice</summary>' + privacyBody() + '</details>' + ck('consent', 'I have read the Privacy Notice. I agree that the SPTA may collect and use my information as described.', true), 'Set up my account')];
     if (kind === 'register') return ['Create an account', (isLive() ? '' : notice('Use fictional details for this rehearsal.')) + form('register', '<div class="name-pair">' + input('firstName', 'First name', '', 'text', 'required maxlength="40" autocomplete="given-name"') + input('lastName', 'Last name', '', 'text', 'required maxlength="40" autocomplete="family-name"') + '</div>' + input('mobile', 'Mobile number', '', 'tel', 'required autocomplete="tel" placeholder="0917 123 4567"') + gradePair('homeroom', '', 'Your child’s grade and section') + input('password', 'Password (10 or more characters)', '', 'password', 'required minlength="10" maxlength="128" autocomplete="new-password"') + ck('officer', 'I am the HPTA president of this section and I am requesting officer access.') + '<div class="entry-meta">Officer access starts after the School Head or chairperson checks the roster.</div><details class="privacy-notice"><summary>Read the Privacy Notice</summary>' + privacyBody() + '</details>' + ck('consent', 'I have read the Privacy Notice. I agree that the SPTA may collect and use my information, and my child’s grade and section, as described.', true), 'Create account')];
     if (kind === 'privacy') return ['Privacy Notice', privacyBody()];
     if (!a) return ['Sign in', empty('Sign in to continue.')];
@@ -970,6 +971,7 @@
   }
   const success = {
     register: 'Account created. You are signed in.',
+    join: 'Your officer account is ready. You are signed in.',
     login: 'Signed in.',
     requestRole: 'BOD request sent for verification.',
     rosterReview: 'Roster decision saved.',
@@ -1329,7 +1331,7 @@
         delete payload.homeroomGrade;
         delete payload.homeroomSection;
       }
-      if (action === 'login' || action === 'register') {
+      if (action === 'login' || action === 'register' || action === 'join') {
         if (action === 'register') {
           payload.role = payload.officer ? 'bod' : 'parent';
           delete payload.officer;

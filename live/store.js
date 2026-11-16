@@ -294,6 +294,12 @@
       throw e;
     }
   }
+  // An officer's first sign-in: the one-time invite code the chairperson gave them, their own mobile number and password.
+  async function join(v) {
+    password(v.password);
+    if (!shared) throw Error('Officer invite codes work only on the school’s live app.');
+    session(await api('join', v));
+  }
   async function login(v) {
     if (shared) {
       session(await api('login', v));
@@ -500,6 +506,7 @@
     refresh,
     run,
     register,
+    join,
     login,
     logout,
     resetPassword,

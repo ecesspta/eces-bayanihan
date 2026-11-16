@@ -32,6 +32,6 @@ Open `live/admin.html`, type the admin key, press **Download backup**. Keep the 
 ## Switching from the fictional rehearsal to the real school record
 1. Open `live/admin.html`, type the admin key, and in **Start the real record** write one officer per line as `role: Full Name` (roles: head, chair, vice, secretary, treasurer, collector). Press **Start real record**. This deletes the fictional data and cannot be undone. It is refused once real data exists.
 2. The page downloads a file of one-time invite codes. Give each officer only their own code, privately.
-3. Each officer opens `live/join.html`, enters their code, their own mobile number and a password, and ticks the Privacy Notice box.
+3. Each officer opens the app, taps **More → Sign in → I am an officer with an invite code**, enters their code, their own mobile number and a password, and ticks the Privacy Notice box.
 4. Lost phone or forgotten sign-in: **New code for one officer** on the admin page. The collecting officer can be added the same way later.
 Do not type real names into the repository or into chat history you share. They belong only in the database.

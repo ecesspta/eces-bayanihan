@@ -1057,7 +1057,15 @@
  "To approve · Photo": "Dapat i-approve · Photo",
  "Project Photo": "Project Photo",
  "This photo was already reviewed.": "Na-review na ang photo na ito.",
- "A photo you added needs no approval.": "Hindi na kailangan ng approval ang photo na idinagdag mo."
+ "A photo you added needs no approval.": "Hindi na kailangan ng approval ang photo na idinagdag mo.",
+ "I am an officer with an invite code": "Officer ako at may invite code",
+ "Officer sign-up": "Officer sign-up",
+ "Use the invite code the chairperson gave you. Choose your own mobile number and password. Nobody else will know your password.": "Gamitin ang invite code na ibinigay ng Chairperson. Pumili ng sarili mong mobile number at password. Walang ibang makakaalam ng password mo.",
+ "Invite code": "Invite code",
+ "Set up my account": "I-set up ang account ko",
+ "Your officer account is ready. You are signed in.": "Handa na ang officer account mo. Naka-sign in ka na.",
+ "I have read the Privacy Notice. I agree that the SPTA may collect and use my information as described.": "Nabasa ko ang Privacy Notice. Pumapayag akong kolektahin at gamitin ng SPTA ang aking impormasyon ayon sa nakasulat.",
+ "Officer invite codes work only on the school’s live app.": "Gumagana lang ang officer invite code sa live app ng paaralan."
 },
     rules: [
       [/^East Central Elementary School SPTA · (.+)$/, "SPTA ng East Central Elementary School · {1}"],
