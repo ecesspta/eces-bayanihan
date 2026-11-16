@@ -741,7 +741,13 @@
   function transition(original, actorId, action, v = {}, requestId = '', context = {}) {
     const db = duplicate(original);
     const device = typeof context.device === 'string' && /^[A-Za-z0-9-]{8,80}$/.test(context.device) ? context.device : '';
-    const a = account(db, actorId);
+    // A new parent has no account yet. Registration is the one action that runs for someone who is not signed in.
+    const a = account(db, actorId) || (action === 'register' ? {
+      id: 'new-parent',
+      role: 'parent',
+      name: 'New parent',
+      active: true
+    } : null);
     check(a?.active, 'Sign in to continue.');
     expire(db);
     const key = requestId ? actorId + '|' + action + '|' + requestId : '';
@@ -789,7 +795,7 @@
       case 'register':
         {
           const wanted = choice(v.role, ['parent', 'bod'], 'role');
-          let login, name, homeroom = '';
+          let login, name, homeroom = '', childName = '';
           if (v.mobile !== undefined) {
             // Parent or officer account, the same details MyNaga asks for with grade and section in place of barangay.
             login = mobileNumber(v.mobile);
@@ -797,6 +803,7 @@
             check(!device || db.accounts.filter(x => x.devices?.[0] === device).length < accountsPerDevice, 'This phone already has two accounts. Sign in instead.');
             name = words(v.firstName, 'First name', 1, 40) + ' ' + words(v.lastName, 'Last name', 1, 40);
             homeroom = words(v.homeroom, 'Grade and section', 2, 80);
+            if (v.childName !== undefined) childName = words(v.childName, 'Child’s full name', 2, 80);
             check(v.consent === true, 'Please read the Privacy Notice and tick the box to agree.');
           } else {
             login = words(v.login, 'Profile handle', 3, 40).toLowerCase();
@@ -816,6 +823,7 @@
             demo: false
           };
           if (homeroom) user.homeroom = homeroom;
+          if (childName) user.childName = childName;
           // Proof that the person agreed, and to which version of the notice.
           if (v.consent === true) user.consent = {
             at: at(),

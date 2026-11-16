@@ -802,7 +802,13 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
   function transition(original, actorId, action, v = {}, requestId = '', context = {}) {
     const db = duplicate(original);
     const device = typeof context.device === 'string' && /^[A-Za-z0-9-]{8,80}$/.test(context.device) ? context.device : '';
-    const a = account(db, actorId);
+    // A new parent has no account yet. Registration is the one action that runs for someone who is not signed in.
+    const a = account(db, actorId) || (action === 'register' ? {
+      id: 'new-parent',
+      role: 'parent',
+      name: 'New parent',
+      active: true
+    } : null);
     check(a?.active, 'Sign in to continue.');
     expire(db);
     const key = requestId ? actorId + '|' + action + '|' + requestId : '';
@@ -850,7 +856,7 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
       case 'register':
         {
           const wanted = choice(v.role, ['parent', 'bod'], 'role');
-          let login, name, homeroom = '';
+          let login, name, homeroom = '', childName = '';
           if (v.mobile !== undefined) {
             // Parent or officer account, the same details MyNaga asks for with grade and section in place of barangay.
             login = mobileNumber(v.mobile);
@@ -858,6 +864,7 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
             check(!device || db.accounts.filter(x => x.devices?.[0] === device).length < accountsPerDevice, 'This phone already has two accounts. Sign in instead.');
             name = words(v.firstName, 'First name', 1, 40) + ' ' + words(v.lastName, 'Last name', 1, 40);
             homeroom = words(v.homeroom, 'Grade and section', 2, 80);
+            if (v.childName !== undefined) childName = words(v.childName, 'Child’s full name', 2, 80);
             check(v.consent === true, 'Please read the Privacy Notice and tick the box to agree.');
           } else {
             login = words(v.login, 'Profile handle', 3, 40).toLowerCase();
@@ -877,6 +884,7 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
             demo: false
           };
           if (homeroom) user.homeroom = homeroom;
+          if (childName) user.childName = childName;
           // Proof that the person agreed, and to which version of the notice.
           if (v.consent === true) user.consent = {
             at: at(),
@@ -2108,10 +2116,15 @@ function visible(db, me) {
     ...safeAccount(me),
     login: me.login
   });
-  // A parent's note of their other children's grade and section is shown only to that parent.
-  if (!me.guest && me.children) out.accounts = out.accounts.map(x => x.id === me.id ? {
+  // A parent's child's name, and the note of their other children, are shown only to that parent.
+  if (!me.guest && (me.children || me.childName)) out.accounts = out.accounts.map(x => x.id === me.id ? {
     ...x,
-    children: me.children
+    ...(me.children ? {
+      children: me.children
+    } : {}),
+    ...(me.childName ? {
+      childName: me.childName
+    } : {})
   } : x);
   out.requests = db.requests.filter(q => verifier || q.user === me.id).map(q => ({
     ...q,

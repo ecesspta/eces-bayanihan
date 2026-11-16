@@ -60,10 +60,15 @@ function visible(db, me) {
     ...safeAccount(me),
     login: me.login
   });
-  // A parent's note of their other children's grade and section is shown only to that parent.
-  if (!me.guest && me.children) out.accounts = out.accounts.map(x => x.id === me.id ? {
+  // A parent's child's name, and the note of their other children, are shown only to that parent.
+  if (!me.guest && (me.children || me.childName)) out.accounts = out.accounts.map(x => x.id === me.id ? {
     ...x,
-    children: me.children
+    ...(me.children ? {
+      children: me.children
+    } : {}),
+    ...(me.childName ? {
+      childName: me.childName
+    } : {})
   } : x);
   out.requests = db.requests.filter(q => verifier || q.user === me.id).map(q => ({
     ...q,

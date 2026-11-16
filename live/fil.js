@@ -1065,7 +1065,10 @@
  "Set up my account": "I-set up ang account ko",
  "Your officer account is ready. You are signed in.": "Handa na ang officer account mo. Naka-sign in ka na.",
  "I have read the Privacy Notice. I agree that the SPTA may collect and use my information as described.": "Nabasa ko ang Privacy Notice. Pumapayag akong kolektahin at gamitin ng SPTA ang aking impormasyon ayon sa nakasulat.",
- "Officer invite codes work only on the school’s live app.": "Gumagana lang ang officer invite code sa live app ng paaralan."
+ "Officer invite codes work only on the school’s live app.": "Gumagana lang ang officer invite code sa live app ng paaralan.",
+ "Your child’s full name": "Buong pangalan ng anak mo",
+ "My students": "Mga estudyante ko",
+ "List your students’ names, grades and sections. Only you can see this list.": "Ilista ang pangalan, grade at section ng mga estudyante mo. Ikaw lang ang makakakita ng listahang ito."
 },
     rules: [
       [/^East Central Elementary School SPTA · (.+)$/, "SPTA ng East Central Elementary School · {1}"],
@@ -1200,7 +1203,8 @@
       [/^Photo (\d+) of (\d+)$/, "Photo {1} ng {2}"],
       [/^Open photo: (.+)$/, "Buksan ang photo: {1}"],
       [/^Sample (.+)$/, "Sample {1}"],
-      [/^Added by (.+)\. It is public once you approve it\.$/, "Idinagdag ni {1}. Magiging public ito kapag in-approve mo."]
+      [/^Added by (.+)\. It is public once you approve it\.$/, "Idinagdag ni {1}. Magiging public ito kapag in-approve mo."],
+      [/^Student: (.+)$/, "Estudyante: {1}"]
     ]
   };
 })(globalThis);
