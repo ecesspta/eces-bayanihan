@@ -47,6 +47,11 @@ fs.writeFileSync(path.join(out, 'manifest.webmanifest'), JSON.stringify({
 }, null, 2));
 fs.writeFileSync(path.join(out, 'connection.js'), `/* Where this app finds its server. The key is the public "anon" key, which is safe to publish. */
 (function () {
+  // Refuse to be shown inside another website's frame.
+  if (window.top !== window.self) {
+    document.documentElement.style.display = 'none';
+    try { window.top.location = window.self.location; } catch (e) {}
+  }
   var c = ${JSON.stringify({ api, key }, null, 2)};
   [['eces-api', c.api], ['eces-key', c.key]].forEach(function (p) {
     if (!p[1]) return;
@@ -97,8 +102,21 @@ document.getElementById('reissue').onclick=function(){say('Working…');call('PO
 document.getElementById('backup').onclick=function(){say('Working…');call('GET','/api/admin/export').then(function(d){save('eces-backup-'+new Date().toISOString().slice(0,10)+'.json',JSON.stringify(d));say('Backup downloaded. Keep it somewhere private.')}).catch(function(e){if(e)say(e.message)})};
 </script></body></html>`);
 
+
+// A strict content policy: only this site's own scripts run, and the app may talk only to its own server.
+const connect = process.env.ECES_CSP_CONNECT || (api ? new URL(api).origin : '');
+const csp = ["default-src 'self'", "script-src 'self'", "style-src 'self' 'unsafe-inline'", "img-src 'self' blob: data:", "object-src blob:", "connect-src 'self' " + connect, "base-uri 'none'", "form-action 'none'"].join('; ');
+const cspTag = '<meta http-equiv="Content-Security-Policy" content="' + csp + '">';
+{
+  const adminFile = path.join(out, 'admin.html');
+  let a = fs.readFileSync(adminFile, 'utf8');
+  const m = /<script>([\s\S]*?)<\/script>\s*<\/body>/.exec(a);
+  fs.writeFileSync(path.join(out, 'admin.js'), m[1]);
+  a = a.replace(m[0], '<script src="admin.js"></script></body>').replace('<head>', '<head>' + cspTag);
+  fs.writeFileSync(adminFile, a);
+}
 const index = path.join(out, 'index.html');
 let html = fs.readFileSync(index, 'utf8');
-html = html.replace('<head>', '<head>\n    <script src="connection.js"></script>\n    <link rel="manifest" href="manifest.webmanifest" />\n    <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />');
+html = html.replace('<head>', '<head>\n    ' + cspTag + '\n    <script src="connection.js"></script>\n    <link rel="manifest" href="manifest.webmanifest" />\n    <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />');
 fs.writeFileSync(index, html);
 console.log('live/ built' + (api ? ' for ' + api : ' (no server address yet: edit live/connection.js or rebuild with the address)'));

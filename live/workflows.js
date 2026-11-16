@@ -430,7 +430,8 @@
         boardSeat: boardRoles.includes(o.role),
         login: 'pending-' + o.role,
         demo: false,
-        invite: o.invite
+        invite: o.invite,
+        inviteAt: o.inviteAt || Date.now()
       };
     });
     return {
@@ -483,11 +484,13 @@
   function officerJoin(db, v, device) {
     const a = db.accounts.find(x => x.invite && x.invite === v.invite);
     check(a, 'That invite code is not valid. Ask the chairperson for a new one.');
+    check(!a.inviteAt || Date.now() - a.inviteAt < 14 * 86400000, 'That invite code has expired. Ask the chairperson for a new one.');
     check(v.consent === true, 'Please read the Privacy Notice and tick the box to agree.');
     const login = mobileNumber(v.mobile);
     check(!db.accounts.some(x => x.login === login && x !== a), 'An account already uses this mobile number.');
     a.login = login;
     delete a.invite;
+    delete a.inviteAt;
     a.consent = {
       at: at(),
       version: '2026-11'

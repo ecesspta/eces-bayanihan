@@ -491,7 +491,8 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
         boardSeat: boardRoles.includes(o.role),
         login: 'pending-' + o.role,
         demo: false,
-        invite: o.invite
+        invite: o.invite,
+        inviteAt: o.inviteAt || Date.now()
       };
     });
     return {
@@ -544,11 +545,13 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
   function officerJoin(db, v, device) {
     const a = db.accounts.find(x => x.invite && x.invite === v.invite);
     check(a, 'That invite code is not valid. Ask the chairperson for a new one.');
+    check(!a.inviteAt || Date.now() - a.inviteAt < 14 * 86400000, 'That invite code has expired. Ask the chairperson for a new one.');
     check(v.consent === true, 'Please read the Privacy Notice and tick the box to agree.');
     const login = mobileNumber(v.mobile);
     check(!db.accounts.some(x => x.login === login && x !== a), 'An account already uses this mobile number.');
     a.login = login;
     delete a.invite;
+    delete a.inviteAt;
     a.consent = {
       at: at(),
       version: '2026-11'
@@ -2365,6 +2368,10 @@ function createApi(store, config = {}) {
       const limit = async () => {
         if (!(await store.hit('login:' + (req.ip || 'unknown'), 35, 60000))) throw new HttpError(429, 'Too many attempts. Try again in one minute.');
       };
+      // A second brake that does not depend on the sender's address: too many wrong tries on one account, or too many new accounts from one place.
+      const brake = async (key, n, ms, message) => {
+        if (!(await store.hit(key, n, ms))) throw new HttpError(429, message);
+      };
       // Admin routes use a long secret key, never a sign-in.
       if (route.startsWith('/api/admin/')) {
         const given = header(req, 'x-admin-key');
@@ -2373,6 +2380,18 @@ function createApi(store, config = {}) {
           await limit();
           throw new HttpError(403, 'Admin key required.');
         }
+        const logAdmin = async (event, ref = '') => store.atomic(async tx => {
+          const d = await tx.load();
+          if (!d) return;
+          d.audit.push({
+            who: 'IT administrator',
+            role: '',
+            event,
+            ref,
+            at: new Date().toISOString()
+          });
+          await tx.save(d);
+        });
         if (route === '/api/admin/setup' && req.method === 'POST') {
           const credentials = await seedSample();
           if (!credentials) throw new HttpError(409, 'Already set up.');
@@ -2392,7 +2411,8 @@ function createApi(store, config = {}) {
             return {
               role: o.role,
               name: o.name,
-              invite: inviteHash(code)
+              invite: inviteHash(code),
+              inviteAt: Date.now()
             };
           });
           await store.atomic(async tx => {
@@ -2402,6 +2422,7 @@ function createApi(store, config = {}) {
             await tx.wipe();
             await tx.save(fresh);
           });
+          await logAdmin('Real school record started');
           return send(201, {
             note: 'One-time invite codes. Give each officer their own code privately.',
             codes
@@ -2425,19 +2446,23 @@ function createApi(store, config = {}) {
               fresh.accounts.push(next);
             } else {
               a.invite = inviteHash(code);
+              a.inviteAt = Date.now();
               a.login = 'pending-' + a.role;
               await tx.delAuth(a.id);
               await tx.delSessionsOf(a.id);
             }
             await tx.save(fresh);
           });
+          await logAdmin('New officer invite code made', v.role);
           return send(201, {
             role: v.role,
             code
           });
         }
         if (route === '/api/admin/export' && req.method === 'GET') {
-          return send(200, await store.load());
+          const everything = await store.load();
+          await logAdmin('Backup downloaded');
+          return send(200, everything);
         }
         throw new HttpError(404, 'Unknown route.');
       }
@@ -2497,6 +2522,7 @@ function createApi(store, config = {}) {
       if (req.method !== 'POST') throw new HttpError(405, 'Use POST.');
       if (!cfg.originOk(req)) throw new HttpError(403, 'Cross-site request denied.');
       const body = req.body || Buffer.alloc(0);
+      if (body.length > 8 * 1024 * 1024 + 1) throw new HttpError(413, 'File or request too large.');
       if (route === '/api/files') {
         if (!me || !['secretary', 'treasurer', 'collector', ...E.leaders].includes(me.role)) throw new HttpError(403, 'This role cannot upload records.');
         if (body.length > 8 * 1024 * 1024) throw new HttpError(413, 'File or request too large.');
@@ -2563,6 +2589,7 @@ function createApi(store, config = {}) {
         await limit();
         if (!passOk(v.password)) throw new HttpError(400, 'Use a password of 10–128 characters.');
         if (route === '/api/register') {
+          await brake('register:' + (req.ip || 'unknown'), 12, 3600000, 'Too many new accounts from this connection. Try again later.');
           const result = await store.atomic(async tx => {
             const fresh = await tx.load();
             const x = E.transition(fresh, 'parent', 'register', v, '', {
@@ -2582,6 +2609,7 @@ function createApi(store, config = {}) {
             device
           });
         }
+        await brake('acct:' + E.loginKey(v.login), 10, 900000, 'Too many tries on this account. Wait 15 minutes, then try again.');
         const u = db.accounts.find(x => x.active && x.login === E.loginKey(v.login));
         const record = u && await store.getAuth(u.id);
         const digest = scryptSync(v.password, record?.salt || Buffer.alloc(16), 32);
@@ -2798,7 +2826,8 @@ Deno.serve(async request => {
   const at = url.pathname.indexOf('/api/');
   const headers = {};
   request.headers.forEach((v, k) => { headers[k] = v; });
-  const ip = (headers['x-forwarded-for'] || '').split(',')[0].trim() || headers['cf-connecting-ip'] || 'unknown';
+  // The edge network sets cf-connecting-ip itself; a visitor cannot choose it, unlike x-forwarded-for.
+  const ip = headers['cf-connecting-ip'] || (headers['x-forwarded-for'] || '').split(',').pop().trim() || 'unknown';
   const body = request.method === 'POST' ? Buffer.from(await request.arrayBuffer()) : Buffer.alloc(0);
   const r = await api.handle({ method: request.method, path: at < 0 ? url.pathname : url.pathname.slice(at), headers, ip, body });
   return new Response(r.body, {

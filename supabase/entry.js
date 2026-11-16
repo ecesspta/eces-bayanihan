@@ -34,7 +34,8 @@ Deno.serve(async request => {
   const at = url.pathname.indexOf('/api/');
   const headers = {};
   request.headers.forEach((v, k) => { headers[k] = v; });
-  const ip = (headers['x-forwarded-for'] || '').split(',')[0].trim() || headers['cf-connecting-ip'] || 'unknown';
+  // The edge network sets cf-connecting-ip itself; a visitor cannot choose it, unlike x-forwarded-for.
+  const ip = headers['cf-connecting-ip'] || (headers['x-forwarded-for'] || '').split(',').pop().trim() || 'unknown';
   const body = request.method === 'POST' ? Buffer.from(await request.arrayBuffer()) : Buffer.alloc(0);
   const r = await api.handle({ method: request.method, path: at < 0 ? url.pathname : url.pathname.slice(at), headers, ip, body });
   return new Response(r.body, {
