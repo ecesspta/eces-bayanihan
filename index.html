@@ -1048,7 +1048,7 @@ body.modal-open {
     ],
     activities: [
       {text:'Safety signage proposal received',detail:'EC-0024 · Automated acknowledgement sent',date:'Today',icon:'lightbulb'},
-      {text:'Reading corner proposal recommended',detail:'EC-0020 · Ready for school-head review',date:'Yesterday',icon:'check-circle'},
+      {text:'Reading corner proposal recommended',detail:'EC-0020 · Ready for School-Head review',date:'Yesterday',icon:'check-circle'},
       {text:'Sample facilities concern routed',detail:'CC-013 · Private · School office',date:'2 days ago',icon:'shield'},
       {text:'Learning garden progress updated',detail:'PR-03 · Volunteer setup',date:'3 days ago',icon:'sprout'}
     ],
@@ -1128,13 +1128,13 @@ body.modal-open {
   'use strict';
 
   const roles = {
-    parent: 'Parent / guardian',
-    bod: 'BOD · HPTA president',
+    parent: 'Parent / Guardian',
+    bod: 'BOD · HPTA President',
     chair: 'Chairperson',
-    vice: 'Vice-president',
+    vice: 'Vice-Chairperson',
     secretary: 'Secretary',
     treasurer: 'Treasurer',
-    head: 'School head',
+    head: 'School Head',
     collector: 'Collecting and Disbursing Officer'
   };
   // Sarah's rule: the Collecting and Disbursing Officer is an officer too, and votes and signs with the rest.
@@ -1147,7 +1147,7 @@ body.modal-open {
     declined: 'Declined',
     screened: 'Screened',
     voting: 'Voting open',
-    awaiting_head: 'For school-head approval',
+    awaiting_head: 'For School-Head approval',
     not_adopted: 'Board did not adopt',
     withdrawn: 'Withdrawn',
     approved: 'Approved',
@@ -1177,9 +1177,9 @@ body.modal-open {
   };
   const categories = ['Facilities', 'Learning', 'Health & Safety', 'Environment', 'Community', 'Accessibility', 'Communication', 'Other'];
   const recipients = {
-    head: 'School head',
+    head: 'School Head',
     chair: 'SPTA chairperson',
-    vice: 'SPTA vice-president'
+    vice: 'SPTA Vice-Chairperson'
   };
   const duplicate = s => structuredClone(s);
   const today = () => new Intl.DateTimeFormat('en-CA', {
@@ -1377,7 +1377,7 @@ body.modal-open {
     return String(value || '').normalize('NFKC').toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '');
   }
   function resolutionText(title, budget, direct = false) {
-    return 'The SPTA records ' + (direct ? 'the chairperson’s proposal “' + title + '”, added without an officer vote,' : 'the board decision on “' + title + '”') + ' and school-head approval for the project with an allocation of ₱' + (budget / 100).toLocaleString('en-PH', {
+    return 'The SPTA records ' + (direct ? 'the chairperson’s proposal “' + title + '”, added without an officer vote,' : 'the board decision on “' + title + '”') + ' and School-Head approval for the project with an allocation of ₱' + (budget / 100).toLocaleString('en-PH', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
     }) + '.';
@@ -1415,7 +1415,7 @@ body.modal-open {
     received: 'Thank you. Your proposal was received and is waiting for review by the SPTA officers.',
     screened: 'Your proposal was reviewed and will open for the SPTA officers’ vote.',
     voting: 'Your proposal was reviewed and is now with the SPTA officers for a vote.',
-    awaiting_head: 'The SPTA officers voted to proceed. Your proposal is now with the school head for approval.',
+    awaiting_head: 'The SPTA officers voted to proceed. Your proposal is now with the School Head for approval.',
     approved: 'Approved. Your proposal is now an SPTA project. Follow it under Projects.',
     in_progress: 'Your proposal is now an SPTA project in progress. Follow it under Projects.',
     completed: 'The SPTA project from your proposal is complete. Thank you.',
@@ -1434,7 +1434,7 @@ body.modal-open {
       if (item.status === 'assigned') return 'Your ' + what + ' was reviewed by the ' + who + '.';
       return 'Thank you. Your ' + what + ' was received privately by the ' + who + '.';
     }
-    if (item.direct && item.status === 'awaiting_head') return 'Added by the chairperson. It is now with the school head for approval.';
+    if (item.direct && item.status === 'awaiting_head') return 'Added by the chairperson. It is now with the School Head for approval.';
     return proposalReplies[item.status] || '';
   }
   // Tells the sender about a status change with the automated response.
@@ -1454,7 +1454,7 @@ body.modal-open {
   }
   const holds = (db, a, role) => !!a?.active && (a.role === role || covering(db, a) === role);
   // The final approval of a fund record comes from someone who neither sent nor checked it.
-  // When the chairperson handled it while standing in, that falls to the vice-president.
+  // When the chairperson handled it while standing in, that falls to the Vice-Chairperson.
   function mayPost(db, a, d) {
     const untouched = d.owner !== a?.id && d.checkedBy !== a?.id;
     if (isChair(db, a)) return untouched;
@@ -1954,7 +1954,7 @@ body.modal-open {
       case 'chairProposal':
         {
           // Sarah's rule: the chairperson may add a proposal that skips screening and the officers' vote
-          // and goes straight to the school head. It is marked as such everywhere, including the resolution.
+          // and goes straight to the School Head. It is marked as such everywhere, including the resolution.
           financeReview(db, a);
           check(directUsed(db) < directPerYear, 'The chairperson can add up to ' + directPerYear + ' direct proposals each school year. Send this one through the officers’ vote.');
           const p = {
@@ -1980,7 +1980,7 @@ body.modal-open {
           p.publicText = p.details;
           db.proposals.unshift(p);
           id = p.id;
-          changed('Chairperson added a proposal for school-head approval without an officer vote');
+          changed('Chairperson added a proposal for School-Head approval without an officer vote');
           break;
         }
       case 'resubmit':
@@ -1994,7 +1994,7 @@ body.modal-open {
           p.published = false;
           p.reason = '';
           if (p.direct) {
-            // A chairperson's direct proposal returns to the school head after revision.
+            // A chairperson's direct proposal returns to the School Head after revision.
             p.publicTitle = p.title;
             p.publicText = p.details;
             p.status = 'awaiting_head';
@@ -2050,7 +2050,7 @@ body.modal-open {
         }
       case 'withdraw':
         {
-          // The sender may take back a submission. A proposal can be withdrawn until the school head approves it.
+          // The sender may take back a submission. A proposal can be withdrawn until the School Head approves it.
           const kind = choice(v.kind, ['proposal', 'case'], 'submission type');
           check(v.confirm === true, 'Confirm that you want to withdraw this.');
           const item = get(kind === 'proposal' ? db.proposals : db.cases, id);
@@ -2110,7 +2110,7 @@ body.modal-open {
         }
       case 'announceEdit':
         {
-          check(canAnnounce(db, a), 'The school head, chairperson or secretary publishes announcements.');
+          check(canAnnounce(db, a), 'The School Head, chairperson or secretary publishes announcements.');
           const n = get(db.announcements, id);
           n.title = words(v.title, 'Title', 3, 100);
           n.body = words(v.body, 'Message', 6, 1600);
@@ -2123,7 +2123,7 @@ body.modal-open {
         }
       case 'announceRemove':
         {
-          check(canAnnounce(db, a), 'The school head, chairperson or secretary publishes announcements.');
+          check(canAnnounce(db, a), 'The School Head, chairperson or secretary publishes announcements.');
           check(v.confirm === true, 'Confirm that you want to remove this announcement.');
           const n = get(db.announcements, id);
           db.announcements = db.announcements.filter(x => x.id !== id);
@@ -2138,7 +2138,7 @@ body.modal-open {
             break;
           }
           const vote = p.direct ? null : get(db.ballots, p.ballot);
-          if (vote) check(p.status === 'awaiting_head' && vote.status === 'closed' && vote.passed && vote.rev === p.rev, 'A closed passing vote on this version is required.');else check(p.status === 'awaiting_head', 'This proposal is not waiting for the school head.');
+          if (vote) check(p.status === 'awaiting_head' && vote.status === 'closed' && vote.passed && vote.rev === p.rev, 'A closed passing vote on this version is required.');else check(p.status === 'awaiting_head', 'This proposal is not waiting for the School Head.');
           // Without a vote, the details come from the chairperson's proposal.
           const b = vote || {
             id: '',
@@ -2153,7 +2153,7 @@ body.modal-open {
           if (v.decision === 'approve') {
             if (p.fundraising) {
               p.ga = words(v.ga, 'General Assembly agreement reference', 3, 150);
-              check(v.concur === true, 'Record school-head concurrence for voluntary contributions.');
+              check(v.concur === true, 'Record School-Head concurrence for voluntary contributions.');
             }
             p.status = 'approved';
             p.approved = at();
@@ -2215,7 +2215,7 @@ body.modal-open {
             if (p.status === 'returned') p.published = false;
           }
           tell(db, p);
-          changed('School-head decision recorded');
+          changed('School-Head decision recorded');
           break;
         }
       case 'projectUpdate':
@@ -2407,8 +2407,8 @@ body.modal-open {
         }
       case 'proposalReply':
         {
-          // Optional personal reply to the person who proposed, from the school head or the chairperson.
-          check(a.role === 'head' || isChair(db, a), 'The school head or the chairperson sends a personal reply.');
+          // Optional personal reply to the person who proposed, from the School Head or the chairperson.
+          check(a.role === 'head' || isChair(db, a), 'The School Head or the chairperson sends a personal reply.');
           const p = get(db.proposals, id);
           p.reply = words(v.reply, 'Personal reply', 3, 600);
           p.replyBy = a.role;
@@ -2419,8 +2419,8 @@ body.modal-open {
         }
       case 'announce':
         {
-          // The school head, the chairperson and the secretary publish SPTA announcements.
-          check(canAnnounce(db, a), 'The school head, chairperson or secretary publishes announcements.');
+          // The School Head, the chairperson and the secretary publish SPTA announcements.
+          check(canAnnounce(db, a), 'The School Head, chairperson or secretary publishes announcements.');
           id = newId(db, 'A');
           db.announcements.unshift({
             id,
@@ -2455,7 +2455,7 @@ body.modal-open {
             signed: at()
           });
           if (a.role !== 'secretary') {
-            // Uploaded by the chairperson standing in, so it goes straight to the school head.
+            // Uploaded by the chairperson standing in, so it goes straight to the School Head.
             Object.assign(db.minutes[0], {
               state: 'for_head',
               chair: a.id,
@@ -2578,7 +2578,7 @@ body.modal-open {
           check(isChair(db, a) || a.role === 'vice', 'Chairperson posting authority is required.');
           const d = get(db.batches, id);
           if (d.status === 'posted' && v.decision === 'post') break;
-          check(d.status === 'pending' && mayPost(db, a, d), 'An independently submitted pending batch is required. The vice-president gives the final approval on records the chairperson sent or checked.');
+          check(d.status === 'pending' && mayPost(db, a, d), 'An independently submitted pending batch is required. The Vice-Chairperson gives the final approval on records the chairperson sent or checked.');
           check(v.stamp === openStamp(d), 'This finance submission changed. Open its latest version before reviewing.');
           if (v.decision === 'return') {
             d.reason = words(v.reason, 'Reason for return', 4, 300);
@@ -3518,7 +3518,7 @@ body.modal-open {
       at = {received: 0, assigned: 1, resolved: 2}[item.status] ?? 0;
       if (item.status === 'withdrawn') stop = labels.withdrawn;
     } else {
-      steps = item.direct ? ['Added by chairperson', 'School head', 'Approved'] : ['Received', 'Reviewed', 'Officer vote', 'School head', 'Approved'];
+      steps = item.direct ? ['Added by chairperson', 'School Head', 'Approved'] : ['Received', 'Reviewed', 'Officer vote', 'School Head', 'Approved'];
       at = item.direct ? {awaiting_head: 0, returned: 1, declined: 1}[item.status] ?? 2 : {received: 0, screened: 1, voting: 1, awaiting_head: 2, approved: 4, in_progress: 4, completed: 4, cancelled: 4, returned: 1, declined: 1, not_adopted: 2}[item.status] ?? 0;
       if (['returned', 'declined', 'not_adopted', 'withdrawn'].includes(item.status)) stop = labels[item.status];
     }
@@ -3589,8 +3589,8 @@ body.modal-open {
   }
   function practiceSelector() {
     if(S.shared)return '';
-    const names={parent:'Parent · signed in',bod:'HPTA president (BOD)',collector:'Collecting officer'};
-    const profiles=[['guest','Guest · not signed in'],...S.practiceProfiles.map(id=>E.account(db(),id)).filter(x=>x?.demo&&x.active).map(x=>[x.id,names[x.role]||E.roles[x.role]])];
+    const names={parent:'Parent · Signed In',bod:'HPTA President (BOD)',collector:'Collecting Officer'};
+    const profiles=[['guest','Guest · Not Signed In'],...S.practiceProfiles.map(id=>E.account(db(),id)).filter(x=>x?.demo&&x.active).map(x=>[x.id,names[x.role]||E.roles[x.role]])];
     const listed=profiles.some(x=>x[0]===(S.me||'guest'));
     return '<label class="mobile-profile-select">Practice as<select id="practice-profile" aria-label="Choose fictional profile">'+(!listed?'<option selected disabled>'+esc(me().name)+'</option>':'')+opts(profiles,S.me||'guest')+'</select></label>'+para('Demo shortcut: one fictional profile for each role. In the live app, everyone signs in with their own account.');
   }
@@ -3602,7 +3602,7 @@ body.modal-open {
     if(role==='bod')return ['Officer voting','Read each proposal and vote on whether it should proceed.','Open voting','tab:board','users'];
     return ['Propose an SPTA project','What would make school better for our children?','Start a proposal','dlg:proposal','lightbulb'];
   }
-  // What is waiting for the school head, chairperson or vice-president to approve or screen.
+  // What is waiting for the School Head, chairperson or Vice-Chairperson to approve or screen.
   // Each entry: icon, what to do, name, action, id, kind of item. The kind is shown as a label so nobody has to guess.
   function approvals() {
     const role=me().role, chair=canChair(), list=[];
@@ -3662,12 +3662,12 @@ body.modal-open {
     const cover=standIn()?notice('You are standing in for the '+E.roles[standIn()]+' until '+date(db().cover.until)+'. Their tasks appear in your list.'):'';
     return hero+cover+feedback+approvalList+section('Latest announcement',announcement)+section('SPTA projects',projectsList||empty('Approved SPTA projects will appear here.'))+join;
   }
-  // A sender may take back a proposal until the school head approves it, and a suggestion or concern until it is resolved.
+  // A sender may take back a proposal until the School Head approves it, and a suggestion or concern until it is resolved.
   const canWithdraw = x => x.owner === S.me && (x.kind ? ['received', 'assigned'] : ['received', 'returned', 'screened', 'voting', 'awaiting_head']).includes(x.status);
   function proposals() {
     const all = db().proposals.filter(p => E.readableProposal(p, me()));
     if (me().role === 'head') all.sort((a, b) => (b.status === 'awaiting_head') - (a.status === 'awaiting_head'));
-    return (me().role === 'parent' ? '' : '<div class="entry-actions">' + btn('Propose a project', 'dlg:proposal', '', 'primary', 'plus') + (canChair() ? btn('Add for school-head approval (' + E.directUsed(db()) + ' of ' + E.directPerYear + ' used)', 'dlg:chairProposal', '', 'light', 'plus') : '') + '</div>') + (all.length ? '' : empty('Screened proposals will appear here.')) + '<div class="entry-list">' + all.map(p => {
+    return (me().role === 'parent' ? '' : '<div class="entry-actions">' + btn('Propose a project', 'dlg:proposal', '', 'primary', 'plus') + (canChair() ? btn('Add for School-Head approval (' + E.directUsed(db()) + ' of ' + E.directPerYear + ' used)', 'dlg:chairProposal', '', 'light', 'plus') : '') + '</div>') + (all.length ? '' : empty('Screened proposals will appear here.')) + '<div class="entry-list">' + all.map(p => {
       const own = p.owner === S.me;
       let actions = '';
       if (lead() && p.status === 'received') actions += btn('Screen proposal', 'dlg:screen', p.id, 'primary');
@@ -3706,13 +3706,13 @@ body.modal-open {
   }
   function board() {
     const ballots = db().ballots.filter(b => b.roster.includes(S.me) || lead() || holds('secretary')).slice().reverse();
-    return para('Every SPTA officer can vote on a screened proposal. It proceeds to the school head once yes votes reach 50% of all officers.') + section('Proposals for officer vote', ballots.map(b => {
+    return para('Every SPTA officer can vote on a screened proposal. It proceeds to the School Head once yes votes reach 50% of all officers.') + section('Proposals for officer vote', ballots.map(b => {
       const open = b.status === 'open',
         member = b.present.includes(S.me),
         voted = b.participated.includes(S.me),
         turnout = b.turnout ?? b.participated.length,
         need = E.yesNeeded(b);
-      const text = para(b.body) + '<div class="entry-meta">Secret ballot · ' + b.present.length + ' officers · ' + need + ' yes votes needed (50%) · SPTA allocation ' + cash(b.budget) + '</div>' + (open ? fundCheck(b.budget, E.funding(db()).shortFor(b.budget)) : '') + (open ? para(turnout + ' of ' + b.present.length + ' officers have voted.' + (voted ? ' Your vote was received.' : '')) + '<div class="entry-meta vote-closes">' + icon('info', 'sm') + 'Voting closes on ' + esc(date(E.voteCloses(b))) + '</div>' : '<div class="vote-summary"><b>' + b.counts.yes + ' Yes</b><b>' + b.counts.no + ' No</b><b>' + b.counts.abstain + ' Abstain</b></div>' + para(b.withdrawn ? 'The proposer withdrew this proposal, so the vote was closed.' : b.passed ? 'Reached 50% of all officers. Sent to the school head for approval.' : 'Yes votes did not reach 50% of all officers' + (b.expired ? ' by the closing date.' : '.')));
+      const text = para(b.body) + '<div class="entry-meta">Secret ballot · ' + b.present.length + ' officers · ' + need + ' yes votes needed (50%) · SPTA allocation ' + cash(b.budget) + '</div>' + (open ? fundCheck(b.budget, E.funding(db()).shortFor(b.budget)) : '') + (open ? para(turnout + ' of ' + b.present.length + ' officers have voted.' + (voted ? ' Your vote was received.' : '')) + '<div class="entry-meta vote-closes">' + icon('info', 'sm') + 'Voting closes on ' + esc(date(E.voteCloses(b))) + '</div>' : '<div class="vote-summary"><b>' + b.counts.yes + ' Yes</b><b>' + b.counts.no + ' No</b><b>' + b.counts.abstain + ' Abstain</b></div>' + para(b.withdrawn ? 'The proposer withdrew this proposal, so the vote was closed.' : b.passed ? 'Reached 50% of all officers. Sent to the School Head for approval.' : 'Yes votes did not reach 50% of all officers' + (b.expired ? ' by the closing date.' : '.')));
       let buttons = '';
       if (open && member && !voted) buttons += btn('Cast vote', 'dlg:vote', b.id, 'primary');
       if (open && canChair() && !S.shared && b.present.some(m => !b.participated.includes(m) && !S.practiceProfiles.includes(m))) buttons += btn('Add practice ballots', 'practiceBallots', b.id);
@@ -3743,7 +3743,7 @@ body.modal-open {
     const demo = '<div class="paper-mark">FICTIONAL REHEARSAL COPY · ' + esc(labels[r.state] || r.state).toUpperCase() + '</div>';
     const fact = (k, v) => v ? '<div class="paper-fact"><span>' + esc(k) + '</span><b>' + esc(v) + '</b></div>' : '';
     let body = demo + '<div class="paper-head">' + seal + '<div><b>East Central Elementary School</b><div>School Parent-Teacher Association</div></div></div><h2>Resolution ' + esc(r.id) + '</h2>' + '<div class="entry-meta">Version ' + r.version + ' · ' + esc(labels[r.state] || r.state) + '</div><h3>' + esc(titleCase(r.title)) + '</h3>' + para(r.text);
-    if (r.meeting) body += '<h3>Project Details</h3><div class="paper-facts">' + fact('Proposal', r.proposal) + fact('Project', r.project) + fact('Category', r.category) + fact('Approved allocation', cash(r.budget)) + fact('Voluntary contributions', r.fundraising ? 'Yes · ' + r.ga : '') + (r.tally ? fact('Officer vote', r.tally.yes + ' yes, ' + r.tally.no + ' no, ' + r.tally.abstain + ' abstain' + (r.officers ? ' of ' + r.officers + ' officers' : '')) + fact('Vote closed', date(r.date)) : fact('Officer vote', 'Not held · Added by the chairperson')) + fact('School-head approval', date(r.approved)) + '</div>';
+    if (r.meeting) body += '<h3>Project Details</h3><div class="paper-facts">' + fact('Proposal', r.proposal) + fact('Project', r.project) + fact('Category', r.category) + fact('Approved allocation', cash(r.budget)) + fact('Voluntary contributions', r.fundraising ? 'Yes · ' + r.ga : '') + (r.tally ? fact('Officer vote', r.tally.yes + ' yes, ' + r.tally.no + ' no, ' + r.tally.abstain + ' abstain' + (r.officers ? ' of ' + r.officers + ' officers' : '')) + fact('Vote closed', date(r.date)) : fact('Officer vote', 'Not held · Added by the chairperson')) + fact('School-Head approval', date(r.approved)) + '</div>';
     body += '<h3>Resolution</h3>' + para(r.clause || 'Draft text awaiting secretary review.');
     if (signatures && r.signers && r.state !== 'draft' && officers()) {
       const done = r.signers.filter(s => r.signatures[s.id]?.status === 'acknowledged').length;
@@ -3800,7 +3800,7 @@ body.modal-open {
       let actions = d.file ? btn('Inspect original', 'evidence', d.id) : '';
       if (treas && d.status === 'for_treasurer' && d.owner !== S.me) actions += btn('Review handover', 'dlg:check', d.id, 'primary');
       if (canPost(d)) actions += btn('Review for posting', 'dlg:post', d.id, 'primary');
-      else if (canChair() && d.status === 'pending') actions += '<span class="entry-meta">Final approval by the vice-president, because you sent or checked this record.</span>';
+      else if (canChair() && d.status === 'pending') actions += '<span class="entry-meta">Final approval by the Vice-Chairperson, because you sent or checked this record.</span>';
       if (d.owner === S.me && d.status === 'returned') actions += btn('Correct and resubmit', 'dlg:finance', d.id);
       if (treas && d.status === 'posted') actions += btn('Record correction', 'dlg:adjust', d.id);
       const list = (d.items || []).map(x => '<div class="list-line"><span>' + esc(x.description) + '</span><b>' + cash(x.cents) + '</b></div>').join('');
@@ -3822,7 +3822,7 @@ body.modal-open {
   }
   function roster() {
     const requests = db().requests.filter(q => q.status === 'pending');
-    return section('BOD account requests', requests.map(q => card(q.name || n(q.user), para(q.homeroom), q.id, 'pending', btn('Review request', 'dlg:roster', q.id, 'primary'))).join('') || empty('No BOD requests awaiting review.')) + section('Current board roster', para('All verified HPTA presidents can review screened proposals. Voting seats are recorded per person. New votes use the current roster.') + db().accounts.filter(a => a.active && E.boardRoles.includes(a.role)).map(a => '<div class="list-line"><span><b>' + esc(a.name) + '</b><small>' + esc(a.homeroom || roleName(a)) + ' · ' + (a.boardSeat ? 'Voting seat' : 'Review access') + '</small></span>' + btn('Edit', 'dlg:seat', a.id) + '</div>').join('')) + (me().role === 'head' ? section('Acting chairperson', para(E.hasDelegation(db()) ? 'Acting vice-president through ' + date(db().actingUntil) + ' · ' + db().actingReference : 'Chairperson holds posting and meeting authority.') + btn(E.hasDelegation(db()) ? 'End assignment' : 'Assign vice-president', 'dlg:acting')) : '');
+    return section('BOD account requests', requests.map(q => card(q.name || n(q.user), para(q.homeroom), q.id, 'pending', btn('Review request', 'dlg:roster', q.id, 'primary'))).join('') || empty('No BOD requests awaiting review.')) + section('Current board roster', para('All verified HPTA presidents can review screened proposals. Voting seats are recorded per person. New votes use the current roster.') + db().accounts.filter(a => a.active && E.boardRoles.includes(a.role)).map(a => '<div class="list-line"><span><b>' + esc(a.name) + '</b><small>' + esc(a.homeroom || roleName(a)) + ' · ' + (a.boardSeat ? 'Voting seat' : 'Review access') + '</small></span>' + btn('Edit', 'dlg:seat', a.id) + '</div>').join('')) + (me().role === 'head' ? section('Acting chairperson', para(E.hasDelegation(db()) ? 'Acting Vice-Chairperson through ' + date(db().actingUntil) + ' · ' + db().actingReference : 'Chairperson holds posting and meeting authority.') + btn(E.hasDelegation(db()) ? 'End assignment' : 'Assign Vice-Chairperson', 'dlg:acting')) : '');
   }
   function accountView() {
     const a = me(),
@@ -3854,7 +3854,7 @@ body.modal-open {
     cases: assignedCases,
     insights: pulse,
     board,
-    resolutions: () => section('Resolution register', db().resolutions.map(resCard).join('') || empty('A resolution is drafted automatically when a proposal passes the officer vote and the school head approves it.')),
+    resolutions: () => section('Resolution register', db().resolutions.map(resCard).join('') || empty('A resolution is drafted automatically when a proposal passes the officer vote and the School Head approves it.')),
     records,
     roster,
     finance,
@@ -3965,11 +3965,11 @@ body.modal-open {
     if (kind === 'login') return ['Sign in', (S.known().length ? '<div class="known-accounts"><small>Accounts on this phone</small>' + S.known().map(x => '<button type="button" class="known-account" data-do="switchTo" data-id="' + esc(x.login) + '"><b>' + esc(x.name) + '</b><span>' + esc(mask(x.login)) + '</span></button>').join('') + '</div>' : '') + form('login', input('login', 'Mobile number', ui.prefill || '', 'tel', 'required autocomplete="username" placeholder="0917 123 4567"') + input('password', 'Password', '', 'password', 'required autocomplete="current-password"'), 'Sign in') + '<div class="entry-actions">' + btn('Forgot password?', 'dlg:forgot', '', 'text') + btn('Create account', 'dlg:register', '', 'text') + '</div>'];
     if (kind === 'forgot') return ['Reset your password', notice('This works on a phone you have signed in on before. On a new phone, ask an SPTA officer for help.') + form('reset', input('mobile', 'Mobile number', ui.prefill || '', 'tel', 'required autocomplete="username" placeholder="0917 123 4567"') + input('lastName', 'Last name', '', 'text', 'required maxlength="40" autocomplete="family-name"') + gradePair('homeroom', '', 'Your child’s grade and section, as you registered it') + input('password', 'New password (10 or more characters)', '', 'password', 'required minlength="10" maxlength="128" autocomplete="new-password"'), 'Save new password') + btn('Back to sign in', 'dlg:login', '', 'text')];
     if (kind === 'children') return ['Other students', form('profileUpdate', '<div id="student-rows">' + (a.children || []).concat((a.children || []).length ? [] : ['']).map(x => studentRow(...splitGrade(x))).join('') + '</div>' + btn('Add another student', 'addStudent', '', 'light', 'plus'), 'Save list')];
-    if (kind === 'cover') return ['Stand in for an absent officer', notice('You do that officer’s tasks until the date you set. A fund record you send or check while standing in gets its final approval from the vice-president, so two people still check every record.') + form('cover', select('enabled', 'What would you like to do?', [['yes', 'Stand in for an officer'], ['no', 'Stop standing in']], 'yes') + '<div data-when="enabled" data-values="yes">' + select('role', 'Officer who is away', E.coverRoles.map(r => [r, E.roles[r]]), standIn()) + input('until', 'Until', db().cover?.until || weekAhead(), 'date', 'required min="' + t() + '"') + input('reason', 'Reason', db().cover?.reason || '', 'text', 'required minlength="3" maxlength="150" placeholder="On leave"') + '</div>', 'Save')];
+    if (kind === 'cover') return ['Stand in for an absent officer', notice('You do that officer’s tasks until the date you set. A fund record you send or check while standing in gets its final approval from the Vice-Chairperson, so two people still check every record.') + form('cover', select('enabled', 'What would you like to do?', [['yes', 'Stand in for an officer'], ['no', 'Stop standing in']], 'yes') + '<div data-when="enabled" data-values="yes">' + select('role', 'Officer who is away', E.coverRoles.map(r => [r, E.roles[r]]), standIn()) + input('until', 'Until', db().cover?.until || weekAhead(), 'date', 'required min="' + t() + '"') + input('reason', 'Reason', db().cover?.reason || '', 'text', 'required minlength="3" maxlength="150" placeholder="On leave"') + '</div>', 'Save')];
     if (kind === 'withdraw') {
       const item = p || db().cases.find(x => x.id === id);
       if (!item) return ['Withdraw', empty('This is no longer available.')];
-      return ['Withdraw ' + (p ? 'proposal' : item.kind === 'concern' ? 'concern' : item.kind === 'inspection' ? 'request' : 'suggestion'), '<h3>' + esc(titleCase(p ? proposalName(p) : item.subject)) + '</h3>' + notice(p ? 'Withdrawing stops the proposal where it is. If the officers are voting on it, the vote is closed. You cannot withdraw it once the school head has approved it.' : 'Withdrawing tells the reviewer you no longer need a response. It cannot be undone.') + form('withdraw', hidden('kind', p ? 'proposal' : 'case') + ck('confirm', 'Yes, withdraw this.', true), 'Withdraw', id)];
+      return ['Withdraw ' + (p ? 'proposal' : item.kind === 'concern' ? 'concern' : item.kind === 'inspection' ? 'request' : 'suggestion'), '<h3>' + esc(titleCase(p ? proposalName(p) : item.subject)) + '</h3>' + notice(p ? 'Withdrawing stops the proposal where it is. If the officers are voting on it, the vote is closed. You cannot withdraw it once the School Head has approved it.' : 'Withdrawing tells the reviewer you no longer need a response. It cannot be undone.') + form('withdraw', hidden('kind', p ? 'proposal' : 'case') + ck('confirm', 'Yes, withdraw this.', true), 'Withdraw', id)];
     }
     if (kind === 'deadline') return ['Change closing date', para(b.title) + notice('When this date passes, the vote closes by itself and the result is recorded with the votes received.') + form('voteDeadline', input('closes', 'Voting closes on', E.voteCloses(b), 'date', 'required min="' + t() + '"'), 'Save date', id)];
     if (kind === 'announceEdit' || kind === 'announceRemove') {
@@ -3978,14 +3978,14 @@ body.modal-open {
       if (kind === 'announceRemove') return ['Remove announcement', '<h3>' + esc(titleCase(x.title)) + '</h3>' + notice('Removing takes it off every phone. It cannot be undone.') + form('announceRemove', ck('confirm', 'Yes, remove this announcement.', true), 'Remove', id)];
       return ['Edit announcement', form('announceEdit', input('title', 'Announcement title', x.title) + area('body', 'Complete message', x.body, 'required minlength="6" maxlength="1600"') + select('audience', 'Audience', [['everyone', 'All parents and officers'], ['officers', 'Officers only']], x.audience) + input('until', 'Show until (optional)', x.until || '', 'date', ''), 'Save changes', id)];
     }
-    if (kind === 'register') return ['Create an account', notice('Use fictional details for this rehearsal.') + form('register', '<div class="name-pair">' + input('firstName', 'First name', '', 'text', 'required maxlength="40" autocomplete="given-name"') + input('lastName', 'Last name', '', 'text', 'required maxlength="40" autocomplete="family-name"') + '</div>' + input('mobile', 'Mobile number', '', 'tel', 'required autocomplete="tel" placeholder="0917 123 4567"') + gradePair('homeroom', '', 'Your child’s grade and section') + input('password', 'Password (10 or more characters)', '', 'password', 'required minlength="10" maxlength="128" autocomplete="new-password"') + ck('officer', 'I am the HPTA president of this section and I am requesting officer access.') + '<div class="entry-meta">Officer access starts after the school head or chairperson checks the roster.</div>', 'Create account')];
+    if (kind === 'register') return ['Create an account', notice('Use fictional details for this rehearsal.') + form('register', '<div class="name-pair">' + input('firstName', 'First name', '', 'text', 'required maxlength="40" autocomplete="given-name"') + input('lastName', 'Last name', '', 'text', 'required maxlength="40" autocomplete="family-name"') + '</div>' + input('mobile', 'Mobile number', '', 'tel', 'required autocomplete="tel" placeholder="0917 123 4567"') + gradePair('homeroom', '', 'Your child’s grade and section') + input('password', 'Password (10 or more characters)', '', 'password', 'required minlength="10" maxlength="128" autocomplete="new-password"') + ck('officer', 'I am the HPTA president of this section and I am requesting officer access.') + '<div class="entry-meta">Officer access starts after the School Head or chairperson checks the roster.</div>', 'Create account')];
     if (!a) return ['Sign in', empty('Sign in to continue.')];
     if (kind === 'acting') {
       const active = E.hasDelegation(db());
       return [active ? 'End acting assignment' : 'Assign acting chairperson', form('acting', hidden('enabled', active ? 'no' : 'yes') + (active ? para(db().actingReference) : input('reference', 'School assignment reference') + input('until', 'Last day of assignment', t(), 'date', 'required min="' + t() + '"')), active ? 'End assignment' : 'Save assignment')];
     }
     if (kind === 'inspection') return ['Request records inspection', form('caseSubmit', hidden('kind', 'inspection') + hidden('category', 'Other') + input('subject', 'Record or period requested') + area('body', 'Describe the records you wish to inspect') + para('The secretary receives this request privately. Track the reply in My updates.'), 'Send to secretary')];
-    if (kind === 'requestRole') return ['Request BOD access', form('requestRole', gradePair('homeroom', a.homeroom || '', 'Grade and section') + para('The chairperson or school head will verify your HPTA presidency.'), 'Send request')];
+    if (kind === 'requestRole') return ['Request BOD access', form('requestRole', gradePair('homeroom', a.homeroom || '', 'Grade and section') + para('The chairperson or School Head will verify your HPTA presidency.'), 'Send request')];
     if (kind === 'roster') {
       const q = db().requests.find(x => x.id === id);
       return ['Verify BOD request', para((q.name || n(q.user)) + ' · ' + q.homeroom) + form('rosterReview', select('decision', 'Decision', [['approve', 'Approve BOD access'], ['return', 'Return with a reason']]) + '<div data-when="decision" data-values="approve">' + select('slot', 'Match the board seat', [['', 'Choose the matching seat'], ...E.availableSeats(db()).map(x => [x.id, x.homeroom + ' · ' + (x.endedAt ? 'Vacant' : x.name)]), ['additional', 'Additional seat confirmed on the roster']], E.availableSeats(db()).find(x => E.homeroomKey(x.homeroom) === E.homeroomKey(q.homeroom))?.id || '', 'required') + ck('verified', 'I matched this person and homeroom to the school roster.', true) + ck('voting', 'This person has a voting seat on the verified roster.', false, true) + '</div><div data-when="decision" data-values="return">' + area('reason', 'Reason') + '</div>', 'Save review', id)];
@@ -3999,9 +3999,9 @@ body.modal-open {
     if (kind === 'screen') return [p.title, '<div class="entry-meta step-line">For screening</div>' + para(p.details) + form('screen', select('decision', 'Next step', [['screen', 'Publish and open the officers’ vote'], ['return', 'Return for revision'], ['decline', 'Decline']]) + '<div data-when="decision" data-values="screen">' + input('title', 'Reviewed title', p.publicTitle || p.title) + area('text', 'Description safe to share', p.publicText || p.details) + input('budget', 'Proposed SPTA allocation (₱)', p.budget / 100, 'number', 'required min="0" step="0.01"') + '<div class="fund-check ok" id="screen-fund" data-available="' + E.funding(db()).available + '">' + icon('info', 'sm') + '<span><b>SPTA funds available now: ' + cash(E.funding(db()).available) + '</b><span id="screen-fund-note">An allocation above this amount will be marked as needing fundraising.</span></span></div>' + ck('fundraising', 'This proposal seeks voluntary contributions.', false, !!p.fundraising) + input('closes', 'Voting closes on', E.voteCloses({date: t()}), 'date', 'required min="' + t() + '"') + '<div class="entry-meta">Officers have one month to vote unless you change this date.</div></div><div data-when="decision" data-values="return decline">' + area('reason', 'Feedback for the parent') + '</div>', 'Save screening', id)];
     if (kind === 'vote') return [b.title, '<div class="entry-meta step-line">For your vote</div>' + para(b.body) + '<div class="entry-meta">Proposed SPTA allocation ' + cash(b.budget) + '</div>' + fundCheck(b.budget, E.funding(db()).shortFor(b.budget)) + notice('Secret ballot. Only the combined result is shown. The proposal proceeds when yes votes reach ' + E.yesNeeded(b) + ' of ' + b.present.length + ' officers. Voting closes on ' + date(E.voteCloses(b)) + '.') + form('vote', select('vote', 'Your vote', [['', 'Choose a response'], ['yes', 'Proceed'], ['no', 'Do not proceed'], ['abstain', 'Abstain']], '', 'required'), 'Submit once', id)];
     if (kind === 'close') return ['Close voting', para(b.title) + notice('Voting closes by itself once the result is decided. Closing early records the result with the votes received so far.') + form('closeBallot', ck('confirm', 'The voting period has ended. Record the result.', true), 'Close and record', id)];
-    if (kind === 'chairProposal' && E.directUsed(db()) >= E.directPerYear) return ['Add for school-head approval', notice('All ' + E.directPerYear + ' direct proposals for this school year have been used. Send this one through the officers’ vote with “Propose a Project”.') + btn('Propose a project', 'dlg:proposal', '', 'primary', 'plus')];
-    if (kind === 'chairProposal') return ['Add for school-head approval', notice('Direct proposal ' + (E.directUsed(db()) + 1) + ' of ' + E.directPerYear + ' for this school year.') + notice('This proposal skips screening and the officers’ vote and goes straight to the school head. It will be marked “Added by the chairperson · No officer vote”, including on the resolution.') + form('chairProposal', input('title', 'Project title', '', 'text', 'required minlength="4" maxlength="100"') + select('category', 'Category', E.categories) + area('details', 'Project details', '', 'required minlength="8" maxlength="700"') + input('budget', 'Proposed SPTA allocation (₱)', '', 'number', 'required min="0" step="0.01"') + '<div class="fund-check ok" id="screen-fund" data-available="' + E.funding(db()).available + '">' + icon('info', 'sm') + '<span><b>SPTA funds available now: ' + cash(E.funding(db()).available) + '</b><span id="screen-fund-note">An allocation above this amount will be marked as needing fundraising.</span></span></div>' + ck('fundraising', 'This proposal seeks voluntary contributions.'), 'Send to the school head')];
-    if (kind === 'head') return [p.publicTitle, '<div class="entry-meta step-line">For the school head’s decision</div>' + para(p.publicText) + (p.direct ? notice('Added by the chairperson. No officer vote was held on this proposal.') : '') + '<div class="entry-meta">Proposed SPTA allocation ' + cash(p.budget) + '</div>' + proposalFund(p) + form('headDecision', select('decision', 'Decision', [['approve', 'Approve project'], ['return', 'Return for revised proposal and new vote'], ['decline', 'Decline']]) + (p.fundraising ? '<div data-when="decision" data-values="approve">' + input('ga', 'General Assembly agreement reference') + ck('concur', 'I record school-head concurrence for the voluntary contributions.', true) + '</div>' : '') + '<div data-when="decision" data-values="return decline">' + area('reason', 'Reason for the parent') + '</div>', 'Record decision', id)];
+    if (kind === 'chairProposal' && E.directUsed(db()) >= E.directPerYear) return ['Add for School-Head approval', notice('All ' + E.directPerYear + ' direct proposals for this school year have been used. Send this one through the officers’ vote with “Propose a Project”.') + btn('Propose a project', 'dlg:proposal', '', 'primary', 'plus')];
+    if (kind === 'chairProposal') return ['Add for School-Head approval', notice('Direct proposal ' + (E.directUsed(db()) + 1) + ' of ' + E.directPerYear + ' for this school year.') + notice('This proposal skips screening and the officers’ vote and goes straight to the School Head. It will be marked “Added by the chairperson · No officer vote”, including on the resolution.') + form('chairProposal', input('title', 'Project title', '', 'text', 'required minlength="4" maxlength="100"') + select('category', 'Category', E.categories) + area('details', 'Project details', '', 'required minlength="8" maxlength="700"') + input('budget', 'Proposed SPTA allocation (₱)', '', 'number', 'required min="0" step="0.01"') + '<div class="fund-check ok" id="screen-fund" data-available="' + E.funding(db()).available + '">' + icon('info', 'sm') + '<span><b>SPTA funds available now: ' + cash(E.funding(db()).available) + '</b><span id="screen-fund-note">An allocation above this amount will be marked as needing fundraising.</span></span></div>' + ck('fundraising', 'This proposal seeks voluntary contributions.'), 'Send to the School Head')];
+    if (kind === 'head') return [p.publicTitle, '<div class="entry-meta step-line">For the School Head’s decision</div>' + para(p.publicText) + (p.direct ? notice('Added by the chairperson. No officer vote was held on this proposal.') : '') + '<div class="entry-meta">Proposed SPTA allocation ' + cash(p.budget) + '</div>' + proposalFund(p) + form('headDecision', select('decision', 'Decision', [['approve', 'Approve project'], ['return', 'Return for revised proposal and new vote'], ['decline', 'Decline']]) + (p.fundraising ? '<div data-when="decision" data-values="approve">' + input('ga', 'General Assembly agreement reference') + ck('concur', 'I record School-Head concurrence for the voluntary contributions.', true) + '</div>' : '') + '<div data-when="decision" data-values="return decline">' + area('reason', 'Reason for the parent') + '</div>', 'Record decision', id)];
     if (kind === 'project' || kind === 'cancel') {
       const proj = db().projects.find(x => x.id === id);
       return [kind === 'cancel' ? 'Cancel project' : 'Update project', para(proj.title) + form('projectUpdate', kind === 'cancel' ? hidden('status', 'cancelled') + area('reason', 'Public cancellation reason') + area('remainder', 'What happened to the remaining ' + cash(proj.budget - E.projectSpend(db(), id)) + '?') : select('status', 'Status', [['in_progress', 'In progress'], ['completed', 'Completed']]) + select('owner', 'Project lead', db().accounts.filter(x => x.active && E.leaders.includes(x.role)).map(x => [x.id, x.name]), proj.owner) + area('phase', 'Public progress update', proj.phase) + input('progress', 'Progress (%)', proj.progress, 'number', 'required min="0" max="100" step="1"'), kind === 'cancel' ? 'Publish cancellation' : 'Publish progress', id)];
@@ -4137,7 +4137,7 @@ body.modal-open {
     minutesReview: 'Minutes updated.',
     caseReply: 'Saved. The sender was told the new status.',
     proposalReply: 'Personal reply sent.',
-    chairProposal: 'Sent to the school head for approval.',
+    chairProposal: 'Sent to the School Head for approval.',
     projectUpdate: 'Project status published.',
     withdraw: 'Withdrawn.',
     voteDeadline: 'Closing date saved.',
