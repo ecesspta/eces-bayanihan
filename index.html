@@ -1010,6 +1010,11 @@ body.modal-open {
 .student-row {display:grid;gap:4px;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--line)}
 .student-row .btn {justify-self:start}
 
+/* Corrected fund entries and project change history */
+.movement-row .correction-note{margin:6px 0 0;padding:8px 10px;border-left:3px solid var(--gold,#c9a227);background:rgba(201,162,39,.12);border-radius:0 8px 8px 0;font-size:.86rem;line-height:1.4}
+.change-log{margin:10px 0 4px;padding:8px 10px;border-left:3px solid var(--gold,#c9a227);background:rgba(201,162,39,.1);border-radius:0 8px 8px 0}
+.change-log p{margin:4px 0 0;font-size:.86rem;line-height:1.4}
+
 </style>
       <link rel="manifest" href="manifest.webmanifest" />
     <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
@@ -1381,6 +1386,36 @@ body.modal-open {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
     }) + '.';
+  }
+  const peso = cents => '₱' + (cents / 100).toLocaleString('en-PH', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  });
+  // A resolution may only state the amount the officers voted. Any other peso figure in its wording is refused.
+  function sameAmount(clause, budget) {
+    const found = String(clause).match(/₱\s?[\d,]+(?:\.\d+)?/g) || [];
+    return found.length > 0 && found.every(x => Math.round(Number(x.replace(/[₱\s,]/g, '')) * 100) === budget);
+  }
+  // Plain-language explanation of a corrected fund entry, built only from public ledger fields.
+  // Works on both the original entry and the correction. Returns '' for an entry that was never corrected.
+  function correctionNote(rows, entry) {
+    const orig = entry.corrects ? rows.find(x => x.id === entry.corrects) : entry;
+    if (!orig) return '';
+    const fixes = rows.filter(x => x.corrects === orig.id);
+    if (!fixes.length) return '';
+    const moved = fixes.reduce((n, x) => n + (x.direction === orig.direction ? -x.cents : x.cents), 0),
+      right = orig.cents - moved,
+      back = orig.direction === 'out' ? 'returned to the SPTA funds' : 'taken back out of the SPTA funds';
+    const who = entry.corrects && entry.approver ? ' Approved by the ' + (roles[entry.approver] || 'chairperson') + '.' : '';
+    if (entry.corrects) return 'Correction to “' + orig.purpose + '”. It was first recorded as ' + peso(orig.cents) + ', but the correct amount is ' + peso(right) + '. The ' + peso(moved) + ' difference is ' + back + '.' + who;
+    return 'This entry was corrected. The correct amount is ' + peso(right) + ', not ' + peso(orig.cents) + '. The ' + peso(moved) + ' difference is ' + back + ' (see the correction).';
+  }
+  // A change to an approved project that is waiting for a fresh officer vote and School-Head decision.
+  const amendOpen = (db, projectId) => db.proposals.find(x => x.amends === projectId && ['voting', 'awaiting_head'].includes(x.status));
+  // What a proposal would add on top of money already set aside. A change to a project adds only the increase.
+  function extraNeeded(db, p) {
+    const base = p.amends ? db.projects.find(x => x.id === p.amends)?.budget || 0 : 0;
+    return Math.max(0, (Number(p.budget) || 0) - base);
   }
   const projectSpend = (db, id) => db.ledger.filter(x => x.project === id).reduce((n, x) => n + (x.direction === 'out' ? x.cents : -x.cents), 0);
   const fundBalance = db => db.opening + db.ledger.reduce((n, x) => n + (x.direction === 'in' ? x.cents : -x.cents), 0);
@@ -2157,29 +2192,54 @@ body.modal-open {
             }
             p.status = 'approved';
             p.approved = at();
-            const project = {
-              id: newId(db, 'PR'),
-              proposal: p.id,
-              title: b.title,
-              text: b.body,
-              budget: b.budget,
-              owner: 'chair',
-              phase: 'Awaiting project start',
-              status: 'approved',
-              progress: 0,
-              changed: today(),
-              created: at(),
-              icon: 'sprout'
-            };
-            db.projects.unshift(project);
+            let project, replaces = [];
+            if (p.amends) {
+              // A change to an approved project: the same project continues with the new amount or purpose.
+              project = get(db.projects, p.amends);
+              check(['approved', 'in_progress'].includes(project.status), 'This project has ended.');
+              check(b.budget >= projectSpend(db, project.id), 'The new allocation is below what has already been spent.');
+              project.history = project.history || [];
+              project.history.push({
+                at: at(),
+                kind: p.change,
+                from: project.budget,
+                to: b.budget,
+                before: p.change === 'purpose' ? project.title : '',
+                reason: p.why || '',
+                proposal: p.id
+              });
+              project.budget = b.budget;
+              if (p.change === 'purpose') {
+                project.title = p.newTitle;
+                project.text = p.newText;
+              }
+              project.changed = today();
+              replaces = db.resolutions.filter(x => x.project === project.id && !x.supersededBy).map(x => x.id);
+            } else {
+              project = {
+                id: newId(db, 'PR'),
+                proposal: p.id,
+                title: b.title,
+                text: b.body,
+                budget: b.budget,
+                owner: 'chair',
+                phase: 'Awaiting project start',
+                status: 'approved',
+                progress: 0,
+                changed: today(),
+                created: at(),
+                icon: 'sprout'
+              };
+              db.projects.unshift(project);
+            }
             const res = {
               id: newId(db, 'R'),
               proposal: p.id,
               project: project.id,
               version: 1,
               state: 'draft',
-              title: b.title,
-              text: b.body,
+              title: p.amends ? project.title : b.title,
+              text: p.amends ? project.text : b.body,
               budget: b.budget,
               category: p.category,
               fundraising: !!p.fundraising,
@@ -2202,10 +2262,14 @@ body.modal-open {
               })),
               signatures: {},
               archive: [],
-              clause: resolutionText(b.title, b.budget, !!p.direct),
+              clause: resolutionText(p.amends ? project.title : b.title, b.budget, !!p.direct) + (replaces.length ? ' This replaces the earlier resolution ' + replaces.join(', ') + ', which authorized a different allocation.' : ''),
+              supersedes: replaces,
               published: false
             };
             db.resolutions.unshift(res);
+            db.resolutions.filter(x => replaces.includes(x.id)).forEach(x => {
+              x.supersededBy = res.id;
+            });
             // The secretary is told that a draft resolution is waiting for review.
             db.accounts.filter(x => x.active && x.role === 'secretary').forEach(x => note(db, x.id, res.id + ' · A resolution for “' + res.title + '” was drafted. Review and publish it for signatures.'));
           } else {
@@ -2250,6 +2314,88 @@ body.modal-open {
           changed('Project update published');
           break;
         }
+      case 'amendProject':
+        {
+          // A change to an approved project. What the officers voted on stays fixed unless they vote again.
+          //   Wording only, or a lower amount: the chairperson records it openly. No new vote.
+          //   A higher amount, or a different purpose: a new officer vote and a new School-Head decision.
+          financeReview(db, a);
+          const proj = get(db.projects, id);
+          check(['approved', 'in_progress'].includes(proj.status), 'Only a project that has not ended can be changed.');
+          check(!amendOpen(db, proj.id), 'A change to this project is already waiting for a vote or decision.');
+          const kind = choice(v.kind, ['wording', 'lower', 'raise', 'purpose'], 'kind of change');
+          const why = words(v.reason, 'Reason for the change', 8, 350);
+          proj.history = proj.history || [];
+          if (kind === 'wording') {
+            check(v.sameMeaning === true, 'Confirm that this wording change does not change what the money is for.');
+            proj.history.push({
+              at: at(),
+              kind,
+              from: proj.budget,
+              to: proj.budget,
+              before: proj.title,
+              reason: why
+            });
+            proj.title = words(v.title, 'Title', 4, 100);
+            proj.text = words(v.text, 'Project details', 8, 700);
+            proj.changed = today();
+            changed('Project wording corrected');
+            break;
+          }
+          const cents = amount(v.budget);
+          if (kind === 'lower') {
+            check(cents < proj.budget, 'A lower allocation must be below ' + peso(proj.budget) + '.');
+            check(cents >= projectSpend(db, proj.id), 'The allocation cannot go below ' + peso(projectSpend(db, proj.id)) + ', which is already spent.');
+            proj.history.push({
+              at: at(),
+              kind,
+              from: proj.budget,
+              to: cents,
+              reason: why
+            });
+            proj.budget = cents;
+            proj.changed = today();
+            changed('Project allocation lowered');
+            break;
+          }
+          if (kind === 'raise') check(cents > proj.budget, 'A higher allocation must be above ' + peso(proj.budget) + '.');
+          check(cents >= projectSpend(db, proj.id), 'The allocation cannot go below ' + peso(projectSpend(db, proj.id)) + ', which is already spent.');
+          const newTitle = kind === 'purpose' ? words(v.title, 'New title', 4, 100) : proj.title,
+            newText = kind === 'purpose' ? words(v.text, 'New project details', 8, 700) : proj.text;
+          const closes = v.closes ? dateValue(v.closes) : '';
+          check(!closes || closes >= today(), 'Choose today or a later date for the vote to close.');
+          const p = {
+            id: newId(db, 'P'),
+            title: 'Change to ' + proj.title,
+            details: why,
+            category: 'Change to a project',
+            owner: a.id,
+            sender: sender(a),
+            device,
+            created: today(),
+            budget: cents,
+            fundraising: false,
+            status: 'screened',
+            published: true,
+            supports: 0,
+            supporters: [],
+            rev: 1,
+            history: [],
+            amends: proj.id,
+            change: kind,
+            why,
+            newTitle,
+            newText
+          };
+          p.publicTitle = ('Change to ' + proj.title).slice(0, 100);
+          p.publicText = (kind === 'raise' ? 'The allocation for this approved project would rise from ' + peso(proj.budget) + ' to ' + peso(cents) + '. ' : 'This approved project would change its purpose to “' + newTitle + '”: ' + newText + ' The allocation would be ' + peso(cents) + ' (now ' + peso(proj.budget) + '). ') + 'Reason: ' + why;
+          p.publicText = p.publicText.slice(0, 700);
+          db.proposals.unshift(p);
+          openVote(db, p, closes);
+          id = p.id;
+          changed('Change to an approved project sent for a new officer vote');
+          break;
+        }
       case 'freeze':
         {
           check(holds(db, a, 'secretary'), 'The secretary does this. The chairperson may stand in while the secretary is away.');
@@ -2262,6 +2408,7 @@ body.modal-open {
           r.signerPolicy = required.length === invited.length ? 'All officers' : words(v.signerPolicy, 'School signer policy reference', 5, 200);
           r.requiredSigners = required;
           r.clause = words(v.clause, 'Resolution text', 12, 1200);
+          check(sameAmount(r.clause, r.budget), 'The resolution must state the amount the officers voted (' + peso(r.budget) + '), and no other amount. A different amount needs a new officer vote through “Change project”.');
           // The secretary may adjust the wording. The allocation stays as voted.
           if (v.title !== undefined) r.title = words(v.title, 'Project title', 4, 100);
           if (v.text !== undefined) r.text = words(v.text, 'Project details', 8, 700);
@@ -2593,6 +2740,7 @@ body.modal-open {
             }
             if (d.direction === 'out') check(d.cents <= fundBalance(db), 'The verified cash balance is insufficient.');
             d.status = 'posted';
+            const earlier = d.adjustment ? db.ledger.find(x => x.batch === d.adjustment) : null;
             db.ledger.unshift({
               id: newId(db, 'L'),
               batch: d.id,
@@ -2600,7 +2748,12 @@ body.modal-open {
               purpose: d.purpose,
               direction: d.direction,
               cents: d.cents,
-              project: d.project
+              project: d.project,
+              // A correction points to the public entry it corrects, and says who approved it.
+              ...(earlier ? {
+                corrects: earlier.id,
+                approver: a.role
+              } : {})
             });
           }
           d.reviewedBy = a.id;
@@ -2664,6 +2817,10 @@ body.modal-open {
     canAnnounce,
     hasDelegation,
     projectSpend,
+    peso,
+    correctionNote,
+    amendOpen,
+    extraNeeded,
     fundBalance,
     funding,
     autoReply,
@@ -3509,7 +3666,14 @@ body.modal-open {
   function fundCheck(cents, short, label = 'Covered by available SPTA funds') {
     return short > 0 ? '<div class="fund-check short">' + icon('alert', 'sm') + '<span><b>Needs fundraising · short by ' + cash(short) + '</b>' + esc('SPTA funds available now cover ' + cash(Math.max(0, cents - short)) + ' of ' + cash(cents) + '.') + '</span></div>' : '<div class="fund-check ok">' + icon('check', 'sm') + '<span><b>' + esc(label) + '</b></span></div>';
   }
-  const proposalFund = p => p.budget > 0 && ['screened', 'voting', 'awaiting_head'].includes(p.status) ? fundCheck(p.budget, E.funding(db()).shortFor(p.budget)) : '';
+  // A change to an approved project only needs funds for the increase. A new proposal needs funds for all of it.
+  const extraFor = p => p ? E.extraNeeded(db(), p) : 0;
+  const proposalFund = p => p.budget > 0 && ['screened', 'voting', 'awaiting_head'].includes(p.status) && extraFor(p) > 0 ? fundCheck(extraFor(p), E.funding(db()).shortFor(extraFor(p))) : '';
+  const ballotFund = b => {
+    const q = db().proposals.find(x => x.id === b.proposal),
+      x = q ? extraFor(q) : b.budget;
+    return x > 0 ? fundCheck(x, E.funding(db()).shortFor(x)) : '';
+  };
   // Status tracker for something a parent sent.
   function tracker(item) {
     let steps, at, stop = '';
@@ -3533,6 +3697,17 @@ body.modal-open {
   }
   // SPTA Projects page: a short summary, then projects grouped by where they stand.
   // Each card shows the few things people look for first; the rest opens under Details.
+  // What changed on an approved project, in plain words.
+  function changeLog(p) {
+    const lines = (p.history || []).map(h => {
+      const when = date(h.at.slice(0, 10));
+      if (h.kind === 'wording') return 'Wording corrected on ' + when + '. ' + h.reason;
+      if (h.kind === 'lower') return 'Allocation lowered from ' + cash(h.from) + ' to ' + cash(h.to) + ' on ' + when + '. ' + h.reason;
+      if (h.kind === 'raise') return 'Allocation raised from ' + cash(h.from) + ' to ' + cash(h.to) + ' on ' + when + ', after a new officer vote and the School Head’s approval. ' + h.reason;
+      return 'Purpose changed from “' + h.before + '” on ' + when + ', after a new officer vote and the School Head’s approval. Allocation ' + cash(h.to) + '. ' + h.reason;
+    });
+    return lines.length ? '<div class="change-log"><b>Changes</b>' + lines.map(x => '<p>' + esc(x) + '</p>').join('') + '</div>' : '';
+  }
   function projectCard(p, fund) {
     const spent = E.projectSpend(db(), p.id),
       done = Math.max(0, Math.min(100, Number(p.progress) || 0)),
@@ -3542,12 +3717,13 @@ body.modal-open {
     const row = (k, v) => '<div class="proj-row"><span>' + esc(k) + '</span><b>' + esc(v) + '</b></div>';
     let buttons = '';
     if (onRole(E.leaders) && active) buttons += btn('Update progress', 'dlg:project', p.id);
+    if (canChair() && active) buttons += btn('Change project', 'dlg:amend', p.id);
     if (me().role === 'head' && active) buttons += btn('Cancel project', 'dlg:cancel', p.id, 'danger');
     const top = '<div class="proj-top"><span class="project-symbol">' + icon(p.icon || 'sprout') + '</span><div><h3>' + esc(titleCase(p.title)) + '</h3><small>' + esc(cancelled ? 'Cancelled' : p.phase || labels[p.status]) + '</small></div>' + badge(p.status) + '</div>';
     const progress = cancelled ? '' : '<div class="proj-bar" role="img" aria-label="' + done + '% done"><div style="width:' + done + '%"></div></div><div class="proj-nums"><span><b>' + done + '%</b> done</span><span><b>' + cash(spent) + '</b> of ' + cash(p.budget) + ' spent</span></div>';
     const cancel = cancelled ? '<div class="cancel-note"><b>Why It Was Cancelled</b>' + para(p.reason) + '<b>Unused Funds</b>' + para(p.remainder) + '</div>' : '';
     const flag = f?.short > 0 ? fundCheck(f.need, f.short) : '';
-    const details = '<details class="proj-details"><summary>Details</summary>' + para(p.text) + row('Project lead', n(p.owner)) + row('SPTA allocation', cash(p.budget)) + row(cancelled ? 'Spent by cancellation' : 'Spent so far', cash(cancelled ? p.spentAtCancellation ?? spent : spent)) + (cancelled ? '' : row('Not yet spent', cash(p.budget - spent))) + (f && !f.short ? row('Funding', 'Covered by SPTA funds') : '') + row('Reference', p.id + ' · updated ' + date(p.changed)) + (buttons ? '<div class="entry-actions">' + buttons + '</div>' : '') + '</details>';
+    const details = '<details class="proj-details"><summary>Details</summary>' + para(p.text) + row('Project lead', n(p.owner)) + row('SPTA allocation', cash(p.budget)) + row(cancelled ? 'Spent by cancellation' : 'Spent so far', cash(cancelled ? p.spentAtCancellation ?? spent : spent)) + (cancelled ? '' : row('Not yet spent', cash(p.budget - spent))) + (f && !f.short ? row('Funding', 'Covered by SPTA funds') : '') + changeLog(p) + (E.amendOpen(db(), p.id) ? '<div class="entry-meta">' + icon('info', 'sm') + 'A change to this project is waiting for a new officer vote or the School Head’s decision. The allocation stays ' + esc(cash(p.budget)) + ' until then.</div>' : '') + row('Reference', p.id + ' · updated ' + date(p.changed)) + (buttons ? '<div class="entry-actions">' + buttons + '</div>' : '') + '</details>';
     return '<article class="proj is-' + esc(p.status) + '">' + top + progress + flag + cancel + details + '</article>';
   }
   function projects() {
@@ -3712,7 +3888,7 @@ body.modal-open {
         voted = b.participated.includes(S.me),
         turnout = b.turnout ?? b.participated.length,
         need = E.yesNeeded(b);
-      const text = para(b.body) + '<div class="entry-meta">Secret ballot · ' + b.present.length + ' officers · ' + need + ' yes votes needed (50%) · SPTA allocation ' + cash(b.budget) + '</div>' + (open ? fundCheck(b.budget, E.funding(db()).shortFor(b.budget)) : '') + (open ? para(turnout + ' of ' + b.present.length + ' officers have voted.' + (voted ? ' Your vote was received.' : '')) + '<div class="entry-meta vote-closes">' + icon('info', 'sm') + 'Voting closes on ' + esc(date(E.voteCloses(b))) + '</div>' : '<div class="vote-summary"><b>' + b.counts.yes + ' Yes</b><b>' + b.counts.no + ' No</b><b>' + b.counts.abstain + ' Abstain</b></div>' + para(b.withdrawn ? 'The proposer withdrew this proposal, so the vote was closed.' : b.passed ? 'Reached 50% of all officers. Sent to the School Head for approval.' : 'Yes votes did not reach 50% of all officers' + (b.expired ? ' by the closing date.' : '.')));
+      const text = para(b.body) + '<div class="entry-meta">Secret ballot · ' + b.present.length + ' officers · ' + need + ' yes votes needed (50%) · SPTA allocation ' + cash(b.budget) + '</div>' + (open ? ballotFund(b) : '') + (open ? para(turnout + ' of ' + b.present.length + ' officers have voted.' + (voted ? ' Your vote was received.' : '')) + '<div class="entry-meta vote-closes">' + icon('info', 'sm') + 'Voting closes on ' + esc(date(E.voteCloses(b))) + '</div>' : '<div class="vote-summary"><b>' + b.counts.yes + ' Yes</b><b>' + b.counts.no + ' No</b><b>' + b.counts.abstain + ' Abstain</b></div>' + para(b.withdrawn ? 'The proposer withdrew this proposal, so the vote was closed.' : b.passed ? 'Reached 50% of all officers. Sent to the School Head for approval.' : 'Yes votes did not reach 50% of all officers' + (b.expired ? ' by the closing date.' : '.')));
       let buttons = '';
       if (open && member && !voted) buttons += btn('Cast vote', 'dlg:vote', b.id, 'primary');
       if (open && canChair() && !S.shared && b.present.some(m => !b.participated.includes(m) && !S.practiceProfiles.includes(m))) buttons += btn('Add practice ballots', 'practiceBallots', b.id);
@@ -3744,7 +3920,7 @@ body.modal-open {
     const fact = (k, v) => v ? '<div class="paper-fact"><span>' + esc(k) + '</span><b>' + esc(v) + '</b></div>' : '';
     let body = demo + '<div class="paper-head">' + seal + '<div><b>East Central Elementary School</b><div>School Parent-Teacher Association</div></div></div><h2>Resolution ' + esc(r.id) + '</h2>' + '<div class="entry-meta">Version ' + r.version + ' · ' + esc(labels[r.state] || r.state) + '</div><h3>' + esc(titleCase(r.title)) + '</h3>' + para(r.text);
     if (r.meeting) body += '<h3>Project Details</h3><div class="paper-facts">' + fact('Proposal', r.proposal) + fact('Project', r.project) + fact('Category', r.category) + fact('Approved allocation', cash(r.budget)) + fact('Voluntary contributions', r.fundraising ? 'Yes · ' + r.ga : '') + (r.tally ? fact('Officer vote', r.tally.yes + ' yes, ' + r.tally.no + ' no, ' + r.tally.abstain + ' abstain' + (r.officers ? ' of ' + r.officers + ' officers' : '')) + fact('Vote closed', date(r.date)) : fact('Officer vote', 'Not held · Added by the chairperson')) + fact('School-Head approval', date(r.approved)) + '</div>';
-    body += '<h3>Resolution</h3>' + para(r.clause || 'Draft text awaiting secretary review.');
+    body += '<h3>Resolution</h3>' + para(r.clause || 'Draft text awaiting secretary review.') + (r.supersededBy ? notice('Replaced by resolution ' + r.supersededBy + ' after the project’s allocation changed. This one records what was approved at the time.') : '');
     if (signatures && r.signers && r.state !== 'draft' && officers()) {
       const done = r.signers.filter(s => r.signatures[s.id]?.status === 'acknowledged').length;
       body += '<h3>Signatures</h3>' + para(done + ' of ' + r.signers.length + ' officers have signed this version. ' + (r.signerPolicy || 'All officers') + ' · ' + E.signaturesPending(r).length + ' required signatures pending.') + '<div class="sig-grid">' + r.signers.map(s => {
@@ -3774,10 +3950,11 @@ body.modal-open {
       const incoming = entry.direction === 'in';
       const project = entry.project && name(entry.project);
       const direction = incoming ? 'Money In' : 'Money Out';
-      return '<li class="movement-row"><div class="movement-heading"><strong>' + esc(entry.purpose) +
+      const explain = E.correctionNote(rows, entry);
+      return '<li class="movement-row' + (explain ? ' corrected' : '') + '"><div class="movement-heading"><strong>' + esc(entry.purpose) +
         '</strong><b class="' + (incoming ? 'cash-in' : 'cash-out') + '">' +
         (incoming ? '+' : '−') + cash(entry.cents) + '</b></div><div class="movement-meta">' +
-        direction + ' · ' + esc(date(entry.date)) + (project ? ' · ' + esc(project) : '') + '</div></li>';
+        direction + ' · ' + esc(date(entry.date)) + (project ? ' · ' + esc(project) : '') + '</div>' + (explain ? '<p class="correction-note">' + esc(explain) + '</p>' : '') + '</li>';
     }).join('');
     const summary = '<section class="balance-card" aria-label="SPTA Cash Balance"><h2>SPTA Cash Balance</h2><strong>' + cash(fund.balance) +
       '</strong><div class="balance-flows"><div>Money In<b>' + cash(total('in')) + '</b></div><div>Money Out<b>' +
@@ -3997,7 +4174,7 @@ body.modal-open {
     if (kind === 'proposal' || kind === 'resubmit') return [kind === 'proposal' ? 'Propose a project' : 'Revise proposal', form(kind === 'proposal' ? 'submitProposal' : 'resubmit', input('title', 'Project title', p?.title || '', 'text', 'required minlength="4" maxlength="100"') + (p ? '' : select('category', 'Category', E.categories)) + area('details', 'What does the school need?', p?.details || '', 'required minlength="8" maxlength="700"') + para('Leave out children’s names and private concerns. The review team checks proposals before sharing them.'), p ? 'Resubmit' : 'Send proposal', p?.id || '')];
     if (['concern', 'suggestion'].includes(kind)) return [kind === 'concern' ? 'Report a private concern' : 'Make a suggestion', form('caseSubmit', hidden('kind', kind) + input('subject', 'Subject', '', 'text', 'required minlength="3" maxlength="100"') + select('category', 'Category', E.categories) + area('body', kind === 'concern' ? 'What happened?' : 'What would you like to improve?', '', 'required minlength="6" maxlength="700"') + select('assigned', 'Send privately to', Object.entries(E.recipients)) + ck('hideName', 'Hide my name from the reviewer') + '<div class="entry-meta">The officer will not see your name or section and will reply here in the app. You can do this ' + E.hiddenPerMonth + ' times a month.</div>' + notice('If the concern involves the usual recipient, choose another reviewer. For an urgent child-safety matter, contact the school’s designated safeguarding staff directly.'), 'Send privately')];
     if (kind === 'screen') return [p.title, '<div class="entry-meta step-line">For screening</div>' + para(p.details) + form('screen', select('decision', 'Next step', [['screen', 'Publish and open the officers’ vote'], ['return', 'Return for revision'], ['decline', 'Decline']]) + '<div data-when="decision" data-values="screen">' + input('title', 'Reviewed title', p.publicTitle || p.title) + area('text', 'Description safe to share', p.publicText || p.details) + input('budget', 'Proposed SPTA allocation (₱)', p.budget / 100, 'number', 'required min="0" step="0.01"') + '<div class="fund-check ok" id="screen-fund" data-available="' + E.funding(db()).available + '">' + icon('info', 'sm') + '<span><b>SPTA funds available now: ' + cash(E.funding(db()).available) + '</b><span id="screen-fund-note">An allocation above this amount will be marked as needing fundraising.</span></span></div>' + ck('fundraising', 'This proposal seeks voluntary contributions.', false, !!p.fundraising) + input('closes', 'Voting closes on', E.voteCloses({date: t()}), 'date', 'required min="' + t() + '"') + '<div class="entry-meta">Officers have one month to vote unless you change this date.</div></div><div data-when="decision" data-values="return decline">' + area('reason', 'Feedback for the parent') + '</div>', 'Save screening', id)];
-    if (kind === 'vote') return [b.title, '<div class="entry-meta step-line">For your vote</div>' + para(b.body) + '<div class="entry-meta">Proposed SPTA allocation ' + cash(b.budget) + '</div>' + fundCheck(b.budget, E.funding(db()).shortFor(b.budget)) + notice('Voting closes on ' + date(E.voteCloses(b)) + '.') + form('vote', select('vote', 'Your vote', [['', 'Choose a response'], ['yes', 'Proceed'], ['no', 'Do not proceed'], ['abstain', 'Abstain']], '', 'required'), 'Submit once', id)];
+    if (kind === 'vote') return [b.title, '<div class="entry-meta step-line">For your vote</div>' + para(b.body) + '<div class="entry-meta">Proposed SPTA allocation ' + cash(b.budget) + '</div>' + ballotFund(b) + notice('Voting closes on ' + date(E.voteCloses(b)) + '.') + form('vote', select('vote', 'Your vote', [['', 'Choose a response'], ['yes', 'Proceed'], ['no', 'Do not proceed'], ['abstain', 'Abstain']], '', 'required'), 'Submit once', id)];
     if (kind === 'close') return ['Close voting', para(b.title) + notice('Voting closes by itself once the result is decided. Closing early records the result with the votes received so far.') + form('closeBallot', ck('confirm', 'The voting period has ended. Record the result.', true), 'Close and record', id)];
     if (kind === 'chairProposal' && E.directUsed(db()) >= E.directPerYear) return ['Add for School-Head approval', notice('All ' + E.directPerYear + ' direct proposals for this school year have been used. Send this one through the officers’ vote with “Propose a Project”.') + btn('Propose a project', 'dlg:proposal', '', 'primary', 'plus')];
     if (kind === 'chairProposal') return ['Add for School-Head approval', notice('Direct proposal ' + (E.directUsed(db()) + 1) + ' of ' + E.directPerYear + ' for this school year.') + notice('This proposal skips screening and the officers’ vote and goes straight to the School Head. It will be marked “Added by the chairperson · No officer vote”, including on the resolution.') + form('chairProposal', input('title', 'Project title', '', 'text', 'required minlength="4" maxlength="100"') + select('category', 'Category', E.categories) + area('details', 'Project details', '', 'required minlength="8" maxlength="700"') + input('budget', 'Proposed SPTA allocation (₱)', '', 'number', 'required min="0" step="0.01"') + '<div class="fund-check ok" id="screen-fund" data-available="' + E.funding(db()).available + '">' + icon('info', 'sm') + '<span><b>SPTA funds available now: ' + cash(E.funding(db()).available) + '</b><span id="screen-fund-note">An allocation above this amount will be marked as needing fundraising.</span></span></div>' + ck('fundraising', 'This proposal seeks voluntary contributions.'), 'Send to the School Head')];
@@ -4005,6 +4182,11 @@ body.modal-open {
     if (kind === 'project' || kind === 'cancel') {
       const proj = db().projects.find(x => x.id === id);
       return [kind === 'cancel' ? 'Cancel project' : 'Update project', para(proj.title) + form('projectUpdate', kind === 'cancel' ? hidden('status', 'cancelled') + area('reason', 'Public cancellation reason') + area('remainder', 'What happened to the remaining ' + cash(proj.budget - E.projectSpend(db(), id)) + '?') : select('status', 'Status', [['in_progress', 'In progress'], ['completed', 'Completed']]) + select('owner', 'Project lead', db().accounts.filter(x => x.active && E.leaders.includes(x.role)).map(x => [x.id, x.name]), proj.owner) + area('phase', 'Public progress update', proj.phase) + input('progress', 'Progress (%)', proj.progress, 'number', 'required min="0" max="100" step="1"'), kind === 'cancel' ? 'Publish cancellation' : 'Publish progress', id)];
+    }
+    if (kind === 'amend') {
+      const proj = db().projects.find(x => x.id === id),
+        spent = E.projectSpend(db(), id);
+      return ['Change project', para(proj.title + ' · allocation ' + cash(proj.budget) + ' · spent ' + cash(spent)) + notice('The officers’ vote and the signatures cover what was approved, nothing more. A wording fix or a lower amount is recorded and shown to families right away. A higher amount, or a different purpose, goes to a new officer vote and then to the School Head.') + form('amendProject', select('kind', 'What is changing?', [['wording', 'Fix the wording (same purpose, same amount)'], ['lower', 'Lower the amount'], ['raise', 'Raise the amount · new vote needed'], ['purpose', 'Change what the money is for · new vote needed']], 'wording') + '<div data-when="kind" data-values="wording purpose">' + input('title', 'Project title', proj.title, 'text', 'required minlength="4" maxlength="100"') + area('text', 'Project details', proj.text, 'required minlength="8" maxlength="700"') + '</div><div data-when="kind" data-values="wording">' + ck('sameMeaning', 'This does not change what the money is for.', true) + '</div><div data-when="kind" data-values="lower raise purpose">' + input('budget', 'Allocation (₱)', '', 'number', 'required min="0.01" step="0.01"') + '</div><div data-when="kind" data-values="raise purpose">' + input('closes', 'Voting closes on (optional)', '', 'date', '') + '</div>' + area('reason', 'Reason for the change, shown to families', '', 'required minlength="8" maxlength="350"'), 'Record change', id)];
     }
     if (kind === 'reply') {
       const c = db().cases.find(x => x.id === id);
@@ -4139,6 +4321,7 @@ body.modal-open {
     proposalReply: 'Personal reply sent.',
     chairProposal: 'Sent to the School Head for approval.',
     projectUpdate: 'Project status published.',
+    amendProject: 'Change recorded. If it needs a new officer vote, the vote is now open.',
     withdraw: 'Withdrawn.',
     voteDeadline: 'Closing date saved.',
     cover: 'Saved.',
