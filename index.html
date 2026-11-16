@@ -1005,6 +1005,10 @@ body.modal-open {
 .known-account span {color:#4a5a70;font-size:13px}
 .vote-closes {display:flex;align-items:center;gap:6px}
 .vote-closes svg {width:15px;height:15px;flex:none}
+.grade-pair {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.field-title {font-weight:700;color:var(--navy);margin:2px 0 6px}
+.student-row {display:grid;gap:4px;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--line)}
+.student-row .btn {justify-self:start}
 
 </style>
       <link rel="manifest" href="manifest.webmanifest" />
@@ -3483,6 +3487,19 @@ body.modal-open {
     const [v, l] = Array.isArray(item) ? item : [item, item];
     return '<option value="' + esc(v) + '"' + (v === selected ? ' selected' : '') + '>' + esc(l) + '</option>';
   }).join('');
+  // Grade and section are always two fields. Stored together as "Grade 3 · Sampaguita".
+  const GRADES = ['Kindergarten', 'Grade 1', 'Grade 2', 'Grade 3', 'Grade 4', 'Grade 5', 'Grade 6'];
+  const splitGrade = v => {
+    const [g = '', ...r] = String(v || '').split(' · ');
+    return [g.trim(), r.join(' · ').trim()];
+  };
+  const joinGrade = (g, sec) => g && sec ? g + ' · ' + sec.trim() : '';
+  const gradeSelect = (name, grade = '', required = true) => '<label>Grade<select name="' + name + '"' + (required ? ' required' : '') + '><option value="">Choose grade</option>' + (grade && !GRADES.includes(grade) ? '<option selected>' + esc(grade) + '</option>' : '') + GRADES.map(g => '<option' + (g === grade ? ' selected' : '') + '>' + g + '</option>').join('') + '</select></label>';
+  const gradePair = (name, value = '', title = '') => {
+    const [g, sec] = splitGrade(value);
+    return (title ? '<div class="field-title">' + esc(title) + '</div>' : '') + '<div class="grade-pair">' + gradeSelect(name + 'Grade', g) + input(name + 'Section', 'Section', sec, 'text', 'required maxlength="40" placeholder="Sampaguita"') + '</div>';
+  };
+  const studentRow = (g = '', sec = '') => '<div class="student-row"><div class="grade-pair">' + gradeSelect('childGrade', g, false) + input('childSection', 'Section', sec, 'text', 'maxlength="40" placeholder="Narra"') + '</div>' + btn('Remove', 'removeStudent', '', 'text') + '</div>';
   const select = (name, title, options, selected = '', attrs = '') => '<label>' + esc(title) + '<select name="' + name + '" ' + attrs + '>' + opts(options, selected) + '</select></label>';
   const ck = (name, label, required = false, checked = false) => '<label class="tick"><input type="checkbox" name="' + name + '" ' + (required ? 'required ' : '') + (checked ? 'checked' : '') + '><span>' + esc(label) + '</span></label>';
   const upload = (label, required = true) => '<label>' + esc(label) + '<input type="file" name="attachment" accept="image/jpeg,image/png,image/webp,application/pdf" ' + (required ? 'required' : '') + '></label>';
@@ -3946,8 +3963,8 @@ body.modal-open {
       d = db()?.batches?.find(i => i.id === id);
     if (kind === 'needAccount') return ['Sign in to send', signInPrompt('Guests can read everything here. To send a proposal, suggestion or private concern, sign in with your mobile number so the SPTA knows it comes from an ECES parent.') + btn('Keep browsing as a guest', 'close', '', 'text')];
     if (kind === 'login') return ['Sign in', (S.known().length ? '<div class="known-accounts"><small>Accounts on this phone</small>' + S.known().map(x => '<button type="button" class="known-account" data-do="switchTo" data-id="' + esc(x.login) + '"><b>' + esc(x.name) + '</b><span>' + esc(mask(x.login)) + '</span></button>').join('') + '</div>' : '') + form('login', input('login', 'Mobile number', ui.prefill || '', 'tel', 'required autocomplete="username" placeholder="0917 123 4567"') + input('password', 'Password', '', 'password', 'required autocomplete="current-password"'), 'Sign in') + '<div class="entry-actions">' + btn('Forgot password?', 'dlg:forgot', '', 'text') + btn('Create account', 'dlg:register', '', 'text') + '</div>'];
-    if (kind === 'forgot') return ['Reset your password', notice('This works on a phone you have signed in on before. On a new phone, ask an SPTA officer for help.') + form('reset', input('mobile', 'Mobile number', ui.prefill || '', 'tel', 'required autocomplete="username" placeholder="0917 123 4567"') + input('lastName', 'Last name', '', 'text', 'required maxlength="40" autocomplete="family-name"') + input('homeroom', 'Your child’s grade and section, as you registered it', '', 'text', 'required maxlength="80"') + input('password', 'New password (10 or more characters)', '', 'password', 'required minlength="10" maxlength="128" autocomplete="new-password"'), 'Save new password') + btn('Back to sign in', 'dlg:login', '', 'text')];
-    if (kind === 'children') return ['Other students', form('profileUpdate', area('children', 'Grade and section, one per line', (a.children || []).join('\n'), 'maxlength="700" placeholder="Grade 5 · Narra"'), 'Save list')];
+    if (kind === 'forgot') return ['Reset your password', notice('This works on a phone you have signed in on before. On a new phone, ask an SPTA officer for help.') + form('reset', input('mobile', 'Mobile number', ui.prefill || '', 'tel', 'required autocomplete="username" placeholder="0917 123 4567"') + input('lastName', 'Last name', '', 'text', 'required maxlength="40" autocomplete="family-name"') + gradePair('homeroom', '', 'Your child’s grade and section, as you registered it') + input('password', 'New password (10 or more characters)', '', 'password', 'required minlength="10" maxlength="128" autocomplete="new-password"'), 'Save new password') + btn('Back to sign in', 'dlg:login', '', 'text')];
+    if (kind === 'children') return ['Other students', form('profileUpdate', '<div id="student-rows">' + (a.children || []).concat((a.children || []).length ? [] : ['']).map(x => studentRow(...splitGrade(x))).join('') + '</div>' + btn('Add another student', 'addStudent', '', 'light', 'plus'), 'Save list')];
     if (kind === 'cover') return ['Stand in for an absent officer', notice('You do that officer’s tasks until the date you set. A fund record you send or check while standing in gets its final approval from the vice-president, so two people still check every record.') + form('cover', select('enabled', 'What would you like to do?', [['yes', 'Stand in for an officer'], ['no', 'Stop standing in']], 'yes') + '<div data-when="enabled" data-values="yes">' + select('role', 'Officer who is away', E.coverRoles.map(r => [r, E.roles[r]]), standIn()) + input('until', 'Until', db().cover?.until || weekAhead(), 'date', 'required min="' + t() + '"') + input('reason', 'Reason', db().cover?.reason || '', 'text', 'required minlength="3" maxlength="150" placeholder="On leave"') + '</div>', 'Save')];
     if (kind === 'withdraw') {
       const item = p || db().cases.find(x => x.id === id);
@@ -3961,14 +3978,14 @@ body.modal-open {
       if (kind === 'announceRemove') return ['Remove announcement', '<h3>' + esc(titleCase(x.title)) + '</h3>' + notice('Removing takes it off every phone. It cannot be undone.') + form('announceRemove', ck('confirm', 'Yes, remove this announcement.', true), 'Remove', id)];
       return ['Edit announcement', form('announceEdit', input('title', 'Announcement title', x.title) + area('body', 'Complete message', x.body, 'required minlength="6" maxlength="1600"') + select('audience', 'Audience', [['everyone', 'All parents and officers'], ['officers', 'Officers only']], x.audience) + input('until', 'Show until (optional)', x.until || '', 'date', ''), 'Save changes', id)];
     }
-    if (kind === 'register') return ['Create an account', notice('Use fictional details for this rehearsal.') + form('register', '<div class="name-pair">' + input('firstName', 'First name', '', 'text', 'required maxlength="40" autocomplete="given-name"') + input('lastName', 'Last name', '', 'text', 'required maxlength="40" autocomplete="family-name"') + '</div>' + input('mobile', 'Mobile number', '', 'tel', 'required autocomplete="tel" placeholder="0917 123 4567"') + input('homeroom', 'Your child’s grade and section', '', 'text', 'required minlength="2" maxlength="80" placeholder="Grade 3 · Sampaguita"') + input('password', 'Password (10 or more characters)', '', 'password', 'required minlength="10" maxlength="128" autocomplete="new-password"') + ck('officer', 'I am the HPTA president of this section and I am requesting officer access.') + '<div class="entry-meta">Officer access starts after the school head or chairperson checks the roster.</div>', 'Create account')];
+    if (kind === 'register') return ['Create an account', notice('Use fictional details for this rehearsal.') + form('register', '<div class="name-pair">' + input('firstName', 'First name', '', 'text', 'required maxlength="40" autocomplete="given-name"') + input('lastName', 'Last name', '', 'text', 'required maxlength="40" autocomplete="family-name"') + '</div>' + input('mobile', 'Mobile number', '', 'tel', 'required autocomplete="tel" placeholder="0917 123 4567"') + gradePair('homeroom', '', 'Your child’s grade and section') + input('password', 'Password (10 or more characters)', '', 'password', 'required minlength="10" maxlength="128" autocomplete="new-password"') + ck('officer', 'I am the HPTA president of this section and I am requesting officer access.') + '<div class="entry-meta">Officer access starts after the school head or chairperson checks the roster.</div>', 'Create account')];
     if (!a) return ['Sign in', empty('Sign in to continue.')];
     if (kind === 'acting') {
       const active = E.hasDelegation(db());
       return [active ? 'End acting assignment' : 'Assign acting chairperson', form('acting', hidden('enabled', active ? 'no' : 'yes') + (active ? para(db().actingReference) : input('reference', 'School assignment reference') + input('until', 'Last day of assignment', t(), 'date', 'required min="' + t() + '"')), active ? 'End assignment' : 'Save assignment')];
     }
     if (kind === 'inspection') return ['Request records inspection', form('caseSubmit', hidden('kind', 'inspection') + hidden('category', 'Other') + input('subject', 'Record or period requested') + area('body', 'Describe the records you wish to inspect') + para('The secretary receives this request privately. Track the reply in My updates.'), 'Send to secretary')];
-    if (kind === 'requestRole') return ['Request BOD access', form('requestRole', input('homeroom', 'Grade and section', a.homeroom || '') + para('The chairperson or school head will verify your HPTA presidency.'), 'Send request')];
+    if (kind === 'requestRole') return ['Request BOD access', form('requestRole', gradePair('homeroom', a.homeroom || '', 'Grade and section') + para('The chairperson or school head will verify your HPTA presidency.'), 'Send request')];
     if (kind === 'roster') {
       const q = db().requests.find(x => x.id === id);
       return ['Verify BOD request', para((q.name || n(q.user)) + ' · ' + q.homeroom) + form('rosterReview', select('decision', 'Decision', [['approve', 'Approve BOD access'], ['return', 'Return with a reason']]) + '<div data-when="decision" data-values="approve">' + select('slot', 'Match the board seat', [['', 'Choose the matching seat'], ...E.availableSeats(db()).map(x => [x.id, x.homeroom + ' · ' + (x.endedAt ? 'Vacant' : x.name)]), ['additional', 'Additional seat confirmed on the roster']], E.availableSeats(db()).find(x => E.homeroomKey(x.homeroom) === E.homeroomKey(q.homeroom))?.id || '', 'required') + ck('verified', 'I matched this person and homeroom to the school roster.', true) + ck('voting', 'This person has a voting seat on the verified roster.', false, true) + '</div><div data-when="decision" data-values="return">' + area('reason', 'Reason') + '</div>', 'Save review', id)];
@@ -4172,6 +4189,20 @@ body.modal-open {
     a.click();
     setTimeout(() => URL.revokeObjectURL(url), 1500);
   }
+  // A tap anywhere outside an open window closes it. The tap must start outside too, so selecting
+  // text inside a form and releasing outside does not close it, and the tap that opens a window does not close it.
+  let outsideTap = '';
+  document.addEventListener('pointerdown', ev => {
+    const inside = !!ev.target.closest('.portal-modal');
+    outsideTap = inside ? '' : ui.dialog ? 'dialog' : document.querySelector('.announce-pop') ? 'announcement' : '';
+  }, true);
+  document.addEventListener('click', ev => {
+    const kind = outsideTap;
+    outsideTap = '';
+    if (!kind || ui.busy) return;
+    if (kind === 'announcement') document.querySelector('.announce-pop [data-do="announceSeen"]')?.click();
+    else closeDialog();
+  });
   document.addEventListener('click', async ev => {
     const el = ev.target.closest('[data-do]');
     if (!el || ui.busy) return;
@@ -4212,6 +4243,28 @@ body.modal-open {
         node.querySelector('.line-flag')?.remove();
         rows.appendChild(node);
         node.querySelector('input').focus();
+        return;
+      }
+      if (act === 'addStudent') {
+        const rows = document.getElementById('student-rows');
+        if (rows.children.length >= 8) return;
+        const node = rows.firstElementChild.cloneNode(true);
+        node.querySelectorAll('input').forEach(x => {
+          x.value = '';
+        });
+        node.querySelectorAll('select').forEach(x => {
+          x.value = '';
+        });
+        rows.appendChild(node);
+        node.querySelector('select').focus();
+        return;
+      }
+      if (act === 'removeStudent') {
+        const row = el.closest('.student-row');
+        if (row.parentNode.children.length > 1) row.remove();
+        else row.querySelectorAll('input,select').forEach(x => {
+          x.value = '';
+        });
         return;
       }
       if (act === 'removeItem') {
@@ -4407,6 +4460,11 @@ body.modal-open {
       f.dataset.token = token;
     }
     try {
+      if ('homeroomGrade' in payload) {
+        payload.homeroom = joinGrade(payload.homeroomGrade, payload.homeroomSection || '');
+        delete payload.homeroomGrade;
+        delete payload.homeroomSection;
+      }
       if (action === 'login' || action === 'register') {
         if (action === 'register') {
           payload.role = payload.officer ? 'bod' : 'parent';
@@ -4433,7 +4491,17 @@ body.modal-open {
         return;
       }
       if (action === 'acting' || action === 'cover') payload.enabled = payload.enabled === 'yes';
-      if (action === 'profileUpdate') payload.children = String(payload.children || '').split('\n');
+      if (action === 'profileUpdate') {
+        const grades = data.getAll('childGrade'),
+          sections = data.getAll('childSection');
+        payload.children = [];
+        grades.forEach((g, i) => {
+          const sec = String(sections[i] || '').trim();
+          if (!g && !sec) return;
+          if (!g || !sec) throw Error('Choose a grade and type a section for each student.');
+          payload.children.push(joinGrade(g, sec));
+        });
+      }
       if (action === 'freeze' && payload.signerRule === 'policy') payload.requiredSigners = data.getAll('requiredSigners');
       if (action === 'financeSubmit') {
         const descriptions = data.getAll('itemDescription'),
