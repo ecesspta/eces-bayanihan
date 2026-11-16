@@ -2987,7 +2987,8 @@ body.modal-open {
       actingVice: false,
       settings: {
         ack: true,
-        reminders: true
+        reminders: true,
+        live: true
       },
       legacy: null,
       receipts: []
@@ -5263,6 +5264,8 @@ body.modal-open {
   const badge = s => '<span class="badge ' + esc(color[s] || s) + '">' + esc(labels[s] || s) + '</span>';
   const badgeText = s => '<span class="badge">' + esc(s) + '</span>';
   const t = () => E.today();
+  // The real school record carries a flag; the fictional rehearsal does not. Wording and the practice reader follow it.
+  const isLive = () => !!db()?.settings?.live;
   const onRole = roles => roles.includes(me()?.role);
   const canChair = () => E.isChair(db(), me());
   const canPrint = () => onRole(E.printers);
@@ -5731,7 +5734,7 @@ body.modal-open {
     return card(r.title, para(r.clause || 'The secretary is reviewing the draft.') + (r.state !== 'draft' && r.signers ? '<div class="entry-meta">' + signed + ' of ' + r.signers.length + ' officers have signed</div>' : ''), r.id + ' · Version ' + r.version, r.state, acts);
   }
   function resolutionPaper(r, signatures = true) {
-    const demo = '<div class="paper-mark">FICTIONAL REHEARSAL COPY · ' + esc(labels[r.state] || r.state).toUpperCase() + '</div>';
+    const demo = '<div class="paper-mark">' + (isLive() ? '' : 'FICTIONAL REHEARSAL COPY · ') + esc(labels[r.state] || r.state).toUpperCase() + '</div>';
     const fact = (k, v) => v ? '<div class="paper-fact"><span>' + esc(k) + '</span><b>' + esc(v) + '</b></div>' : '';
     let body = demo + '<div class="paper-head">' + seal + '<div><b>East Central Elementary School</b><div>School Parent-Teacher Association</div></div></div><h2>Resolution ' + esc(r.id) + '</h2>' + '<div class="entry-meta">Version ' + r.version + ' · ' + esc(labels[r.state] || r.state) + '</div><h3>' + esc(titleCase(r.title)) + '</h3>' + para(r.text);
     if (r.meeting) body += '<h3>Project Details</h3><div class="paper-facts">' + fact('Proposal', r.proposal) + fact('Project', r.project) + fact('Category', r.category) + fact('Approved allocation', cash(r.budget)) + fact('Voluntary contributions', r.fundraising ? 'Yes · ' + r.ga : '') + (r.tally ? fact('Officer vote', r.tally.yes + ' yes, ' + r.tally.no + ' no, ' + r.tally.abstain + ' abstain' + (r.officers ? ' of ' + r.officers + ' officers' : '')) + fact('Vote closed', date(r.date)) : fact('Officer vote', 'Not held · Added by the chairperson')) + fact('School-Head approval', date(r.approved)) + '</div>';
@@ -5803,7 +5806,7 @@ body.modal-open {
     const all = db().batches.filter(d => !officer || d.owner === S.me),
       waiting = treas ? all.filter(d => d.status === 'for_treasurer') : [],
       rest = all.filter(d => !waiting.includes(d) && (!review || treas || d.status !== 'for_treasurer'));
-    return (treas || collects ? btn(collects ? 'Scan a collection handover' : 'Scan a sheet or receipt', 'dlg:finance', '', 'primary', 'camera') : '') + (collects ? para('Scan the collection sheet for the money you are handing over. The treasurer approves it first, then the chairperson gives final approval before it shows in SPTA funds.') : '') + (treas ? section('Handovers for your approval', waiting.map(cardOf).join('') || empty('No handovers are waiting for you.')) : '') + section(officer ? 'My handovers' : 'Finance submissions', rest.map(cardOf).join('') || empty(officer ? 'You have not recorded a handover yet.' : 'There are no finance submissions.'));
+    return (treas || collects ? btn(isLive() ? (collects ? 'Record a collection handover' : 'Submit finance evidence') : collects ? 'Scan a collection handover' : 'Scan a sheet or receipt', 'dlg:finance', '', 'primary', 'camera') : '') + (collects ? para('Scan the collection sheet for the money you are handing over. The treasurer approves it first, then the chairperson gives final approval before it shows in SPTA funds.') : '') + (treas ? section('Handovers for your approval', waiting.map(cardOf).join('') || empty('No handovers are waiting for you.')) : '') + section(officer ? 'My handovers' : 'Finance submissions', rest.map(cardOf).join('') || empty(officer ? 'You have not recorded a handover yet.' : 'There are no finance submissions.'));
   }
   function records() {
     const sec = holds('secretary');
@@ -5941,7 +5944,7 @@ body.modal-open {
       const flagged = read.items.filter(x => x.check).length;
       source = '<div class="scan-attached">' + scanPreview(scan, false) + '<div><b>Scanned Original</b>' + para(scan.file.name + ' is attached for the chairperson.') + btn('Scan a different photo', 'scanAgain', '', 'light', 'camera') + '</div></div>';
       intro = '<div class="scan-result">' + icon('check', 'sm') + '<span><b>' + read.items.length + ' Lines Filled In for You</b>' + esc(flagged ? flagged + ' line' + (flagged === 1 ? ' is' : 's are') + ' marked in gold because the writing was hard to read.' : 'Every line was read clearly.') + ' Compare each one with the paper and fix anything that is wrong.</span></div>' + (read.matchesImage ? '' : notice('Practice mode: this demo cannot read a real photo yet, so it filled in the fictional sample collection amounts. The live app will read the photo you took.'));
-    } else if (kind === 'finance' && !id) intro = btn('Scan a photo instead', 'scanAgain', '', 'light', 'camera');
+    } else if (kind === 'finance' && !id && !isLive()) intro = btn('Scan a photo instead', 'scanAgain', '', 'light', 'camera');
     return intro + form('financeSubmit', (officer || orig ? hidden('direction', dir) + notice(officer ? 'Collection handover · Money in' : 'Linked correction for ' + orig.id + ' · Money ' + dir) : select('direction', 'Movement', [['in', 'Money in'], ['out', 'Money out']], dir)) + hidden('adjustment', orig?.id || prior?.adjustment || '') + input('date', officer ? 'Collection date' : 'Transaction date', read?.date || prior?.date || t(), 'date') + input('receipt', 'Receipt / batch reference', read?.receipt || prior?.receipt || '') + input('purpose', 'Purpose shown to parents', read?.purpose || prior?.purpose || (orig ? 'Correction · ' + orig.purpose : ''), 'text', 'required maxlength="140"') + (orig || officer ? hidden('project', '') : select('project', 'Expense allocation', [['', 'General fund'], ...db().projects.filter(x => x.status !== 'cancelled').map(x => [x.id, x.title])], prior?.project || '')) + '<fieldset><legend>' + (scan ? 'Scanned Line Items' : 'Private Line Items') + '</legend><div id="item-rows">' + initItems.map(row).join('') + '</div>' + btn(scan ? 'Add a missed line' : 'Add item', 'addItem', '', 'light', 'plus') + totalLine(lineSum(initItems), read ? read.writtenTotal : null) + '</fieldset>' + source + ck('verifiedItems', scan ? 'I compared every scanned line with the paper original and corrected anything that was wrong.' : 'I checked the amounts and item descriptions against the supporting document.', true), officer ? 'Submit to treasurer' : 'Submit to chairperson', prior?.id || '');
   }
   function cleanScan() {
@@ -5979,7 +5982,7 @@ body.modal-open {
   function financeDialog(kind, id) {
     if (kind === 'adjust') return ['Record a linked correction', financeForm(kind, id)];
     const officer = holds('collector');
-    if (kind !== 'finance' || id || ui.scan?.stage === 'manual') return [officer ? 'Record a collection handover' : 'Submit finance evidence', financeForm(kind, id)];
+    if (kind !== 'finance' || id || ui.scan?.stage === 'manual' || isLive()) return [officer ? 'Record a collection handover' : 'Submit finance evidence', financeForm(kind, id)];
     if (!ui.scan) return [officer ? 'Scan a collection handover' : 'Scan a sheet or receipt', scanStart()];
     if (ui.scan.stage === 'reading') return ['Reading the paper', scanReading(ui.scan)];
     return ['Check the scanned amounts', financeForm(kind, id)];
@@ -6010,7 +6013,7 @@ body.modal-open {
       if (kind === 'announceRemove') return ['Remove announcement', '<h3>' + esc(titleCase(x.title)) + '</h3>' + notice('Removing takes it off every phone. It cannot be undone.') + form('announceRemove', ck('confirm', 'Yes, remove this announcement.', true), 'Remove', id)];
       return ['Edit announcement', form('announceEdit', input('title', 'Announcement title', x.title) + area('body', 'Complete message', x.body, 'required minlength="6" maxlength="1600"') + select('audience', 'Audience', [['everyone', 'All parents and officers'], ['officers', 'Officers only']], x.audience) + input('until', 'Show until (optional)', x.until || '', 'date', ''), 'Save changes', id)];
     }
-    if (kind === 'register') return ['Create an account', notice('Use fictional details for this rehearsal.') + form('register', '<div class="name-pair">' + input('firstName', 'First name', '', 'text', 'required maxlength="40" autocomplete="given-name"') + input('lastName', 'Last name', '', 'text', 'required maxlength="40" autocomplete="family-name"') + '</div>' + input('mobile', 'Mobile number', '', 'tel', 'required autocomplete="tel" placeholder="0917 123 4567"') + gradePair('homeroom', '', 'Your child’s grade and section') + input('password', 'Password (10 or more characters)', '', 'password', 'required minlength="10" maxlength="128" autocomplete="new-password"') + ck('officer', 'I am the HPTA president of this section and I am requesting officer access.') + '<div class="entry-meta">Officer access starts after the School Head or chairperson checks the roster.</div><details class="privacy-notice"><summary>Read the Privacy Notice</summary>' + privacyBody() + '</details>' + ck('consent', 'I have read the Privacy Notice. I agree that the SPTA may collect and use my information, and my child’s grade and section, as described.', true), 'Create account')];
+    if (kind === 'register') return ['Create an account', (isLive() ? '' : notice('Use fictional details for this rehearsal.')) + form('register', '<div class="name-pair">' + input('firstName', 'First name', '', 'text', 'required maxlength="40" autocomplete="given-name"') + input('lastName', 'Last name', '', 'text', 'required maxlength="40" autocomplete="family-name"') + '</div>' + input('mobile', 'Mobile number', '', 'tel', 'required autocomplete="tel" placeholder="0917 123 4567"') + gradePair('homeroom', '', 'Your child’s grade and section') + input('password', 'Password (10 or more characters)', '', 'password', 'required minlength="10" maxlength="128" autocomplete="new-password"') + ck('officer', 'I am the HPTA president of this section and I am requesting officer access.') + '<div class="entry-meta">Officer access starts after the School Head or chairperson checks the roster.</div><details class="privacy-notice"><summary>Read the Privacy Notice</summary>' + privacyBody() + '</details>' + ck('consent', 'I have read the Privacy Notice. I agree that the SPTA may collect and use my information, and my child’s grade and section, as described.', true), 'Create account')];
     if (kind === 'privacy') return ['Privacy Notice', privacyBody()];
     if (!a) return ['Sign in', empty('Sign in to continue.')];
     if (kind === 'acting') {
@@ -6163,7 +6166,7 @@ body.modal-open {
       html+='<main class="mobile-main">'+sectionHead+(!ui.dialog?renderFeedback():'')+'<div id="desk-content">'+sections[ui.tab]()+'</div></main>';
       html+=mobileNav(choices);
     }
-    html+='<footer class="portal-foot">East Central Elementary School SPTA · '+(S.shared?'Shared rehearsal · Fictional data':S.sessionOnly?'Session-only demo · Changes last until this page closes.':'Practice mode · Fictional records on this device')+' · <button type="button" class="link-btn" data-do="dlg:privacy">Privacy Notice</button></footer>';
+    html+='<footer class="portal-foot">East Central Elementary School SPTA · '+(isLive()?'':(S.shared?'Shared rehearsal · Fictional data':S.sessionOnly?'Session-only demo · Changes last until this page closes.':'Practice mode · Fictional records on this device')+' · ')+'<button type="button" class="link-btn" data-do="dlg:privacy">Privacy Notice</button></footer>';
     if (ui.dialog) {
       const parts = dialogContents(), about = dialogKind(), inQueue = ui.queue && about && about.at >= 0, more = inQueue && about.at < about.list.length - 1;
       const queueBar = inQueue ? '<div class="queue-bar"><span>' + (about.at + 1) + ' of ' + about.list.length + ' waiting for you</span>' + (more ? '<button class="queue-skip" data-do="queue:next">Skip for Now' + icon('arrow', 'sm') + '</button>' : '<button class="queue-skip" data-do="close">Back to the List</button>') + '</div>' : '';

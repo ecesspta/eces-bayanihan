@@ -472,7 +472,8 @@
       actingVice: false,
       settings: {
         ack: true,
-        reminders: true
+        reminders: true,
+        live: true
       },
       legacy: null,
       receipts: []
