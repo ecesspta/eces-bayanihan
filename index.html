@@ -1028,6 +1028,13 @@ body.modal-open {
 .proj-photo img{display:block;width:100%;height:100%;object-fit:cover}
 .proj-photo .more{position:absolute;inset:0;display:grid;place-items:center;background:rgba(16,42,77,.62);color:#fff;font-weight:700;font-size:1.1rem}
 .photo-caption{margin:12px 0 4px}
+/* Change history */
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 14px}
+.chip{border:1px solid var(--stroke,#c9d3e3);background:#fff;color:var(--deep,#12294d);border-radius:999px;padding:7px 12px;font:inherit;font-size:.82rem;font-weight:600;cursor:pointer}
+.chip.on{background:var(--deep,#12294d);color:#fff;border-color:var(--deep,#12294d)}
+.audit-entry .audit-who{margin:2px 0 6px}
+.audit-entry .audit-reason{margin:6px 0 0;padding:8px 10px;border-left:3px solid var(--gold,#e0a62f);background:#fdf8ea;border-radius:6px}
+.audit-entry.is-retracted{border-left:4px solid #b4533a}
 
 </style>
       <link rel="manifest" href="manifest.webmanifest" />
@@ -1644,7 +1651,7 @@ body.modal-open {
  "A vote has already been received from this account.": "May natanggap nang boto mula sa account na ito.",
  "This ballot is closed.": "Sarado na ang balotang ito.",
  "Confirm the voting period has ended.": "Kumpirmahin na tapos na ang panahon ng botohan.",
- "Confirm that you want to withdraw this.": "Kumpirmahin na gusto mo itong bawiin.",
+ "Confirm that you want to withdraw this.": "Kumpirmahin na nais mong bawiin ito.",
  "Only the sender can withdraw this.": "Ang nagpadala lamang ang maaaring bumawi nito.",
  "This proposal was already decided and can no longer be withdrawn.": "Napagdesisyunan na ang panukalang ito at hindi na maaaring bawiin.",
  "This was already resolved and can no longer be withdrawn.": "Naresolba na ito at hindi na maaaring bawiin.",
@@ -2207,7 +2214,20 @@ body.modal-open {
  "BOD access request withdrawn": "Binawi ang kahilingan sa access ng BOD",
  "Personal resolution response taken back": "Binawi ang personal na tugon sa resolusyon",
  "Completed project reopened": "Binuksan muli ang natapos na proyekto",
- "Project allocation restored to an amount the officers approved": "Ibinalik ang alokasyon ng proyekto sa halagang inaprubahan ng mga opisyal"
+ "Project allocation restored to an amount the officers approved": "Ibinalik ang alokasyon ng proyekto sa halagang inaprubahan ng mga opisyal",
+ "Change history": "Kasaysayan ng mga Pagbabago",
+ "Everything": "Lahat",
+ "Money": "Pera",
+ "Resolutions and minutes": "Mga resolusyon at minuto",
+ "People and access": "Mga tao at access",
+ "Withdrawn or returned": "Binawi o ibinalik",
+ "Filter the history": "I-filter ang kasaysayan",
+ "Every major change is recorded here: who did it, in which role, and what was decided. Entries are added automatically. The app has no way to edit or remove them.": "Nakatala rito ang bawat malaking pagbabago: sino ang gumawa, sa anong tungkulin, at ano ang napagpasyahan. Awtomatikong idinaragdag ang mga tala. Walang paraan sa app para baguhin o alisin ang mga ito.",
+ "Nothing recorded for this filter yet.": "Wala pang naitalang pagbabago para sa filter na ito.",
+ "Done automatically": "Awtomatikong ginawa",
+ "Approved for posting": "Inaprubahan para i-post",
+ "Did not sign": "Hindi lumagda",
+ "Announcement removed": "Inalis ang anunsyo"
 },
     rules: [
       [/^East Central Elementary School SPTA · (.+)$/, "SPTA ng East Central Elementary School · {1}"],
@@ -2335,6 +2355,9 @@ body.modal-open {
       [/^Withdrawn\. (.+)$/, "Binawi. {1}"],
       [/^Allocation put back from (.+) to (.+) on (.+), an amount the officers had already approved\. (.+)$/, "Ibinalik ang alokasyon mula {1} tungo sa {2} noong {3}, halagang naaprubahan na ng mga opisyal. {4}"],
       [/^Reopened on (.+) after it was marked completed\. (.+)$/, "Binuksan muli noong {1} matapos itong mamarkahang tapos na. {2}"],
+      [/^Announcement removed: (.+)$/, "Inalis ang anunsyo: {1}"],
+      [/^Showing the latest (\d+) of (\d+)\.$/, "Ipinapakita ang pinakabagong {1} sa {2}."],
+      [/^(.+) · standing in for the (.+)$/, "{1} · pumapalit sa {2}"],
       [/^Sample HPTA President (\d+)$/, "Halimbawang Pangulo ng HPTA {1}"],
       [/^Photo (\d+) of (\d+)$/, "Larawan {1} ng {2}"],
       [/^Open photo: (.+)$/, "Buksan ang larawan: {1}"],
@@ -2816,11 +2839,18 @@ body.modal-open {
   function financeReview(db, a) {
     check(isChair(db, a), 'Chairperson posting authority is required.');
   }
-  function audit(db, a, event, ref) {
+  // The change history. Every entry says who acted, in which role (and who they stood in for), what the record was,
+  // what was decided and why. Entries are only ever added. Private case details and sender names never go in.
+  function audit(db, a, event, ref, extra = {}) {
     db.audit.push({
       who: a.id,
+      role: a.role,
+      ...(covering(db, a) ? {
+        cover: covering(db, a)
+      } : {}),
       event,
       ref,
+      ...extra,
       at: at()
     });
   }
@@ -3106,8 +3136,39 @@ body.modal-open {
       replay: true
     };
     let id = String(v.id || '');
+    // What the entry says about the record, in plain words. Titles and amounts here are already public to the officers.
+    function trace() {
+      const t = {
+        action
+      };
+      const decision = v.decision || v.response;
+      if (typeof decision === 'string' && decision) t.decision = decision;
+      if (['withdrawRecord', 'amendProject'].includes(action) && typeof v.kind === 'string') t.kind = v.kind;
+      const why = v.reason || v.why;
+      if (typeof why === 'string' && why.trim() && !['caseReply', 'proposalReply'].includes(action)) t.reason = why.trim().slice(0, 350);
+      const rec = [['projects', 'title'], ['proposals', 'publicTitle'], ['batches', 'purpose'], ['minutes', 'title'], ['resolutions', 'title'], ['announcements', 'title']].map(([list, field]) => {
+        const x = (db[list] || []).find(i => i.id === id);
+        return x && {
+          list,
+          x,
+          label: x[field] || x.title
+        };
+      }).find(Boolean);
+      if (rec) {
+        t.what = String(rec.label || '').slice(0, 140);
+        const outcome = rec.x.status || rec.x.state;
+        if (outcome) t.outcome = outcome;
+        if (rec.list === 'batches') t.cents = rec.x.cents;
+        if (rec.list === 'proposals' && rec.x.budget) t.cents = rec.x.budget;
+        if (rec.list === 'projects' && ['amendProject', 'projectUpdate'].includes(action)) t.cents = rec.x.budget;
+      }
+      return t;
+    }
     function changed(event) {
-      audit(db, a, event, id);
+      audit(db, a, event, id, /Private case|Hidden-name|Personal reply/.test(event) ? {
+        action,
+        private: true
+      } : trace());
     }
     switch (action) {
       case 'register':
@@ -5267,6 +5328,7 @@ body.modal-open {
     if (onRole(E.boardRoles) || lead()) arr.push(['board', 'Officer voting', 'users'], ['resolutions', 'Resolutions', 'file']);
     if (onRole(['secretary', 'head', 'chair', 'vice'])) arr.push(['records', 'Minutes & notices', 'clipboard']);
     if (onRole(['head', 'chair'])) arr.push(['roster', 'BOD requests', 'users']);
+    if (onRole(['head', 'chair', 'vice'])) arr.push(['history', 'Change history', 'clipboard']);
     if (onRole(['collector', 'treasurer']) || canChair() || db().batches.some(canPost)) arr.push(['finance', 'Finance desk', 'clipboard']);
     arr.push(['updates', 'My updates', 'bell'], ['account', isGuest() ? 'Sign in' : 'My account', 'settings'], ['more','More','layout']);
     return arr;
@@ -5550,6 +5612,41 @@ body.modal-open {
     const settings = me().role === 'head' ? section('Follow-up settings', ['ack', 'reminders'].map(k => '<div class="list-line"><span>' + esc(k === 'ack' ? 'In-app submission acknowledgements' : 'Flag overdue feedback first') + '</span>' + btn(db().settings[k] ? 'Turn off' : 'Turn on', 'setting', k) + '</div>').join('')) : '';
     return section(kind === 'suggestion' ? 'Suggestions sent to you' : kind === 'concern' ? 'Concerns sent to you' : 'Assigned to you', mine.map(caseCard).join('') || empty(kind ? 'Nothing here yet.' : 'No private cases assigned to you.')) + others + (kind ? '' : settings);
   }
+  // Change history: who acted, in which role, on what, what was decided and why. Only the School Head, chairperson and Vice-Chairperson see it.
+  const HISTORY_AREAS = {
+    money: ['financeSubmit', 'financeCheck', 'financeReview'],
+    projects: ['projectUpdate', 'projectPhoto', 'projectPhotoRemove', 'projectReopen', 'amendProject'],
+    proposals: ['screen', 'chairProposal', 'resubmit', 'withdraw', 'headDecision', 'closeBallot', 'voteDeadline', 'proposalReply'],
+    records: ['minutesUpload', 'minutesReview', 'freeze', 'reviseResolution', 'sign', 'unsign', 'finalizeResolution', 'announce', 'announceEdit', 'announceRemove'],
+    people: ['rosterReview', 'setSeat', 'endBod', 'acting', 'cover']
+  };
+  const RETRACTED = ['withdraw', 'withdrawRecord', 'unsign', 'projectPhotoRemove', 'announceRemove', 'projectReopen'];
+  const DECISIONS = {post: 'Approved for posting', approve: 'Approved', return: 'Returned', decline: 'Declined', screen: 'Screened', acknowledged: 'Signed', not_signed: 'Did not sign'};
+  const isRetraction = x => RETRACTED.includes(x.action) || ['return', 'decline', 'not_signed'].includes(x.decision);
+  function history() {
+    const f = ui.historyFilter || 'all',
+      all = (db().audit || []).slice().reverse(),
+      shown = all.filter(x => f === 'all' || (f === 'retracted' ? isRetraction(x) : (HISTORY_AREAS[f] || []).includes(x.action)));
+    const chips = [['all', 'Everything'], ['money', 'Money'], ['projects', 'Projects'], ['proposals', 'Proposals'], ['records', 'Resolutions and minutes'], ['people', 'People and access'], ['retracted', 'Withdrawn or returned']].map(([key, label]) => '<button type="button" class="chip' + (f === key ? ' on' : '') + '" data-do="histfilter" data-id="' + key + '"' + (f === key ? ' aria-pressed="true"' : ' aria-pressed="false"') + '>' + esc(label) + '</button>').join('');
+    const when = at => {
+      try {
+        return new Intl.DateTimeFormat('en-PH', {dateStyle: 'medium', timeStyle: 'short'}).format(new Date(at));
+      } catch (e) {
+        return at;
+      }
+    };
+    const entry = x => {
+      const acct = db().accounts.find(a => a.id === x.who),
+        role = x.role || acct?.role,
+        by = x.who === 'system' ? 'Done automatically' : (acct?.name || x.who) + (role ? ' · ' + (E.roles[role] || role) : '') + (x.cover ? ' · standing in for the ' + (E.roles[x.cover] || x.cover) : '');
+      const lines = [];
+      if (x.what || x.ref) lines.push((x.what ? x.what + ' · ' : '') + x.ref);
+      if (x.cents) lines.push(cash(x.cents));
+      if (x.decision && DECISIONS[x.decision]) lines.push(DECISIONS[x.decision]);
+      return '<article class="entry audit-entry' + (isRetraction(x) ? ' is-retracted' : '') + '"><div class="entry-top"><span class="entry-meta">' + esc(when(x.at)) + '</span>' + (x.outcome && labels[x.outcome] ? badge(x.outcome) : '') + '</div><h3>' + esc(x.event) + '</h3><p class="audit-who"><b>' + esc(by) + '</b></p>' + lines.map(para).join('') + (x.reason ? '<p class="audit-reason">' + esc(x.reason) + '</p>' : '') + '</article>';
+    };
+    return '<p class="page-lead">Every major change is recorded here: who did it, in which role, and what was decided. Entries are added automatically. The app has no way to edit or remove them.</p><div class="chips" role="group" aria-label="Filter the history">' + chips + '</div>' + (shown.length ? shown.slice(0, 100).map(entry).join('') + (shown.length > 100 ? para('Showing the latest 100 of ' + shown.length + '.') : '') : empty('Nothing recorded for this filter yet.'));
+  }
   const sections = {
     home,
     more,
@@ -5562,6 +5659,7 @@ body.modal-open {
     board,
     resolutions: () => section('Resolution register', db().resolutions.map(resCard).join('') || empty('A resolution is drafted automatically when a proposal passes the officer vote and the School Head approves it.')),
     records,
+    history,
     roster,
     finance,
     account: accountView
@@ -5952,6 +6050,10 @@ body.modal-open {
       id = el.dataset.id || '';
     try {
       if (act === 'lang') return ECESLang.toggle();
+      if (act === 'histfilter') {
+        ui.historyFilter = id;
+        return render();
+      }
       if (act === 'queue:next') {
         const next = todo()[(dialogKind()?.at ?? -1) + 1];
         if (!next) return closeDialog();
