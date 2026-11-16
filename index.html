@@ -2149,6 +2149,9 @@ body.modal-open {
  "Publish photo": "I-publish ang larawan",
  "Remove photo": "Alisin ang larawan",
  "Photo published on the project.": "Nailathala na ang larawan sa proyekto.",
+ "Publishing…": "Inilalathala…",
+ "Saving the file took too long. Check your connection and try again.": "Natagalan ang pag-save ng file. Suriin ang iyong koneksyon at subukan muli.",
+ "Photo took too long to prepare.": "Natagalan ang paghahanda ng larawan.",
  "Photo removed.": "Naalis na ang larawan.",
  "Photos can be added to ongoing or completed projects.": "Maaaring magdagdag ng larawan sa mga proyektong ginagawa o natapos na.",
  "A project can show up to 8 photos. Remove one first.": "Hanggang 8 larawan ang maaaring ipakita ng isang proyekto. Mag-alis muna ng isa.",
@@ -5022,17 +5025,34 @@ body.modal-open {
       }
     }
   }
+  // Wait for a step, but never forever. A step that stalls ends with a message instead of a silent button.
+  const within = (promise, ms, message) => new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(Error(message)), ms);
+    promise.then(v => { clearTimeout(timer); resolve(v); }, e => { clearTimeout(timer); reject(e); });
+  });
   // Re-draw the photo as a JPEG of at most 1600 pixels. This also drops any location or camera details stored inside the original.
+  // If the browser cannot re-draw it, the original is used as it is.
   async function shrinkImage(file) {
-    try {
-      const bmp = await createImageBitmap(file, {imageOrientation: 'from-image'});
+    const draw = async () => {
+      let bmp;
+      try {
+        bmp = await createImageBitmap(file, {imageOrientation: 'from-image'});
+      } catch (e) {
+        bmp = await createImageBitmap(file);
+      }
       const scale = Math.min(1, 1600 / Math.max(bmp.width, bmp.height)),
         canvas = document.createElement('canvas');
-      canvas.width = Math.round(bmp.width * scale);
-      canvas.height = Math.round(bmp.height * scale);
-      canvas.getContext('2d').drawImage(bmp, 0, 0, canvas.width, canvas.height);
+      canvas.width = Math.max(1, Math.round(bmp.width * scale));
+      canvas.height = Math.max(1, Math.round(bmp.height * scale));
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(bmp, 0, 0, canvas.width, canvas.height);
       const blob = await new Promise(done => canvas.toBlob(done, 'image/jpeg', 0.85));
       return blob ? new File([blob], file.name.replace(/\.[^.]+$/, '') + '.jpg', {type: 'image/jpeg'}) : file;
+    };
+    try {
+      return await within(draw(), 15000, 'Photo took too long to prepare.');
     } catch (e) {
       return file;
     }
@@ -5605,6 +5625,7 @@ body.modal-open {
     if (el) {
       el.hidden = false;
       el.textContent = s;
+      el.scrollIntoView?.({block: 'nearest'});
     } else render();
   }
   function renderFeedback() {
@@ -5988,6 +6009,8 @@ body.modal-open {
     ui.busy = true;
     const submitButton = f.querySelector('[type="submit"]');
     submitButton.disabled = true;
+    const idleLabel = submitButton.textContent;
+    if (f.dataset.form === 'projectPhoto') submitButton.textContent = 'Publishing…';
     const action = f.dataset.form,
       data = new FormData(f),
       payload = {};
@@ -6066,7 +6089,7 @@ body.modal-open {
       }
       let file = data.get('attachment');
       if (file?.size && action === 'projectPhoto') file = await shrinkImage(file);
-      if (file?.size) payload.file = await S.fileMeta(file);else if (action === 'financeSubmit' && ui.scan?.stage === 'done') payload.file = ui.scan.meta ||= await S.fileMeta(ui.scan.file);
+      if (file?.size) payload.file = await within(S.fileMeta(file), 30000, 'Saving the file took too long. Check your connection and try again.');else if (action === 'financeSubmit' && ui.scan?.stage === 'done') payload.file = ui.scan.meta ||= await S.fileMeta(ui.scan.file);
       if (['submitProposal', 'caseSubmit', 'resubmit'].includes(action)) ui.tab = 'updates';
       if (action === 'headDecision' && payload.decision === 'approve') ui.tab = 'projects';
       await change(action, payload, token);
@@ -6075,6 +6098,7 @@ body.modal-open {
     } finally {
       ui.busy = false;
       submitButton.disabled = false;
+      submitButton.textContent = idleLabel;
     }
   });
   document.addEventListener('keydown', e => {
