@@ -49,7 +49,7 @@
   const badgeText = s => '<span class="badge">' + esc(s) + '</span>';
   const t = () => E.today();
   // The real school record carries a flag; the fictional rehearsal does not. Wording and the practice reader follow it.
-  const isLive = () => !!db()?.settings?.live;
+  const isLive = () => !!db()?.settings?.live || !!db()?.accounts?.length && db().accounts.every(a => !a.demo);
   const onRole = roles => roles.includes(me()?.role);
   const canChair = () => E.isChair(db(), me());
   const canPrint = () => onRole(E.printers);
