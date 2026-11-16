@@ -75,7 +75,11 @@
     reviseId: null,
     scan: null,
     prefill: '',
-    queue: false
+    queue: false,
+    back: '',
+    avatarUrl: '',
+    avatarFor: '',
+    avatarBusy: false
   };
   const smallWords = new Set(['a', 'an', 'and', 'as', 'at', 'but', 'by', 'for', 'from', 'in', 'nor', 'of', 'on', 'or', 'per', 'the', 'to', 'vs', 'with']);
   // Headings and sub-headings use title case. A word that already has a capital (SPTA, iPad) is left alone.
@@ -138,7 +142,11 @@
   }
   const para = s => s ? '<p class="wrap-lines">' + esc(s) + '</p>' : '';
   const actionCard = (label, act, ic, id = '') => '<button class="action-tile" data-do="' + esc(act) + '" data-id="' + esc(id) + '">' + icon(ic) + '<span>' + esc(titleCase(label)) + '</span>' + icon('chevron', 'sm') + '</button>';
-  const input = (name, title, value = '', type = 'text', attrs = 'required') => '<label>' + esc(title) + '<input type="' + type + '" name="' + esc(name) + '" value="' + esc(value) + '" ' + attrs + '></label>';
+  const input = (name, title, value = '', type = 'text', attrs = 'required') => {
+    const field = '<input type="' + type + '" name="' + esc(name) + '" value="' + esc(value) + '" ' + attrs + '>';
+    // A password field has an eye button to show or hide what was typed.
+    return '<label>' + esc(title) + (type === 'password' ? '<span class="pw-field">' + field + '<button type="button" class="pw-eye" data-do="pwToggle" aria-label="Show password" aria-pressed="false">' + icon('eye') + '</button></span>' : field) + '</label>';
+  };
   const area = (name, title, value = '', attrs = 'required') => '<label>' + esc(title) + '<textarea name="' + name + '" ' + attrs + '>' + esc(value) + '</textarea></label>';
   const opts = (pairs, selected = '') => pairs.map(item => {
     const [v, l] = Array.isArray(item) ? item : [item, item];
@@ -222,7 +230,7 @@
   const PRIVACY_VERSION = '2026-11';
   const PRIVACY = [
     ['Who we are', ['This app is run by the East Central Elementary School SPTA in San Fabian, Pangasinan, with the approval of the School Head. For any privacy question, ask the SPTA chairperson or the School Head’s office.']],
-    ['What we collect', ['Your name, mobile number, and your child’s grade and section. You may also list the name, grade and section of your other children. Only you can see that list.', 'What you send us: proposals, suggestions, private concerns and requests.', 'If you are an SPTA officer: your drawn signature, votes counted as results only, finance records, meeting minutes and photos of project work.', 'A code that identifies your phone, so one phone cannot create many accounts, and a sign-in cookie.']],
+    ['What we collect', ['Your name, mobile number, and your child’s grade and section. You may also list the name, grade and section of your other children. Only you can see that list.', 'What you send us: proposals, suggestions, private concerns and requests.', 'If you are an SPTA officer: your drawn signature, votes counted as results only, finance records, meeting minutes and photos of project work.', 'A code that identifies your phone, so one phone cannot create many accounts, and a sign-in cookie.', 'If you choose to add one, a profile picture. Only you can see it, and you can remove it at any time.']],
     ['Why we collect it', ['To run SPTA proposals, officer voting and fund reports openly, to answer what you send, and to keep records of officer decisions.']],
     ['Who can see it', ['Everyone can see approved projects, fund entries, announcements and signed resolutions. They do not show receipts, contributors’ names or your private messages.', 'Your private concern or suggestion goes only to the officer it is assigned to. Officers see only what their role needs.']],
     ['Children’s information', ['We ask only for the name, grade and section of your own children. Please do not upload photos that show pupils’ faces, names or uniforms.']],
@@ -236,18 +244,87 @@
   const shownPhotos = p => (p.photos || []).filter(x => photoState(x) === 'approved' || onRole(E.leaders));
   const findPhoto = key => db().projects.flatMap(p => p.photos || []).find(x => x.file.key === key);
   const photoImg = (ph, alt, cls = '') => '<img class="' + cls + '" alt="' + esc(alt) + '" data-photo="' + esc(ph.file.key) + '"' + (ui.photoUrls.get(ph.file.key) ? ' src="' + esc(ui.photoUrls.get(ph.file.key)) + '"' : '') + '>';
+  function goBack() {
+    ui.tab = ui.back || 'more';
+    ui.back = '';
+    ui.dialog = null;
+    ui.message = '';
+    render();
+    window.scrollTo(0, 0);
+  }
+  function clearAvatar() {
+    if (ui.avatarUrl) URL.revokeObjectURL(ui.avatarUrl);
+    ui.avatarUrl = '';
+    ui.avatarFor = '';
+  }
+  // The profile picture is fetched with the person's own sign-in, then kept as a local address for the header and account page.
+  async function loadAvatar() {
+    const a = me();
+    if (!S.shared || !a || a.guest || !a.avatar) {
+      if (ui.avatarUrl && (!a || a.guest || !a.avatar)) {
+        clearAvatar();
+        render();
+      }
+      return;
+    }
+    const want = a.id + ':' + a.avatar;
+    if (ui.avatarFor === want || ui.avatarLoading === want) return;
+    ui.avatarLoading = want;
+    try {
+      const url = await S.fileURL({ key: 'avatar-' + a.id });
+      clearAvatar();
+      ui.avatarUrl = url;
+      ui.avatarFor = want;
+    } catch (e) {
+      /* the icon stays */
+    } finally {
+      ui.avatarLoading = '';
+    }
+    if (ui.avatarFor === want) render();
+  }
+  // Crop to a centred square and shrink, so every picture is small and loads fast.
+  async function squarePicture(file, size = 320) {
+    if (!/^image\/(jpeg|png|webp|heic|heif)$/i.test(file.type || '') && !/\.(jpe?g|png|webp|heic|heif)$/i.test(file.name || '')) throw Error('Choose a JPG, PNG or WEBP picture.');
+    if (file.size > 15 * 1024 * 1024) throw Error('Choose a smaller picture.');
+    const bitmap = await createImageBitmap(file);
+    const side = Math.min(bitmap.width, bitmap.height),
+      canvas = document.createElement('canvas');
+    canvas.width = canvas.height = size;
+    canvas.getContext('2d').drawImage(bitmap, (bitmap.width - side) / 2, (bitmap.height - side) / 2, side, side, 0, 0, size, size);
+    if (bitmap.close) bitmap.close();
+    const blob = await new Promise(done => canvas.toBlob(done, 'image/jpeg', 0.86));
+    if (!blob) throw Error('That picture could not be read. Try another one.');
+    return blob;
+  }
   async function loadPhotos(scope = document) {
     if (typeof scope.querySelectorAll !== 'function') return;
-    for (const img of scope.querySelectorAll('img[data-photo]:not([src])')) {
-      const ph = findPhoto(img.dataset.photo);
-      if (!ph) continue;
-      try {
-        if (!ui.photoUrls.has(ph.file.key)) ui.photoUrls.set(ph.file.key, await S.fileURL(ph.file));
-        img.src = ui.photoUrls.get(ph.file.key);
-      } catch (e) {
-        img.alt = 'This photo could not be loaded.';
+    const imgs = [...scope.querySelectorAll('img[data-photo]:not([src])')],
+      pending = ui.photoPending || (ui.photoPending = new Map());
+    // One request per photo, even if it is on screen twice, and a few at a time instead of one after another.
+    const fetchOne = ph => {
+      const k = ph.file.key;
+      if (ui.photoUrls.has(k)) return Promise.resolve(ui.photoUrls.get(k));
+      if (!pending.has(k)) pending.set(k, S.fileURL(ph.file, true).then(u => {
+        ui.photoUrls.set(k, u);
+        return u;
+      }).finally(() => pending.delete(k)));
+      return pending.get(k);
+    };
+    let next = 0;
+    const worker = async () => {
+      while (next < imgs.length) {
+        const img = imgs[next++],
+          ph = findPhoto(img.dataset.photo);
+        if (!ph) continue;
+        try {
+          img.src = await fetchOne(ph);
+        } catch (e) {
+          img.alt = 'This photo could not be loaded.';
+          img.classList.add('failed');
+        }
       }
-    }
+    };
+    await Promise.all([worker(), worker(), worker()]);
   }
   // Wait for a step, but never forever. A step that stalls ends with a message instead of a silent button.
   const within = (promise, ms, message) => new Promise((resolve, reject) => {
@@ -351,6 +428,8 @@
     return db().announcements.filter(a => (a.audience === 'everyone' || me().role !== 'parent') && (publisher() || !ended(a)));
   }
   const primaryTabs = ['home','projects','funds','more'];
+  // A screen opened from More, or from the account icon, has a Back button and can be left with a swipe.
+  const isSub = t => t !== 'more' && !primaryTabs.includes(t);
   function mobileNav(choices) {
     const selected = primaryTabs.includes(ui.tab) ? ui.tab : 'more';
     return '<nav class="mobile-dock" aria-label="Main navigation">'+primaryTabs.map(key=>{
@@ -611,13 +690,16 @@
       requests = a.guest ? [] : db().requests.filter(q => q.user === a.id);
     const signIn = section('Sign in or create an account', signInPrompt('ECES Bayanihan is an East Central Elementary SPTA initiative. You are browsing as a guest. You can read projects, funds and announcements. Sign in to send a proposal, suggestion or private concern, or to work as an SPTA officer.'));
     const profile = section('My profile', card(a.name, (a.childName ? para('Student: ' + a.childName + ' · ' + a.homeroom) : para(a.homeroom)) + (a.role === 'bod' ? para(a.boardSeat ? 'Verified voting seat.' : 'Verified BOD review access.') : ''), E.roles[a.role], '', a.role === 'parent' && !a.demo && !requests.some(q => q.status === 'pending') ? btn('Request BOD role', 'dlg:requestRole') : '') + requests.map(q => card('BOD role request', para(q.homeroom) + para(q.reason), q.id, q.status, q.status === 'pending' ? btn('Withdraw request', 'dlg:withdrawRequest', q.id, 'danger') : '')).join('') + btn('Sign out', 'logout'));
+    const initials = String(a.name || '?').split(/\s+/).filter(Boolean).slice(0, 2).map(x => x[0]).join('').toUpperCase();
+    const havePic = a.avatar && ui.avatarUrl && ui.avatarFor === a.id + ':' + a.avatar;
+    const picture = a.guest || !S.shared ? '' : section('Profile picture', '<div class="avatar-row"><span class="avatar-big">' + (havePic ? '<img alt="Your profile picture" src="' + esc(ui.avatarUrl) + '">' : '<b>' + esc(initials) + '</b>') + '</span><div>' + para('Only you can see this picture. Please do not use a photo of a child.') + '<div class="entry-actions"><label class="btn primary file-btn' + (ui.avatarBusy ? ' disabled' : '') + '">' + icon('camera', 'sm') + (ui.avatarBusy ? 'Saving…' : a.avatar ? 'Change picture' : 'Choose a picture') + '<input type="file" id="avatar-file" accept="image/jpeg,image/png,image/webp" hidden' + (ui.avatarBusy ? ' disabled' : '') + '></label>' + (a.avatar ? btn('Remove picture', 'avatarRemove', '', 'danger') : '') + '</div></div></div>');
     const others = a.guest || a.demo ? [] : S.known().filter(x => x.id !== a.id);
     const kid = x => { const [nm, g, sec] = splitChild(x); return '<div class="list-line"><span>' + (nm ? '<b>' + esc(nm) + '</b><br>' : '') + esc(joinGrade(g, sec) || g || x) + '</span></div>'; };
     const children = a.guest ? '' : section(a.childName ? 'Other students' : 'My students', para(a.childName ? 'List your other students’ names, grades and sections. Only you can see this list.' : 'List your students’ names, grades and sections. Only you can see this list.') + ((a.children || []).map(kid).join('') || empty('None listed.')) + btn((a.children || []).length ? 'Edit list' : 'Add a student', 'dlg:children'));
     const phone = a.guest || a.demo ? '' : section('Switch account', others.map(x => '<div class="list-line"><span><b>' + esc(x.name) + '</b><small>' + esc(mask(x.login)) + '</small></span>' + btn('Switch', 'switchTo', x.login) + '</div>').join('') + (S.known().length < E.accountsPerDevice ? btn('Add another account', 'dlg:register') : ''));
     const cover = canChair() ? section('Stand in for an absent officer', para(standIn() ? 'You are standing in for the ' + E.roles[standIn()] + ' until ' + date(db().cover.until) + '. Reason: ' + db().cover.reason : 'When the secretary, treasurer or Collecting and Disbursing Officer is away, you can do their tasks for a set period. It is recorded in the audit trail.') + btn(standIn() ? 'Change or end' : 'Stand in for an officer', 'dlg:cover')) : '';
     const practice = S.shared ? '' : section('Practice mode', (db().legacy ? notice('Earlier fictional records are loaded. Reset demo starts the sample meeting and finance review.') : '') + practiceSelector() + btn('Reset demo', 'dlg:reset', '', 'danger'));
-    return (a.guest ? signIn : profile + children + phone + cover) + practice;
+    return (a.guest ? signIn : profile + picture + children + phone + cover) + practice;
   }
   function assignedCases() {
     const late = c => db().settings.reminders && c.status !== 'resolved' && c.due < t();
@@ -781,8 +863,8 @@
       b = db()?.ballots?.find(i => i.id === id),
       d = db()?.batches?.find(i => i.id === id);
     if (kind === 'needAccount') return ['Sign in to send', signInPrompt('Guests can read everything here. To send a proposal, suggestion or private concern, sign in with your mobile number so the SPTA knows it comes from an ECES parent.') + btn('Keep browsing as a guest', 'close', '', 'text')];
-    if (kind === 'login') return ['Sign in', (S.known().length ? '<div class="known-accounts"><small>Accounts on this phone</small>' + S.known().map(x => '<button type="button" class="known-account" data-do="switchTo" data-id="' + esc(x.login) + '"><b>' + esc(x.name) + '</b><span>' + esc(mask(x.login)) + '</span></button>').join('') + '</div>' : '') + form('login', input('login', 'Mobile number', ui.prefill || '', 'tel', 'required autocomplete="username" placeholder="0917 123 4567"') + input('password', 'Password', '', 'password', 'required autocomplete="current-password"'), 'Sign in') + '<div class="entry-actions">' + btn('Forgot password?', 'dlg:forgot', '', 'text') + btn('Create account', 'dlg:register', '', 'text') + '</div>'];
-    if (kind === 'forgot') return ['Reset your password', notice('This works on a phone you have signed in on before. On a new phone, ask an SPTA officer for help.') + form('reset', input('mobile', 'Mobile number', ui.prefill || '', 'tel', 'required autocomplete="username" placeholder="0917 123 4567"') + input('lastName', 'Last name', '', 'text', 'required maxlength="40" autocomplete="family-name"') + gradePair('homeroom', '', 'Your child’s grade and section, as you registered it') + input('password', 'New password (10 or more characters)', '', 'password', 'required minlength="10" maxlength="128" autocomplete="new-password"'), 'Save new password') + btn('Back to sign in', 'dlg:login', '', 'text')];
+    if (kind === 'login') return ['Sign in', (S.known().length ? '<div class="known-accounts"><small>Accounts on this phone</small>' + S.known().map(x => '<button type="button" class="known-account" data-do="switchTo" data-id="' + esc(x.login) + '"><b>' + esc(x.name) + '</b><span>' + esc(mask(x.login)) + '</span></button>').join('') + '</div>' : '') + form('login', input('login', 'Mobile number', ui.prefill || '', 'tel', 'required autocomplete="username" placeholder="09171234567"') + input('password', 'Password', '', 'password', 'required autocomplete="current-password"'), 'Sign in') + '<div class="entry-actions">' + btn('Forgot password?', 'dlg:forgot', '', 'text') + btn('Create account', 'dlg:register', '', 'text') + '</div>'];
+    if (kind === 'forgot') return ['Reset your password', notice('This works on a phone you have signed in on before. On a new phone, ask an SPTA officer for help.') + form('reset', input('mobile', 'Mobile number', ui.prefill || '', 'tel', 'required autocomplete="username" placeholder="09171234567"') + input('lastName', 'Last name', '', 'text', 'required maxlength="40" autocomplete="family-name"') + gradePair('homeroom', '', 'Your child’s grade and section, as you registered it') + input('password', 'New password (10 or more characters)', '', 'password', 'required minlength="10" maxlength="128" autocomplete="new-password"'), 'Save new password') + btn('Back to sign in', 'dlg:login', '', 'text')];
     if (kind === 'children') return [me().childName ? 'Other students' : 'My students', form('profileUpdate', '<div id="student-rows">' + (a.children || []).concat((a.children || []).length ? [] : ['']).map(x => studentRow(...splitChild(x))).join('') + '</div>' + btn('Add another student', 'addStudent', '', 'light', 'plus'), 'Save list')];
     if (kind === 'cover') return ['Stand in for an absent officer', notice('You do that officer’s tasks until the date you set. A fund record you send or check while standing in gets its final approval from the Vice-Chairperson, so two people still check every record.') + form('cover', select('enabled', 'What would you like to do?', [['yes', 'Stand in for an officer'], ['no', 'Stop standing in']], 'yes') + '<div data-when="enabled" data-values="yes">' + select('role', 'Officer who is away', E.coverRoles.map(r => [r, E.roles[r]]), standIn()) + input('until', 'Until', db().cover?.until || weekAhead(), 'date', 'required min="' + t() + '"') + input('reason', 'Reason', db().cover?.reason || '', 'text', 'required minlength="3" maxlength="150" placeholder="On leave"') + '</div>', 'Save')];
     if (kind === 'withdraw') {
@@ -797,8 +879,8 @@
       if (kind === 'announceRemove') return ['Remove announcement', '<h3>' + esc(titleCase(x.title)) + '</h3>' + notice('Removing takes it off every phone. It cannot be undone.') + form('announceRemove', ck('confirm', 'Yes, remove this announcement.', true), 'Remove', id)];
       return ['Edit announcement', form('announceEdit', input('title', 'Announcement title', x.title) + area('body', 'Complete message', x.body, 'required minlength="6" maxlength="1600"') + select('audience', 'Audience', [['everyone', 'All parents and officers'], ['officers', 'Officers only']], x.audience) + input('until', 'Show until (optional)', x.until || '', 'date', ''), 'Save changes', id)];
     }
-    if (kind === 'join') return ['Officer sign-up', para('Use the invite code the chairperson gave you. Choose your own mobile number and password. Nobody else will know your password.') + form('join', input('code', 'Invite code', '', 'text', 'required autocomplete="off" autocapitalize="characters" placeholder="XXXX-XXXX-XXXX"') + input('mobile', 'Mobile number', '', 'tel', 'required autocomplete="tel" placeholder="0917 123 4567"') + input('password', 'Password (10 or more characters)', '', 'password', 'required minlength="10" maxlength="128" autocomplete="new-password"') + '<details class="privacy-notice"><summary>Read the Privacy Notice</summary>' + privacyBody() + '</details>' + ck('consent', 'I have read the Privacy Notice. I agree that the SPTA may collect and use my information as described.', true), 'Set up my account')];
-    if (kind === 'register') return ['Create an account', (isLive() ? '' : notice('Use fictional details for this rehearsal.')) + form('register', '<div class="name-pair">' + input('firstName', 'First name', '', 'text', 'required maxlength="40" autocomplete="given-name"') + input('lastName', 'Last name', '', 'text', 'required maxlength="40" autocomplete="family-name"') + '</div>' + input('mobile', 'Mobile number', '', 'tel', 'required autocomplete="tel" placeholder="0917 123 4567"') + input('childName', 'Your child’s full name', '', 'text', 'required maxlength="80" autocomplete="off"') + gradePair('homeroom', '', 'Your child’s grade and section') + input('password', 'Password (10 or more characters)', '', 'password', 'required minlength="10" maxlength="128" autocomplete="new-password"') + ck('officer', 'I am the HPTA president of this section and I am requesting officer access.') + '<div class="entry-meta">Officer access starts after the School Head or chairperson checks the roster.</div><details class="privacy-notice"><summary>Read the Privacy Notice</summary>' + privacyBody() + '</details>' + ck('consent', 'I have read the Privacy Notice. I agree that the SPTA may collect and use my information, and my child’s grade and section, as described.', true), 'Create account')];
+    if (kind === 'join') return ['Officer sign-up', para('Use the invite code the chairperson gave you. Choose your own mobile number and password. Nobody else will know your password.') + form('join', input('code', 'Invite code', '', 'text', 'required autocomplete="off" autocapitalize="characters" placeholder="XXXX-XXXX-XXXX"') + input('mobile', 'Mobile number', '', 'tel', 'required autocomplete="tel" placeholder="09171234567"') + input('password', 'Password (10 or more characters)', '', 'password', 'required minlength="10" maxlength="128" autocomplete="new-password"') + '<details class="privacy-notice"><summary>Read the Privacy Notice</summary>' + privacyBody() + '</details>' + ck('consent', 'I have read the Privacy Notice. I agree that the SPTA may collect and use my information as described.', true), 'Set up my account')];
+    if (kind === 'register') return ['Create an account', (isLive() ? '' : notice('Use fictional details for this rehearsal.')) + form('register', '<div class="name-pair">' + input('firstName', 'First name', '', 'text', 'required maxlength="40" autocomplete="given-name"') + input('lastName', 'Last name', '', 'text', 'required maxlength="40" autocomplete="family-name"') + '</div>' + input('mobile', 'Mobile number', '', 'tel', 'required autocomplete="tel" placeholder="09171234567"') + input('childName', 'Your child’s full name', '', 'text', 'required maxlength="80" autocomplete="off"') + gradePair('homeroom', '', 'Your child’s grade and section') + input('password', 'Password (10 or more characters)', '', 'password', 'required minlength="10" maxlength="128" autocomplete="new-password"') + ck('officer', 'I am the HPTA president of this section and I am requesting officer access.') + '<div class="entry-meta">Officer access starts after the School Head or chairperson checks the roster.</div><details class="privacy-notice"><summary>Read the Privacy Notice</summary>' + privacyBody() + '</details>' + ck('consent', 'I have read the Privacy Notice. I agree that the SPTA may collect and use my information, and my child’s grade and section, as described.', true), 'Create account')];
     if (kind === 'privacy') return ['Privacy Notice', privacyBody()];
     if (!a) return ['Sign in', empty('Sign in to continue.')];
     if (kind === 'acting') {
@@ -932,7 +1014,8 @@
     });
   }
   function header() {
-    const accountButton=me()?'<button class="app-icon" data-do="tab:account" aria-label="'+(isGuest()?'Sign in':'My account')+'">'+icon('users')+'</button>':'';
+    const pic=me()&&!isGuest()&&me().avatar&&ui.avatarUrl&&ui.avatarFor===me().id+':'+me().avatar;
+    const accountButton=me()?'<button class="app-icon'+(pic?' has-photo':'')+'" data-do="tab:account" aria-label="'+(isGuest()?'Sign in':'My account')+'">'+(pic?'<img alt="" src="'+esc(ui.avatarUrl)+'">':icon('users'))+'</button>':'';
     const fil=ECESLang.lang==='fil';
     const language='<button type="button" class="lang-toggle" data-do="lang" aria-label="Change language"><span'+(fil?'':' class="on"')+'>EN</span><span'+(fil?' class="on"':'')+'>FIL</span></button>';
     return '<header class="mobile-bar"><div class="mobile-wordmark">'+seal+'<div><b>ECES Bayanihan</b><small><span class="tag-full">An East Central Elementary SPTA Initiative</span><span class="tag-short">An SPTA Initiative</span></small></div></div><div class="header-tools">'+language+accountButton+'</div></header>';
@@ -947,7 +1030,8 @@
       if(!choices.some(x=>x[0]===ui.tab))ui.tab='home';
       const title={home:'SPTA community',cases:{suggestion:'Suggestions raised',concern:'Private concerns'}[ui.caseFilter],projects:'SPTA projects',funds:'SPTA funds'}[ui.tab]||choices.find(x=>x[0]===ui.tab)[1];
       const topAction='';
-      const sectionHead='<div class="mobile-heading"><div><span>'+esc(roleName(a))+'</span><h1>'+esc(titleCase(title))+'</h1></div>'+topAction+'</div>';
+      const backButton=isSub(ui.tab)?'<button type="button" class="back-btn" data-do="back" aria-label="Back">'+icon('chevron','sm')+'<span>Back</span></button>':'';
+      const sectionHead=backButton+'<div class="mobile-heading"><div><span>'+esc(roleName(a))+'</span><h1>'+esc(titleCase(title))+'</h1></div>'+topAction+'</div>';
       html+='<main class="mobile-main">'+sectionHead+(!ui.dialog?renderFeedback():'')+'<div id="desk-content">'+sections[ui.tab]()+'</div></main>';
       html+=mobileNav(choices);
     }
@@ -967,6 +1051,7 @@
     updateConditions();
     ECESLang.apply(root);
     loadPhotos(root);
+    loadAvatar();
     document.body.classList.toggle('modal-open', !!ui.dialog || !!popup);
   }
   const success = {
@@ -1069,6 +1154,31 @@
       id = el.dataset.id || '';
     try {
       if (act === 'lang') return ECESLang.toggle();
+      if (act === 'back') return goBack();
+      if (act === 'pwToggle') {
+        const box = el.closest('.pw-field'),
+          field = box && box.querySelector('input');
+        if (!field) return;
+        const show = field.type === 'password';
+        field.type = show ? 'text' : 'password';
+        el.innerHTML = icon(show ? 'eyeOff' : 'eye');
+        el.setAttribute('aria-pressed', show ? 'true' : 'false');
+        el.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+        return;
+      }
+      if (act === 'avatarRemove') {
+        ui.avatarBusy = true;
+        render();
+        try {
+          await S.removeAvatar();
+          clearAvatar();
+          showMessage('Profile picture removed.');
+        } finally {
+          ui.avatarBusy = false;
+          render();
+        }
+        return;
+      }
       if (act === 'histfilter') {
         ui.historyFilter = id;
         return render();
@@ -1081,7 +1191,11 @@
       }
       if (act.startsWith('tab:')) {
         ui.queue = false;
-        ui.tab = act.slice(4);
+        const next = act.slice(4);
+        if (!isSub(next)) ui.back = '';
+        else if (next === 'account' || !isSub(ui.tab)) ui.back = ui.tab;
+        else ui.back = ui.back || 'more';
+        ui.tab = next;
         ui.caseFilter = ui.tab === 'cases' ? id : '';
         ui.dialog = null;
         ui.printId = null;
@@ -1280,6 +1394,21 @@
     }
   });
   document.addEventListener('change', ev => {
+    if (ev.target.id === 'avatar-file') {
+      const file = ev.target.files && ev.target.files[0];
+      ev.target.value = '';
+      if (!file) return;
+      ui.avatarBusy = true;
+      render();
+      squarePicture(file).then(blob => S.setAvatar(blob)).then(() => {
+        clearAvatar();
+        showMessage('Profile picture saved.');
+      }).catch(e => showMessage(e.message)).finally(() => {
+        ui.avatarBusy = false;
+        render();
+      });
+      return;
+    }
     if (ev.target.id === 'scan-file') {
       const file = ev.target.files?.[0];
       if (file) startScan(file).catch(e => showMessage(e.message));
@@ -1428,6 +1557,32 @@
     } catch (e) {
       showMessage(e.message);
     }
+  }
+  // A quick sideways swipe on a screen opened from More goes back. It ignores forms, sliders, photo strips and open dialogs.
+  if (typeof document.addEventListener === 'function') {
+    let swipe = null;
+    document.addEventListener('touchstart', ev => {
+      swipe = null;
+      if (ui.dialog || !me() || !isSub(ui.tab) || !ev.touches || ev.touches.length !== 1) return;
+      const t = ev.target;
+      if (t && t.closest && t.closest('input,textarea,select,[data-noswipe],.proj-photos,.portal-overlay')) return;
+      swipe = { x: ev.touches[0].clientX, y: ev.touches[0].clientY, at: Date.now() };
+    }, { passive: true });
+    document.addEventListener('touchmove', ev => {
+      if (swipe && ev.touches && ev.touches[0]) {
+        swipe.lx = ev.touches[0].clientX;
+        swipe.ly = ev.touches[0].clientY;
+      }
+    }, { passive: true });
+    document.addEventListener('touchend', ev => {
+      if (!swipe) return;
+      const end = ev.changedTouches && ev.changedTouches[0] ? { x: ev.changedTouches[0].clientX, y: ev.changedTouches[0].clientY } : { x: swipe.lx ?? swipe.x, y: swipe.ly ?? swipe.y };
+      const dx = end.x - swipe.x,
+        dy = end.y - swipe.y,
+        fast = Date.now() - swipe.at < 700;
+      swipe = null;
+      if (fast && Math.abs(dx) >= 90 && Math.abs(dy) <= 45 && Math.abs(dx) > 2.2 * Math.abs(dy)) goBack();
+    }, { passive: true });
   }
   S.notice.addEventListener('message', refresh);
   window.addEventListener('focus', refresh);

@@ -451,10 +451,39 @@
     await finished;
     return meta;
   }
-  async function fileURL(meta) {
+  // A profile picture, already cropped and shrunk to a small JPEG. Only the owner can read it back.
+  async function setAvatar(blob) {
+    if (!shared) throw Error('Profile pictures are available in the live app.');
+    const res = await fetch(endpoint('avatar'), {
+      method: 'POST',
+      credentials: apiBase ? 'omit' : 'same-origin',
+      headers: liveHeaders({
+        'Content-Type': blob.type
+      }),
+      body: blob
+    });
+    const data = await res.json();
+    if (!res.ok) throw Error(data.error || 'The picture could not be saved.');
+    await refresh();
+    return data;
+  }
+  async function removeAvatar() {
+    const res = await fetch(endpoint('avatar-remove'), {
+      method: 'POST',
+      credentials: apiBase ? 'omit' : 'same-origin',
+      headers: liveHeaders({}),
+      body: ''
+    });
+    const data = await res.json();
+    if (!res.ok) throw Error(data.error || 'The picture could not be removed.');
+    await refresh();
+    return data;
+  }
+  // keep: a public project photo may be remembered by the phone, because each photo has its own one-time key.
+  async function fileURL(meta, keep = false) {
     if (shared) {
       const r = await fetch(endpoint('files/' + encodeURIComponent(meta.key)), {
-        cache: 'no-store',
+        cache: keep ? 'default' : 'no-store',
         credentials: apiBase ? 'omit' : 'same-origin',
         headers: liveHeaders()
       });
@@ -516,6 +545,8 @@
     practiceBallots,
     fileMeta,
     fileURL,
+    setAvatar,
+    removeAvatar,
     printRecord,
     reset,
     random,

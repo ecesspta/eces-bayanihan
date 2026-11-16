@@ -71,6 +71,9 @@ function postgresStore(sql) {
     async putFile(id, owner, name, mime, data) {
       await q`insert into files (id, owner, name, mime, data) values (${id}, ${owner}, ${name}, ${mime}, ${data})`;
     },
+    async delFile(id) {
+      await q`delete from files where id = ${id}`;
+    },
     async seen(hash, stamp) {
       return (await q`select 1 from evidence_views where session_hash = ${hash} and stamp = ${stamp}`).length > 0;
     },

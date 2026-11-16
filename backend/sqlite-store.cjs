@@ -52,6 +52,9 @@ function sqliteStore(file = ':memory:') {
     async putFile(id, owner, name, mime, data) {
       sql.prepare('INSERT INTO files VALUES(?,?,?,?,?)').run(id, owner, name, mime, data);
     },
+    async delFile(id) {
+      sql.prepare('DELETE FROM files WHERE id=?').run(id);
+    },
     async seen(hash, stamp) {
       return !!sql.prepare('SELECT 1 FROM evidence_views WHERE session_hash=? AND stamp=?').get(hash, stamp);
     },

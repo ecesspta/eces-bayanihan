@@ -951,3 +951,27 @@ body.modal-open {
 .privacy-notice summary{cursor:pointer;font-weight:700;color:var(--deep,#12294d)}
 .privacy-notice h4,.portal-modal h4{margin:14px 0 4px;color:var(--deep,#12294d)}
 .privacy-notice p,.portal-modal .modal-inner h4+p{margin:0 0 6px}
+
+/* Password eye, lighter sample text, Back button, profile picture */
+input::placeholder,textarea::placeholder {color:#a9b3c7;opacity:1}
+.pw-field {position:relative;display:block}
+.pw-field input {padding-right:52px}
+.pw-eye {position:absolute;right:4px;top:50%;transform:translateY(-50%);width:44px;height:44px;border:0;background:transparent;color:#51607f;display:grid;place-items:center;border-radius:10px;cursor:pointer}
+.pw-eye .icon {width:22px;height:22px}
+.pw-eye[aria-pressed="true"] {color:var(--deep)}
+.back-btn {display:inline-flex;align-items:center;gap:4px;margin:0 0 10px -6px;padding:8px 14px 8px 8px;border:0;background:transparent;color:var(--deep);font:inherit;font-weight:700;font-size:16px;border-radius:999px;cursor:pointer}
+.back-btn .icon {width:20px;height:20px;transform:rotate(180deg)}
+.app-icon.has-photo {padding:0;overflow:hidden}
+.app-icon.has-photo img {width:100%;height:100%;object-fit:cover;display:block}
+.avatar-row {display:flex;gap:16px;align-items:center}
+.avatar-big {flex:none;width:84px;height:84px;border-radius:50%;overflow:hidden;background:#14264f;color:#f2c44d;display:grid;place-items:center;font-size:28px}
+.avatar-big img {width:100%;height:100%;object-fit:cover;display:block}
+.file-btn {cursor:pointer}
+.file-btn.disabled {opacity:.6;pointer-events:none}
+
+/* A photo that has not arrived yet is a soft placeholder, not a broken-image icon */
+img[data-photo]:not([src]) {visibility:hidden}
+img[data-photo].failed {visibility:visible}
+.proj-photo {background:linear-gradient(110deg,#e6ecf4 30%,#f3f6fa 50%,#e6ecf4 70%);background-size:200% 100%;animation:photo-wait 1.4s linear infinite}
+@keyframes photo-wait {to {background-position:-200% 0}}
+@media (prefers-reduced-motion:reduce) {.proj-photo {animation:none}}

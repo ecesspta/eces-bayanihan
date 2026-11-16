@@ -96,7 +96,7 @@
   function mobileNumber(value) {
     const digits = String(value ?? '').replace(/[\s().-]/g, '');
     const m = /^(?:\+?63|0)(9\d{9})$/.exec(digits);
-    check(m, 'Enter a mobile number such as 0917 123 4567.');
+    check(m, 'Enter a mobile number such as 09171234567.');
     return '0' + m[1];
   }
   // What a person types in the sign-in box: a mobile number, or an officer handle from the rehearsal.

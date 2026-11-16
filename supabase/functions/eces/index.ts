@@ -157,7 +157,7 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
   function mobileNumber(value) {
     const digits = String(value ?? '').replace(/[\s().-]/g, '');
     const m = /^(?:\+?63|0)(9\d{9})$/.exec(digits);
-    check(m, 'Enter a mobile number such as 0917 123 4567.');
+    check(m, 'Enter a mobile number such as 09171234567.');
     return '0' + m[1];
   }
   // What a person types in the sign-in box: a mobile number, or an officer handle from the rehearsal.
@@ -2188,9 +2188,10 @@ function visible(db, me) {
   };
   const governance = board || me.role === 'head';
   const verifier = ['head', 'chair'].includes(me.role);
-  out.accounts = (governance ? db.accounts.filter(x => x.active && (!x.vacant || verifier) && (E.boardRoles.includes(x.role) || lead && x.role === 'head' || x.id === me.id || verifier && x.endedAt && !x.claimed)) : []).map(safeAccount);
+  out.accounts = (governance ? db.accounts.filter(x => x.active && (!x.vacant || verifier) && (E.boardRoles.includes(x.role) || lead && x.role === 'head' || x.id === me.id || verifier && x.endedAt && !x.claimed)) : []).map(x => x.id === me.id ? { ...safeAccount(x), avatar: x.avatar } : safeAccount(x));
   if (!me.guest && !out.accounts.some(x => x.id === me.id)) out.accounts.push({
     ...safeAccount(me),
+    avatar: me.avatar,
     login: me.login
   });
   // A parent's child's name, and the note of their other children, are shown only to that parent.
@@ -2390,6 +2391,8 @@ function createApi(store, config = {}) {
   async function canReadFile(db, me, key, tx) {
     if (db.projects.some(p => (p.photos || []).some(x => x.file.key === key && (x.status || 'approved') === 'approved'))) return true;
     if (!me) return false;
+    // A profile picture is seen only by the person it belongs to.
+    if (key === 'avatar-' + me.id) return true;
     if (E.leaders.includes(me.role) && db.projects.some(p => (p.photos || []).some(x => x.file.key === key))) return true;
     const finance = E.isChair(db, me) || me.role === 'treasurer';
     const holds = d => d.file?.key === key || d.history.some(h => h.file?.key === key);
@@ -2616,6 +2619,9 @@ function createApi(store, config = {}) {
           }
           out.headers['Content-Security-Policy'] = "sandbox; default-src 'none'";
           out.headers['Content-Type'] = f.mime;
+          // An approved project photo never changes under its key, so the phone may keep it. Everything else is private and not stored.
+          const publicPhoto = db.projects.some(p => (p.photos || []).some(x => x.file.key === key && (x.status || 'approved') === 'approved'));
+          out.headers['Cache-Control'] = publicPhoto ? 'private, max-age=31536000, immutable' : 'private, no-store';
           out.body = Buffer.from(f.data);
           return out;
         }
@@ -2625,6 +2631,31 @@ function createApi(store, config = {}) {
       if (!cfg.originOk(req)) throw new HttpError(403, 'Cross-site request denied.');
       const body = req.body || Buffer.alloc(0);
       if (body.length > 8 * 1024 * 1024 + 1) throw new HttpError(413, 'File or request too large.');
+      if (route === '/api/avatar' || route === '/api/avatar-remove') {
+        if (!me || me.guest) throw new HttpError(403, 'Sign in to change your profile picture.');
+        await brake('avatar:' + me.id, 20, 3600000, 'Too many picture changes. Try again in an hour.');
+        const key = 'avatar-' + me.id;
+        let stamp = 0;
+        if (route === '/api/avatar') {
+          if (body.length > 400 * 1024) throw new HttpError(413, 'Choose a smaller picture.');
+          const sig = h => body.subarray(0, h.length / 2).equals(Buffer.from(h, 'hex'));
+          const type = sig('89504e470d0a1a0a') ? 'image/png' : sig('ffd8ff') ? 'image/jpeg' : sig('52494646') && body.subarray(8, 12).toString() === 'WEBP' ? 'image/webp' : '';
+          if (!type || header(req, 'content-type') !== type) throw new HttpError(400, 'Choose a JPG, PNG or WEBP picture.');
+          await store.delFile(key);
+          await store.putFile(key, me.id, 'profile-picture', type, body);
+          stamp = Date.now();
+        } else {
+          await store.delFile(key);
+        }
+        const fresh = await store.atomic(async tx => {
+          const d = await tx.load();
+          const acc = E.account(d, me.id);
+          if (acc) acc.avatar = stamp;
+          await tx.save(d);
+          return d;
+        });
+        return send(200, { avatar: stamp });
+      }
       if (route === '/api/files') {
         if (!me || !['secretary', 'treasurer', 'collector', ...E.leaders].includes(me.role)) throw new HttpError(403, 'This role cannot upload records.');
         if (body.length > 8 * 1024 * 1024) throw new HttpError(413, 'File or request too large.');
@@ -2860,6 +2891,9 @@ function postgresStore(sql) {
     },
     async putFile(id, owner, name, mime, data) {
       await q`insert into files (id, owner, name, mime, data) values (${id}, ${owner}, ${name}, ${mime}, ${data})`;
+    },
+    async delFile(id) {
+      await q`delete from files where id = ${id}`;
     },
     async seen(hash, stamp) {
       return (await q`select 1 from evidence_views where session_hash = ${hash} and stamp = ${stamp}`).length > 0;
