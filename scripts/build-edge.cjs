@@ -20,6 +20,7 @@ const imports = entry.split('\n').filter(l => /^import /.test(l));
 out += imports.join('\n') + '\n';
 out += "import { randomBytes as __rb, createHash as __ch, scryptSync as __sc, timingSafeEqual as __te } from 'node:crypto';\n";
 out += 'globalThis.Buffer = Buffer;\n';
+out += 'globalThis.__SAMPLE_SHEET = ' + JSON.stringify(fs.readFileSync(path.join(root, 'dist/assets/sample-collection-sheet.pdf')).toString('base64')) + ';\n';
 out += 'const __defs = {};\nconst __cache = {};\n';
 out += "const require = id => { const k = __alias[id] || id; if (k === 'node:crypto') return { randomBytes: __rb, createHash: __ch, scryptSync: __sc, timingSafeEqual: __te }; if (!__cache[k]) { const m = { exports: {} }; __cache[k] = m; __defs[k](m, m.exports, require); } return __cache[k].exports; };\n";
 out += 'const __alias = ' + JSON.stringify({

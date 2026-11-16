@@ -14,6 +14,8 @@ const sql = postgres(env('SUPABASE_DB_URL'), { max: 3, prepare: false, idle_time
 const api = createApi(postgresStore(sql), {
   cookies: false,
   adminKey: env('ADMIN_KEY'),
+  // The fictional sample collection sheet that the rehearsal records point to. Filled in when the file is bundled.
+  sampleSheet: () => globalThis.__SAMPLE_SHEET ? Buffer.from(globalThis.__SAMPLE_SHEET, 'base64') : null,
   originOk: req => !req.headers.origin || origins.includes(req.headers.origin)
 });
 

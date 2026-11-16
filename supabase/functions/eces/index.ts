@@ -4,6 +4,7 @@ import postgres from 'npm:postgres@3.4.4';
 import { Buffer } from 'node:buffer';
 import { randomBytes as __rb, createHash as __ch, scryptSync as __sc, timingSafeEqual as __te } from 'node:crypto';
 globalThis.Buffer = Buffer;
+globalThis.__SAMPLE_SHEET = "JVBERi0xLjMKJZOMi54gUmVwb3J0TGFiIEdlbmVyYXRlZCBQREYgZG9jdW1lbnQgKG9wZW5zb3VyY2UpCjEgMCBvYmoKPDwKL0YxIDIgMCBSIC9GMiAzIDAgUgo+PgplbmRvYmoKMiAwIG9iago8PAovQmFzZUZvbnQgL0hlbHZldGljYSAvRW5jb2RpbmcgL1dpbkFuc2lFbmNvZGluZyAvTmFtZSAvRjEgL1N1YnR5cGUgL1R5cGUxIC9UeXBlIC9Gb250Cj4+CmVuZG9iagozIDAgb2JqCjw8Ci9CYXNlRm9udCAvSGVsdmV0aWNhLUJvbGQgL0VuY29kaW5nIC9XaW5BbnNpRW5jb2RpbmcgL05hbWUgL0YyIC9TdWJ0eXBlIC9UeXBlMSAvVHlwZSAvRm9udAo+PgplbmRvYmoKNCAwIG9iago8PAovQ29udGVudHMgOCAwIFIgL01lZGlhQm94IFsgMCAwIDQwMCAzMjAgXSAvUGFyZW50IDcgMCBSIC9SZXNvdXJjZXMgPDwKL0ZvbnQgMSAwIFIgL1Byb2NTZXQgWyAvUERGIC9UZXh0IC9JbWFnZUIgL0ltYWdlQyAvSW1hZ2VJIF0KPj4gL1JvdGF0ZSAwIC9UcmFucyA8PAoKPj4gCiAgL1R5cGUgL1BhZ2UKPj4KZW5kb2JqCjUgMCBvYmoKPDwKL1BhZ2VNb2RlIC9Vc2VOb25lIC9QYWdlcyA3IDAgUiAvVHlwZSAvQ2F0YWxvZwo+PgplbmRvYmoKNiAwIG9iago8PAovQXV0aG9yIChhbm9ueW1vdXMpIC9DcmVhdGlvbkRhdGUgKEQ6MjAyNjExMTQwNzUyMzktMDUnMDAnKSAvQ3JlYXRvciAoYW5vbnltb3VzKSAvS2V5d29yZHMgKCkgL01vZERhdGUgKEQ6MjAyNjExMTQwNzUyMzktMDUnMDAnKSAvUHJvZHVjZXIgKFJlcG9ydExhYiBQREYgTGlicmFyeSAtIFwob3BlbnNvdXJjZVwpKSAKICAvU3ViamVjdCAodW5zcGVjaWZpZWQpIC9UaXRsZSAodW50aXRsZWQpIC9UcmFwcGVkIC9GYWxzZQo+PgplbmRvYmoKNyAwIG9iago8PAovQ291bnQgMSAvS2lkcyBbIDQgMCBSIF0gL1R5cGUgL1BhZ2VzCj4+CmVuZG9iago4IDAgb2JqCjw8Ci9GaWx0ZXIgWyAvQVNDSUk4NURlY29kZSAvRmxhdGVEZWNvZGUgXSAvTGVuZ3RoIDMxNwo+PgpzdHJlYW0KR2Fybzw+dGAnaChrcUdRLydhdUtYJUJgc2ZVWConPzsrRVdsb3FqckJkP0RGT3BfKlxWS0dFNTktQjt1Y11jOSpALVIxTi9tSTciaWJtKVkiXzgoVmNJUydebSxWWCIiYUU1bEprXjw4OzI+WkxUKDNYdUhYMCwuWD4yMnAwZjInKilQVkhjcSREPzxYOE4hdVdILEJhUSNCV2MtWDUiNzpWMnRSbydwcywxPDBAalZCIWNMbWM3JltVW2klM25pa1UvZEhjakIta3A4clNtUFVqXSUwaXNCTTIxKDk7WDp1azVxLFdgYFU3NV1PRTBWYE9ma0g2X0gpPCVIVUdLTzRZI2Q3VlViQiVyJUVwVFBgb0A5XEkoPnJASWoyOm9kV2QxUWowKTUkOSpbTUZzP2xWNlRlIilNITRqfj5lbmRzdHJlYW0KZW5kb2JqCnhyZWYKMCA5CjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDA2MSAwMDAwMCBuIAowMDAwMDAwMTAyIDAwMDAwIG4gCjAwMDAwMDAyMDkgMDAwMDAgbiAKMDAwMDAwMDMyMSAwMDAwMCBuIAowMDAwMDAwNTE0IDAwMDAwIG4gCjAwMDAwMDA1ODIgMDAwMDAgbiAKMDAwMDAwMDg0MyAwMDAwMCBuIAowMDAwMDAwOTAyIDAwMDAwIG4gCnRyYWlsZXIKPDwKL0lEIApbPDQ3YWM0M2M4MTU2NmRlY2EwZjlmZTYxNjRkZjYyNGNiPjw0N2FjNDNjODE1NjZkZWNhMGY5ZmU2MTY0ZGY2MjRjYj5dCiUgUmVwb3J0TGFiIGdlbmVyYXRlZCBQREYgZG9jdW1lbnQgLS0gZGlnZXN0IChvcGVuc291cmNlKQoKL0luZm8gNiAwIFIKL1Jvb3QgNSAwIFIKL1NpemUgOQo+PgpzdGFydHhyZWYKMTMwOQolJUVPRgo=";
 const __defs = {};
 const __cache = {};
 const require = id => { const k = __alias[id] || id; if (k === 'node:crypto') return { randomBytes: __rb, createHash: __ch, scryptSync: __sc, timingSafeEqual: __te }; if (!__cache[k]) { const m = { exports: {} }; __cache[k] = m; __defs[k](m, m.exports, require); } return __cache[k].exports; };
@@ -2578,6 +2579,8 @@ const sql = postgres(env('SUPABASE_DB_URL'), { max: 3, prepare: false, idle_time
 const api = createApi(postgresStore(sql), {
   cookies: false,
   adminKey: env('ADMIN_KEY'),
+  // The fictional sample collection sheet that the rehearsal records point to. Filled in when the file is bundled.
+  sampleSheet: () => globalThis.__SAMPLE_SHEET ? Buffer.from(globalThis.__SAMPLE_SHEET, 'base64') : null,
   originOk: req => !req.headers.origin || origins.includes(req.headers.origin)
 });
 
