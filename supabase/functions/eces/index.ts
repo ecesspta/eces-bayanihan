@@ -519,7 +519,7 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
   function addPastProject(db, v) {
     const title = words(v.title, 'Project title', 4, 100),
       text = words(v.text, 'Project description', 8, 700),
-      sponsor = words(v.sponsor, 'Who paid for it', 2, 75),
+      sponsor = words(v.sponsor, 'Who paid for it', 0, 75),
       done = String(v.date || '');
     check(/^\d{4}-\d{2}-\d{2}$/.test(done) && !Number.isNaN(Date.parse(done)), 'Enter the date it was completed.');
     const id = newId(db, 'PR');
