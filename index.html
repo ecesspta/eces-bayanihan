@@ -1017,11 +1017,17 @@ body.modal-open {
 
 /* Language switch */
 .header-tools{display:flex;align-items:center;gap:8px;flex:none}
-.lang-toggle{display:inline-flex;align-items:center;height:44px;padding:3px;border:1px solid var(--stroke);border-radius:22px;background:#fff;color:var(--deep);font:inherit;font-size:.72rem;font-weight:700;letter-spacing:.02em;cursor:pointer}
-.lang-toggle span{display:grid;place-items:center;min-width:32px;height:36px;padding:0 4px;border-radius:18px;color:var(--muted,#5a6578)}
+.lang-toggle{display:inline-flex;align-items:center;height:34px;padding:2px;border:1px solid var(--stroke);border-radius:17px;background:#fff;color:var(--deep);font:inherit;font-size:.66rem;font-weight:700;letter-spacing:.02em;cursor:pointer}
+.lang-toggle span{display:grid;place-items:center;min-width:27px;height:28px;padding:0 3px;border-radius:14px;color:var(--muted,#5a6578)}
 /* With the language switch beside it, let the tagline wrap to two lines instead of being cut off */
 @media (max-width:430px){.mobile-wordmark small{white-space:normal;line-height:1.2;overflow:visible;text-overflow:clip}.header-tools{gap:6px}}
 .lang-toggle span.on{background:var(--deep);color:#fff}
+/* Project photos */
+.proj-photos{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0 4px}
+.proj-photo{position:relative;display:block;padding:0;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#e6ecf4;aspect-ratio:4/3;cursor:pointer}
+.proj-photo img{display:block;width:100%;height:100%;object-fit:cover}
+.proj-photo .more{position:absolute;inset:0;display:grid;place-items:center;background:rgba(16,42,77,.62);color:#fff;font-weight:700;font-size:1.1rem}
+.photo-caption{margin:12px 0 4px}
 
 </style>
       <link rel="manifest" href="manifest.webmanifest" />
@@ -2126,7 +2132,31 @@ body.modal-open {
  "Signatures": "Mga Lagda",
  "Drawn signature": "Iginuhit na lagda",
  "Fictional filing record": "Kathang-isip na talaan ng pag-file",
- "Credit note": "Credit note"
+ "Credit note": "Credit note",
+ "Add photo": "Magdagdag ng larawan",
+ "Add a photo": "Magdagdag ng larawan",
+ "Project photo": "Larawan ng proyekto",
+ "Photos of this project": "Mga larawan ng proyektong ito",
+ "Previous": "Nakaraan",
+ "Completed project": "Natapos na proyekto",
+ "This photo could not be loaded.": "Hindi ma-load ang larawang ito.",
+ "This photo is no longer available.": "Hindi na available ang larawang ito.",
+ "This project is no longer available.": "Hindi na available ang proyektong ito.",
+ "Everyone who opens the app can see this photo. Show the work, such as the shelves, the paint or the garden. Please keep pupils’ faces, names and uniforms out of the picture.": "Makikita ng sinumang magbubukas ng app ang larawang ito. Ipakita ang gawa, tulad ng mga istante, pintura o hardin. Huwag isama sa larawan ang mukha, pangalan o uniporme ng mga mag-aaral.",
+ "Photo (JPG, PNG or WEBP)": "Larawan (JPG, PNG o WEBP)",
+ "What does the photo show?": "Ano ang ipinapakita ng larawan?",
+ "Books on the new shelves": "Mga aklat sa bagong istante",
+ "Publish photo": "I-publish ang larawan",
+ "Remove photo": "Alisin ang larawan",
+ "Photo published on the project.": "Nailathala na ang larawan sa proyekto.",
+ "Photo removed.": "Naalis na ang larawan.",
+ "Photos can be added to ongoing or completed projects.": "Maaaring magdagdag ng larawan sa mga proyektong ginagawa o natapos na.",
+ "A project can show up to 8 photos. Remove one first.": "Hanggang 8 larawan ang maaaring ipakita ng isang proyekto. Mag-alis muna ng isa.",
+ "Choose a JPG, PNG or WEBP photo.": "Pumili ng larawang JPG, PNG o WEBP.",
+ "That photo is no longer on this project.": "Wala na ang larawang iyon sa proyektong ito.",
+ "Photo caption must be 3–140 characters.": "Ang paglalarawan ng larawan ay dapat 3–140 na karakter.",
+ "Project photo added": "Nagdagdag ng larawan sa proyekto",
+ "Project photo removed": "Nag-alis ng larawan sa proyekto"
 },
     rules: [
       [/^East Central Elementary School SPTA · (.+)$/, "SPTA ng East Central Elementary School · {1}"],
@@ -2251,6 +2281,8 @@ body.modal-open {
       [/^Purpose changed from “(.+)” on (.+?), after a new officer vote and the School Head’s approval\. Allocation (₱[\d,\.]+)\. (.+)$/, "Binago ang layunin mula sa “{1}” noong {2}, matapos ang bagong boto ng mga opisyal at pag-apruba ng Punong Guro. Alokasyon {3}. {4}"],
       [/^(\d+) days ago$/, "{1} araw na ang nakalipas"],
       [/^Sample HPTA President (\d+)$/, "Halimbawang Pangulo ng HPTA {1}"],
+      [/^Photo (\d+) of (\d+)$/, "Larawan {1} ng {2}"],
+      [/^Open photo: (.+)$/, "Buksan ang larawan: {1}"],
       [/^Sample (.+)$/, "Halimbawang {1}"]
     ]
   };
@@ -3544,6 +3576,40 @@ body.modal-open {
           changed('Project update published');
           break;
         }
+      case 'projectPhoto':
+        {
+          // Officers show parents the real work. Photos are public, so only images are accepted, never PDFs.
+          allows(a, leaders);
+          const p = get(db.projects, id);
+          check(['approved', 'in_progress', 'completed'].includes(p.status), 'Photos can be added to ongoing or completed projects.');
+          p.photos = p.photos || [];
+          check(p.photos.length < 8, 'A project can show up to 8 photos. Remove one first.');
+          const file = photo(v.file);
+          check(file.type !== 'application/pdf', 'Choose a JPG, PNG or WEBP photo.');
+          const n = p.photos.reduce((m, x) => Math.max(m, Number(String(x.id).slice(3)) || 0), 0) + 1;
+          p.photos.push({
+            id: 'PH-' + n,
+            file,
+            caption: words(v.caption, 'Photo caption', 3, 140),
+            stage: p.status === 'completed' ? 'completed' : 'in_progress',
+            by: a.id,
+            date: today()
+          });
+          p.changed = today();
+          changed('Project photo added');
+          break;
+        }
+      case 'projectPhotoRemove':
+        {
+          allows(a, leaders);
+          const p = get(db.projects, id);
+          const before = (p.photos || []).length;
+          p.photos = (p.photos || []).filter(x => x.id !== v.photo);
+          check(p.photos.length < before, 'That photo is no longer on this project.');
+          p.changed = today();
+          changed('Project photo removed');
+          break;
+        }
       case 'amendProject':
         {
           // A change to an approved project. What the officers voted on stays fixed unless they vote again.
@@ -4801,6 +4867,7 @@ body.modal-open {
     rows: 1,
     reviewed: new Set(),
     attachment: null,
+    photoUrls: new Map(),
     printId: null,
     reviseId: null,
     scan: null,
@@ -4890,6 +4957,7 @@ body.modal-open {
   const select = (name, title, options, selected = '', attrs = '') => '<label>' + esc(title) + '<select name="' + name + '" ' + attrs + '>' + opts(options, selected) + '</select></label>';
   const ck = (name, label, required = false, checked = false) => '<label class="tick"><input type="checkbox" name="' + name + '" ' + (required ? 'required ' : '') + (checked ? 'checked' : '') + '><span>' + esc(label) + '</span></label>';
   const upload = (label, required = true) => '<label>' + esc(label) + '<input type="file" name="attachment" accept="image/jpeg,image/png,image/webp,application/pdf" ' + (required ? 'required' : '') + '></label>';
+  const imageUpload = label => '<label>' + esc(label) + '<input type="file" name="attachment" accept="image/jpeg,image/png,image/webp" required></label>';
   const submit = lbl => '<button type="submit" class="btn primary">' + esc(lbl) + '</button>';
   const form = (action, body, label, id = '') => '<form class="portal-form" data-form="' + action + '" data-id="' + esc(id) + '">' + body + '<div class="form-end">' + submit(label) + '</div></form>';
   // Funding check against the SPTA pool: green when available funds cover it, red when fundraising is needed.
@@ -4938,6 +5006,59 @@ body.modal-open {
     });
     return lines.length ? '<div class="change-log"><b>Changes</b>' + lines.map(x => '<p>' + esc(x) + '</p>').join('') + '</div>' : '';
   }
+  // Public project photos. The picture itself loads after the page is drawn, then stays ready for later redraws.
+  const findPhoto = key => db().projects.flatMap(p => p.photos || []).find(x => x.file.key === key);
+  const photoImg = (ph, alt, cls = '') => '<img class="' + cls + '" alt="' + esc(alt) + '" data-photo="' + esc(ph.file.key) + '"' + (ui.photoUrls.get(ph.file.key) ? ' src="' + esc(ui.photoUrls.get(ph.file.key)) + '"' : '') + '>';
+  async function loadPhotos(scope = document) {
+    if (typeof scope.querySelectorAll !== 'function') return;
+    for (const img of scope.querySelectorAll('img[data-photo]:not([src])')) {
+      const ph = findPhoto(img.dataset.photo);
+      if (!ph) continue;
+      try {
+        if (!ui.photoUrls.has(ph.file.key)) ui.photoUrls.set(ph.file.key, await S.fileURL(ph.file));
+        img.src = ui.photoUrls.get(ph.file.key);
+      } catch (e) {
+        img.alt = 'This photo could not be loaded.';
+      }
+    }
+  }
+  // Re-draw the photo as a JPEG of at most 1600 pixels. This also drops any location or camera details stored inside the original.
+  async function shrinkImage(file) {
+    try {
+      const bmp = await createImageBitmap(file, {imageOrientation: 'from-image'});
+      const scale = Math.min(1, 1600 / Math.max(bmp.width, bmp.height)),
+        canvas = document.createElement('canvas');
+      canvas.width = Math.round(bmp.width * scale);
+      canvas.height = Math.round(bmp.height * scale);
+      canvas.getContext('2d').drawImage(bmp, 0, 0, canvas.width, canvas.height);
+      const blob = await new Promise(done => canvas.toBlob(done, 'image/jpeg', 0.85));
+      return blob ? new File([blob], file.name.replace(/\.[^.]+$/, '') + '.jpg', {type: 'image/jpeg'}) : file;
+    } catch (e) {
+      return file;
+    }
+  }
+  function photoStrip(p) {
+    const list = p.photos || [];
+    if (!list.length) return '';
+    const shown = list.slice(0, 3);
+    return '<div class="proj-photos" aria-label="Photos of this project">' + shown.map((ph, i) => '<button type="button" class="proj-photo" data-do="dlg:photo" data-id="' + esc(p.id + '|' + ph.id) + '" aria-label="' + esc('Open photo: ' + ph.caption) + '">' + photoImg(ph, ph.caption) + (i === 2 && list.length > 3 ? '<span class="more">+' + (list.length - 3) + '</span>' : '') + '</button>').join('') + '</div>';
+  }
+  function photoDialog(id) {
+    const [pid, phid] = String(id).split('|'),
+      proj = db().projects.find(x => x.id === pid),
+      list = proj?.photos || [],
+      at = list.findIndex(x => x.id === phid),
+      ph = list[at];
+    if (!ph) return ['Project photo', empty('This photo is no longer available.')];
+    const step = (label, to) => to ? btn(label, 'dlg:photo', pid + '|' + to.id) : '';
+    const manage = onRole(E.leaders) ? form('projectPhotoRemove', hidden('photo', ph.id), 'Remove photo', pid) : '';
+    return [proj.title, photoImg(ph, ph.caption, 'attachment-image') + '<p class="photo-caption"><b>' + esc(ph.caption) + '</b></p><div class="entry-meta">' + esc((ph.stage === 'completed' ? 'Completed project' : 'In progress') + ' · ' + date(ph.date)) + (list.length > 1 ? ' · Photo ' + (at + 1) + ' of ' + list.length : '') + '</div>' + (list.length > 1 ? '<div class="entry-actions">' + step('Previous', list[at - 1]) + step('Next', list[at + 1]) + '</div>' : '') + manage];
+  }
+  function photoAddDialog(id) {
+    const proj = db().projects.find(x => x.id === id);
+    if (!proj) return ['Add a photo', empty('This project is no longer available.')];
+    return ['Add a photo', para(proj.title) + notice('Everyone who opens the app can see this photo. Show the work, such as the shelves, the paint or the garden. Please keep pupils’ faces, names and uniforms out of the picture.') + form('projectPhoto', imageUpload('Photo (JPG, PNG or WEBP)') + input('caption', 'What does the photo show?', '', 'text', 'required minlength="3" maxlength="140" placeholder="Books on the new shelves"'), 'Publish photo', id)];
+  }
   function projectCard(p, fund) {
     const spent = E.projectSpend(db(), p.id),
       done = Math.max(0, Math.min(100, Number(p.progress) || 0)),
@@ -4947,6 +5068,7 @@ body.modal-open {
     const row = (k, v) => '<div class="proj-row"><span>' + esc(k) + '</span><b>' + esc(v) + '</b></div>';
     let buttons = '';
     if (onRole(E.leaders) && active) buttons += btn('Update progress', 'dlg:project', p.id);
+    if (onRole(E.leaders) && (active || p.status === 'completed')) buttons += btn('Add photo', 'dlg:photoAdd', p.id);
     if (canChair() && active) buttons += btn('Change project', 'dlg:amend', p.id);
     if (me().role === 'head' && active) buttons += btn('Cancel project', 'dlg:cancel', p.id, 'danger');
     const top = '<div class="proj-top"><span class="project-symbol">' + icon(p.icon || 'sprout') + '</span><div><h3>' + esc(titleCase(p.title)) + '</h3><small>' + esc(cancelled ? 'Cancelled' : p.phase || labels[p.status]) + '</small></div>' + badge(p.status) + '</div>';
@@ -4954,7 +5076,7 @@ body.modal-open {
     const cancel = cancelled ? '<div class="cancel-note"><b>Why It Was Cancelled</b>' + para(p.reason) + '<b>Unused Funds</b>' + para(p.remainder) + '</div>' : '';
     const flag = f?.short > 0 ? fundCheck(f.need, f.short) : '';
     const details = '<details class="proj-details"><summary>Details</summary>' + para(p.text) + row('Project lead', n(p.owner)) + row('SPTA allocation', cash(p.budget)) + row(cancelled ? 'Spent by cancellation' : 'Spent so far', cash(cancelled ? p.spentAtCancellation ?? spent : spent)) + (cancelled ? '' : row('Not yet spent', cash(p.budget - spent))) + (f && !f.short ? row('Funding', 'Covered by SPTA funds') : '') + changeLog(p) + (E.amendOpen(db(), p.id) ? '<div class="entry-meta">' + icon('info', 'sm') + 'A change to this project is waiting for a new officer vote or the School Head’s decision. The allocation stays ' + esc(cash(p.budget)) + ' until then.</div>' : '') + row('Reference', p.id + ' · updated ' + date(p.changed)) + (buttons ? '<div class="entry-actions">' + buttons + '</div>' : '') + '</details>';
-    return '<article class="proj is-' + esc(p.status) + '">' + top + progress + flag + cancel + details + '</article>';
+    return '<article class="proj is-' + esc(p.status) + '">' + top + progress + photoStrip(p) + flag + cancel + details + '</article>';
   }
   function projects() {
     const all = db().projects,
@@ -5444,6 +5566,8 @@ body.modal-open {
         url = f?.url || '';
       return ['Supporting original', para(f?.name || '') + (f?.type === 'application/pdf' ? '<object class="attachment-pdf" data="' + esc(url) + '" type="application/pdf"><p>Use the file link below to open this PDF.</p></object>' : '<img class="attachment-image" alt="Uploaded supporting document" src="' + esc(url) + '">') + '<a class="btn light" href="' + esc(url) + '" target="_blank" rel="noopener noreferrer">Open file in a new tab</a>'];
     }
+    if (kind === 'photo') return photoDialog(id);
+    if (kind === 'photoAdd') return photoAddDialog(id);
     if (kind === 'reset') return ['Reset fictional records', notice('This clears the profiles, documents, votes and finance posts in this browser rehearsal.') + btn('Reset fictional demo', 'resetNow', '', 'danger')];
     return ['Account', empty('This action is unavailable.')];
   }
@@ -5531,6 +5655,7 @@ body.modal-open {
     root.innerHTML = html;
     updateConditions();
     ECESLang.apply(root);
+    loadPhotos(root);
     document.body.classList.toggle('modal-open', !!ui.dialog || !!popup);
   }
   const success = {
@@ -5554,6 +5679,8 @@ body.modal-open {
     proposalReply: 'Personal reply sent.',
     chairProposal: 'Sent to the School Head for approval.',
     projectUpdate: 'Project status published.',
+    projectPhoto: 'Photo published on the project.',
+    projectPhotoRemove: 'Photo removed.',
     amendProject: 'Change recorded. If it needs a new officer vote, the vote is now open.',
     withdraw: 'Withdrawn.',
     voteDeadline: 'Closing date saved.',
@@ -5937,7 +6064,8 @@ body.modal-open {
         payload.stamp = E.openStamp(batch);
         if (payload.decision === 'post' && !ui.reviewed.has(S.me + '|' + payload.stamp)) throw Error('Open the supporting original before approving this post.');
       }
-      const file = data.get('attachment');
+      let file = data.get('attachment');
+      if (file?.size && action === 'projectPhoto') file = await shrinkImage(file);
       if (file?.size) payload.file = await S.fileMeta(file);else if (action === 'financeSubmit' && ui.scan?.stage === 'done') payload.file = ui.scan.meta ||= await S.fileMeta(ui.scan.file);
       if (['submitProposal', 'caseSubmit', 'resubmit'].includes(action)) ui.tab = 'updates';
       if (action === 'headDecision' && payload.decision === 'approve') ui.tab = 'projects';
