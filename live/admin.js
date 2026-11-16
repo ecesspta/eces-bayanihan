@@ -15,4 +15,9 @@ document.getElementById('reissue').onclick=function(){say('Working…');call('PO
 document.getElementById('addseats').onclick=function(){var seats=document.getElementById('seats').value.split('\n').map(function(l){return l.trim()}).filter(Boolean).map(function(l){var i=l.lastIndexOf('|');return{homeroom:l.slice(0,i).trim(),name:l.slice(i+1).trim()}});
  if(!seats.length||seats.some(function(o){return !o.homeroom||!o.name})){say('Write one section per line as Grade · Section | Name.');return}
  say('Working…');call('POST','/api/admin/seats',{seats:seats}).then(function(d){say('Done. '+d.added+' seat'+(d.added===1?'':'s')+' added.')}).catch(function(e){if(e)say(e.message)})};
+document.getElementById('opening').onclick=function(){var g=function(i){return document.getElementById(i).value.trim()},body={};
+ if(g('obal')){body.amount=g('obal').replace(/[,₱\s]/g,'');body.date=g('odate');if(!body.date){say('Choose the date of the balance.');return}}
+ if(g('ptitle')||g('ptext')||g('psponsor')||g('pdate')){body.project={title:g('ptitle'),text:g('ptext'),sponsor:g('psponsor'),date:g('pdate')}}
+ if(!body.amount&&!body.project){say('Fill in the balance or the finished project.');return}
+ say('Working…');call('POST','/api/admin/opening',body).then(function(){say('Saved.')}).catch(function(e){if(e)say(e.message)})};
 document.getElementById('backup').onclick=function(){say('Working…');call('GET','/api/admin/export').then(function(d){save('eces-backup-'+new Date().toISOString().slice(0,10)+'.json',JSON.stringify(d));say('Backup downloaded. Keep it somewhere private.')}).catch(function(e){if(e)say(e.message)})};

@@ -443,6 +443,42 @@
     }
     return added;
   }
+  // Money already held before the app was used. One figure from the treasurer's paper, set once and before any money is recorded here.
+  function setOpening(db, v) {
+    check(!db.ledger.length, 'The opening balance cannot change once money has been recorded in the app.');
+    const cents = Math.round(Number(v.amount) * 100);
+    check(Number.isFinite(cents) && cents >= 0 && cents <= 100000000000, 'Enter the balance in pesos.');
+    const asOf = String(v.date || '');
+    check(/^\d{4}-\d{2}-\d{2}$/.test(asOf) && !Number.isNaN(Date.parse(asOf)), 'Enter the date the balance applies to.');
+    db.opening = cents;
+    db.openingAsOf = asOf;
+    return cents;
+  }
+  // A project finished before the app, shown as completed. It carries no vote, no signature and no SPTA allocation.
+  function addPastProject(db, v) {
+    const title = words(v.title, 'Project title', 4, 100),
+      text = words(v.text, 'Project description', 8, 700),
+      sponsor = words(v.sponsor, 'Who paid for it', 2, 75),
+      done = String(v.date || '');
+    check(/^\d{4}-\d{2}-\d{2}$/.test(done) && !Number.isNaN(Date.parse(done)), 'Enter the date it was completed.');
+    const id = newId(db, 'PR');
+    db.projects.unshift({
+      id,
+      title,
+      text,
+      budget: 0,
+      owner: 'chair',
+      phase: 'Completed before ECES Bayanihan',
+      status: 'completed',
+      progress: 100,
+      changed: done,
+      created: done,
+      icon: 'sprout',
+      past: true,
+      sponsor
+    });
+    return id;
+  }
   // The real school record: no sample content, only the officers, each waiting for a one-time invite.
   const liveRoles = ['head', 'chair', 'vice', 'secretary', 'treasurer', 'collector'];
   function createLive(officers) {
@@ -1462,7 +1498,7 @@
         {
           allows(a, leaders);
           const p = get(db.projects, id);
-          check(p.status === 'completed', 'Only a project marked completed can be reopened.');
+          check(p.status === 'completed' && !p.past, 'Only a project marked completed in this app can be reopened.');
           const reason = words(v.reason, 'Reason for reopening', 8, 350);
           const progress = Number(v.progress);
           check(Number.isInteger(progress) && progress >= 0 && progress <= 99, 'Progress must be between 0 and 99 while the project is open.');
@@ -1996,6 +2032,8 @@
     seenOn,
     createLive,
     addSeats,
+    setOpening,
+    addPastProject,
     officerJoin,
     liveRoles,
     loginKey,

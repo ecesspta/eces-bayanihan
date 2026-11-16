@@ -872,6 +872,7 @@ body.modal-open {
 .balance-flows b {display:block;margin-top:2px;font-size:17px;overflow-wrap:anywhere}
 .balance-note,.movement-meta {font-size:14px;line-height:1.45;color:var(--muted)}
 .balance-note {margin:9px 2px 16px}
+.balance-carry {display:block;margin-top:6px;font-size:13px;line-height:1.4;opacity:.85}
 .movement-list {margin:0;padding:0;list-style:none;background:white;border:1px solid var(--line);border-radius:14px}
 .movement-row {padding:14px}
 .movement-row+.movement-row {border-top:1px solid var(--line)}

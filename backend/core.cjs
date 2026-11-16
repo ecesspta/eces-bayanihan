@@ -52,6 +52,7 @@ function visible(db, me) {
       live: !!db.settings?.live || db.accounts.some(a => !a.demo && E.liveRoles.includes(a.role))
     },
     opening: db.opening,
+    openingAsOf: db.openingAsOf,
     actingVice: E.hasDelegation(db),
     actingUntil: db.actingUntil,
     actingReference: lead ? db.actingReference : undefined,
@@ -415,6 +416,23 @@ function createApi(store, config = {}) {
           return send(201, {
             added
           });
+        }
+        if (route === '/api/admin/opening' && req.method === 'POST') {
+          // The treasurer's balance on a stated date, and optionally one project finished before the app.
+          const v = JSON.parse((req.body || Buffer.alloc(0)).toString() || '{}');
+          const out = await store.atomic(async tx => {
+            const fresh = await tx.load();
+            if (!fresh || !fresh.accounts.some(a => !a.demo && E.liveRoles.includes(a.role))) throw new HttpError(409, 'Start the real record first.');
+            const r = {};
+            if (v.amount !== undefined && v.amount !== '') r.cents = E.setOpening(fresh, v);
+            if (v.project) r.project = E.addPastProject(fresh, v.project);
+            if (!Object.keys(r).length) throw new HttpError(400, 'Send a balance or a finished project.');
+            await tx.save(fresh);
+            return r;
+          });
+          if (out.cents !== undefined) await logAdmin('Opening balance set', String(out.cents / 100) + ' as of ' + String(v.date));
+          if (out.project) await logAdmin('Project recorded from paper', out.project);
+          return send(201, out);
         }
         if (route === '/api/admin/export' && req.method === 'GET') {
           const everything = await store.load();

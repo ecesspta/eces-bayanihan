@@ -315,14 +315,14 @@
     let buttons = '';
     if (onRole(E.leaders) && active) buttons += btn('Update progress', 'dlg:project', p.id);
     if (onRole(E.leaders) && (active || p.status === 'completed')) buttons += btn('Add photo', 'dlg:photoAdd', p.id);
-    if (onRole(E.leaders) && p.status === 'completed') buttons += btn('Reopen project', 'dlg:reopen', p.id);
+    if (onRole(E.leaders) && p.status === 'completed' && !p.past) buttons += btn('Reopen project', 'dlg:reopen', p.id);
     if (canChair() && active) buttons += btn('Change project', 'dlg:amend', p.id);
     if (me().role === 'head' && active) buttons += btn('Cancel project', 'dlg:cancel', p.id, 'danger');
     const top = '<div class="proj-top"><span class="project-symbol">' + icon(p.icon || 'sprout') + '</span><div><h3>' + esc(titleCase(p.title)) + '</h3><small>' + esc(cancelled ? 'Cancelled' : p.phase || labels[p.status]) + '</small></div>' + badge(p.status) + '</div>';
-    const progress = cancelled ? '' : '<div class="proj-bar" role="img" aria-label="' + done + '% done"><div style="width:' + done + '%"></div></div><div class="proj-nums"><span><b>' + done + '%</b> done</span><span><b>' + cash(spent) + '</b> of ' + cash(p.budget) + ' spent</span></div>';
+    const progress = p.past ? '<div class="proj-nums"><span><b>Completed</b> before this app</span><span>No SPTA funds used</span></div>' : cancelled ? '' : '<div class="proj-bar" role="img" aria-label="' + done + '% done"><div style="width:' + done + '%"></div></div><div class="proj-nums"><span><b>' + done + '%</b> done</span><span><b>' + cash(spent) + '</b> of ' + cash(p.budget) + ' spent</span></div>';
     const cancel = cancelled ? '<div class="cancel-note"><b>Why It Was Cancelled</b>' + para(p.reason) + '<b>Unused Funds</b>' + para(p.remainder) + '</div>' : '';
     const flag = f?.short > 0 ? fundCheck(f.need, f.short) : '';
-    const details = '<details class="proj-details"><summary>Details</summary>' + para(p.text) + row('Project lead', n(p.owner)) + row('SPTA allocation', cash(p.budget)) + row(cancelled ? 'Spent by cancellation' : 'Spent so far', cash(cancelled ? p.spentAtCancellation ?? spent : spent)) + (cancelled ? '' : row('Not yet spent', cash(p.budget - spent))) + (f && !f.short ? row('Funding', 'Covered by SPTA funds') : '') + changeLog(p) + (E.amendOpen(db(), p.id) ? '<div class="entry-meta">' + icon('info', 'sm') + 'A change to this project is waiting for a new officer vote or the School Head’s decision. The allocation stays ' + esc(cash(p.budget)) + ' until then.</div>' : '') + row('Reference', p.id + ' · updated ' + date(p.changed)) + (buttons ? '<div class="entry-actions">' + buttons + '</div>' : '') + '</details>';
+    const details = '<details class="proj-details"><summary>Details</summary>' + para(p.text) + row('Project lead', n(p.owner)) + (p.past ? row('Paid for by', p.sponsor) + row('Completed on', date(p.changed)) + row('SPTA funds used', cash(0)) : row('SPTA allocation', cash(p.budget)) + row(cancelled ? 'Spent by cancellation' : 'Spent so far', cash(cancelled ? p.spentAtCancellation ?? spent : spent)) + (cancelled ? '' : row('Not yet spent', cash(p.budget - spent)))) + (f && !f.short ? row('Funding', 'Covered by SPTA funds') : '') + changeLog(p) + (E.amendOpen(db(), p.id) ? '<div class="entry-meta">' + icon('info', 'sm') + 'A change to this project is waiting for a new officer vote or the School Head’s decision. The allocation stays ' + esc(cash(p.budget)) + ' until then.</div>' : '') + row('Reference', p.id + ' · updated ' + date(p.changed)) + (buttons ? '<div class="entry-actions">' + buttons + '</div>' : '') + '</details>';
     return '<article class="proj is-' + esc(p.status) + '">' + top + progress + photoStrip(p) + flag + cancel + details + '</article>';
   }
   function projects() {
@@ -559,7 +559,7 @@
         direction + ' · ' + esc(date(entry.date)) + (project ? ' · ' + esc(project) : '') + '</div>' + (explain ? '<p class="correction-note">' + esc(explain) + '</p>' : '') + '</li>';
     }).join('');
     const summary = '<section class="balance-card" aria-label="SPTA Cash Balance"><h2>SPTA Cash Balance</h2><strong>' + cash(fund.balance) +
-      '</strong><div class="balance-flows"><div>Money In<b>' + cash(total('in')) + '</b></div><div>Money Out<b>' +
+      '</strong>' + (db().opening > 0 ? '<small class="balance-carry">Includes ' + cash(db().opening) + ' carried over from earlier this school year, as of ' + esc(date(db().openingAsOf)) + '.</small>' : '') + '<div class="balance-flows"><div>Money In<b>' + cash(total('in')) + '</b></div><div>Money Out<b>' +
       cash(total('out')) + '</b></div></div></section>';
     const allocations = '<div class="fund-split"><div><span>Set Aside for Approved Projects</span><b>' + cash(fund.committed) +
       '</b></div><div class="' + (fund.available > 0 ? 'ok' : 'short') + '"><span>Available for New Proposals</span><b>' + cash(fund.available) + '</b></div></div>';

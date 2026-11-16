@@ -84,6 +84,12 @@ button.alt{background:#fff;color:#102b59;border:1px solid #102b59}pre{white-spac
 <p class="note">One section per line, as <b>Grade · Section | President's name</b>, for example <b>Grade 1 · Ramos | Full Name</b>. For kindergarten write <b>Kindergarten · Biala A.M. | Full Name</b>. Running it again only adds sections that are missing.</p>
 <textarea id="seats" rows="8" style="width:100%;padding:10px;font-size:16px;border:1px solid #9aa9c4;border-radius:8px;box-sizing:border-box" placeholder="Grade 1 · Ramos | Full Name"></textarea>
 <button id="addseats">Add presidents</button>
+<h2 style="font-size:18px;margin-top:28px">Opening balance and finished project</h2>
+<p class="note">Use the treasurer's paper. The balance is one figure on one date and can only be set before any money is recorded in the app. The finished project is shown as Completed, with no vote, no signatures and no SPTA money used. Fill in only what you need.</p>
+<label for="obal">Balance (pesos)</label><input id="obal" inputmode="decimal" placeholder="12345.67"><label for="odate">Balance as of (date)</label><input id="odate" type="date">
+<label for="ptitle">Finished project: title</label><input id="ptitle"><label for="ptext">What was done</label><textarea id="ptext" rows="3" style="width:100%;padding:10px;font-size:16px;border:1px solid #9aa9c4;border-radius:8px;box-sizing:border-box"></textarea>
+<label for="psponsor">Paid for by</label><input id="psponsor"><label for="pdate">Completed on</label><input id="pdate" type="date">
+<button id="opening">Save</button>
 <h2 style="font-size:18px;margin-top:28px">New code for one officer</h2>
 <p class="note">For a lost phone or forgotten sign-in, or to add the collecting officer later. Add the name only for a new officer.</p>
 <label for="orole">Role</label><input id="orole" placeholder="collector"><label for="oname">Name (new officer only)</label><input id="oname">
@@ -106,6 +112,11 @@ document.getElementById('reissue').onclick=function(){say('Working…');call('PO
 document.getElementById('addseats').onclick=function(){var seats=document.getElementById('seats').value.split('\\n').map(function(l){return l.trim()}).filter(Boolean).map(function(l){var i=l.lastIndexOf('|');return{homeroom:l.slice(0,i).trim(),name:l.slice(i+1).trim()}});
  if(!seats.length||seats.some(function(o){return !o.homeroom||!o.name})){say('Write one section per line as Grade · Section | Name.');return}
  say('Working…');call('POST','/api/admin/seats',{seats:seats}).then(function(d){say('Done. '+d.added+' seat'+(d.added===1?'':'s')+' added.')}).catch(function(e){if(e)say(e.message)})};
+document.getElementById('opening').onclick=function(){var g=function(i){return document.getElementById(i).value.trim()},body={};
+ if(g('obal')){body.amount=g('obal').replace(/[,₱\\s]/g,'');body.date=g('odate');if(!body.date){say('Choose the date of the balance.');return}}
+ if(g('ptitle')||g('ptext')||g('psponsor')||g('pdate')){body.project={title:g('ptitle'),text:g('ptext'),sponsor:g('psponsor'),date:g('pdate')}}
+ if(!body.amount&&!body.project){say('Fill in the balance or the finished project.');return}
+ say('Working…');call('POST','/api/admin/opening',body).then(function(){say('Saved.')}).catch(function(e){if(e)say(e.message)})};
 document.getElementById('backup').onclick=function(){say('Working…');call('GET','/api/admin/export').then(function(d){save('eces-backup-'+new Date().toISOString().slice(0,10)+'.json',JSON.stringify(d));say('Backup downloaded. Keep it somewhere private.')}).catch(function(e){if(e)say(e.message)})};
 </script></body></html>`);
 

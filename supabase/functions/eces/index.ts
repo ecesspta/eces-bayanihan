@@ -504,6 +504,42 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
     }
     return added;
   }
+  // Money already held before the app was used. One figure from the treasurer's paper, set once and before any money is recorded here.
+  function setOpening(db, v) {
+    check(!db.ledger.length, 'The opening balance cannot change once money has been recorded in the app.');
+    const cents = Math.round(Number(v.amount) * 100);
+    check(Number.isFinite(cents) && cents >= 0 && cents <= 100000000000, 'Enter the balance in pesos.');
+    const asOf = String(v.date || '');
+    check(/^\d{4}-\d{2}-\d{2}$/.test(asOf) && !Number.isNaN(Date.parse(asOf)), 'Enter the date the balance applies to.');
+    db.opening = cents;
+    db.openingAsOf = asOf;
+    return cents;
+  }
+  // A project finished before the app, shown as completed. It carries no vote, no signature and no SPTA allocation.
+  function addPastProject(db, v) {
+    const title = words(v.title, 'Project title', 4, 100),
+      text = words(v.text, 'Project description', 8, 700),
+      sponsor = words(v.sponsor, 'Who paid for it', 2, 75),
+      done = String(v.date || '');
+    check(/^\d{4}-\d{2}-\d{2}$/.test(done) && !Number.isNaN(Date.parse(done)), 'Enter the date it was completed.');
+    const id = newId(db, 'PR');
+    db.projects.unshift({
+      id,
+      title,
+      text,
+      budget: 0,
+      owner: 'chair',
+      phase: 'Completed before ECES Bayanihan',
+      status: 'completed',
+      progress: 100,
+      changed: done,
+      created: done,
+      icon: 'sprout',
+      past: true,
+      sponsor
+    });
+    return id;
+  }
   // The real school record: no sample content, only the officers, each waiting for a one-time invite.
   const liveRoles = ['head', 'chair', 'vice', 'secretary', 'treasurer', 'collector'];
   function createLive(officers) {
@@ -1523,7 +1559,7 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
         {
           allows(a, leaders);
           const p = get(db.projects, id);
-          check(p.status === 'completed', 'Only a project marked completed can be reopened.');
+          check(p.status === 'completed' && !p.past, 'Only a project marked completed in this app can be reopened.');
           const reason = words(v.reason, 'Reason for reopening', 8, 350);
           const progress = Number(v.progress);
           check(Number.isInteger(progress) && progress >= 0 && progress <= 99, 'Progress must be between 0 and 99 while the project is open.');
@@ -2057,6 +2093,8 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
     seenOn,
     createLive,
     addSeats,
+    setOpening,
+    addPastProject,
     officerJoin,
     liveRoles,
     loginKey,
@@ -2141,6 +2179,7 @@ function visible(db, me) {
       live: !!db.settings?.live || db.accounts.some(a => !a.demo && E.liveRoles.includes(a.role))
     },
     opening: db.opening,
+    openingAsOf: db.openingAsOf,
     actingVice: E.hasDelegation(db),
     actingUntil: db.actingUntil,
     actingReference: lead ? db.actingReference : undefined,
@@ -2504,6 +2543,23 @@ function createApi(store, config = {}) {
           return send(201, {
             added
           });
+        }
+        if (route === '/api/admin/opening' && req.method === 'POST') {
+          // The treasurer's balance on a stated date, and optionally one project finished before the app.
+          const v = JSON.parse((req.body || Buffer.alloc(0)).toString() || '{}');
+          const out = await store.atomic(async tx => {
+            const fresh = await tx.load();
+            if (!fresh || !fresh.accounts.some(a => !a.demo && E.liveRoles.includes(a.role))) throw new HttpError(409, 'Start the real record first.');
+            const r = {};
+            if (v.amount !== undefined && v.amount !== '') r.cents = E.setOpening(fresh, v);
+            if (v.project) r.project = E.addPastProject(fresh, v.project);
+            if (!Object.keys(r).length) throw new HttpError(400, 'Send a balance or a finished project.');
+            await tx.save(fresh);
+            return r;
+          });
+          if (out.cents !== undefined) await logAdmin('Opening balance set', String(out.cents / 100) + ' as of ' + String(v.date));
+          if (out.project) await logAdmin('Project recorded from paper', out.project);
+          return send(201, out);
         }
         if (route === '/api/admin/export' && req.method === 'GET') {
           const everything = await store.load();
