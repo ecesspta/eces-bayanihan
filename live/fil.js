@@ -1178,6 +1178,7 @@
  "Use this for a project the officers have already agreed on.": "Gamitin ito para sa proyektong napagkasunduan na ng mga officer.",
  "It skips screening and the officers’ vote and goes straight to the School Head.": "Lalaktawan nito ang review at ang boto ng mga officer at diretso ito sa School Head.",
  "On the resolution, everyone who signs counts as agreeing.": "Sa resolution, ang bawat pumirma ay ituturing na pumapayag.",
+ "Chairperson added a proposal for School-Head approval": "Nagdagdag ang Chairperson ng proposal para sa approval ng School Head",
  "Show password": "Ipakita ang password",
  "Hide password": "Itago ang password",
  "Back": "Bumalik",

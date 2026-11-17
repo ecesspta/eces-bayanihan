@@ -1374,7 +1374,7 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
           p.publicText = p.details;
           db.proposals.unshift(p);
           id = p.id;
-          changed('Chairperson added a proposal for School-Head approval without an officer vote');
+          changed('Chairperson added a proposal for School-Head approval');
           break;
         }
       case 'resubmit':
