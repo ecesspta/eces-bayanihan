@@ -150,9 +150,9 @@ function visible(db, me) {
     ...c,
     // Notes between the officers and the School Head are not for the sender.
     notes: undefined,
-    forwarded: c.forwarded ? {
-      at: c.forwarded.at
-    } : null
+    replyBy: c.kind !== 'inspection' && E.onDesk(c) ? undefined : c.replyBy,
+    // The sender is not told which officers read it, or that it moved.
+    forwarded: null
   } : c);
   out.trends = {};
   if (lead) for (const c of db.cases) out.trends[c.category] = (out.trends[c.category] || 0) + 1;

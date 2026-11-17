@@ -7,7 +7,7 @@
     current = null,
     actorId = '',
     shared = false;
-  const key = 'eces-bayanihan-v3';
+  const key = globalThis.ECES_OFFICERS_ONLY === true ? 'eces-bayanihan-officers-v3' : 'eces-bayanihan-v3';
   const memoryFiles = new Map(),
     memoryPins = new Map();
   let notice;
@@ -358,7 +358,7 @@
     }));
   }
   // One practice profile per role. The other fictional presidents stay on the board roster.
-  const practiceProfiles = ['parent', 'bod-1', 'head', 'chair', 'vice', 'secretary', 'treasurer', 'collector'];
+  const practiceProfiles = ['parent', 'bod-1', 'head', 'chair', 'vice', 'secretary', 'treasurer', 'collector'].filter(x => globalThis.ECES_OFFICERS_ONLY !== true || !['head', 'chair', 'vice'].includes(x));
   // Practice only: each remaining fictional attendee casts a ballot through the ordinary vote rule.
   async function practiceBallots(id) {
     if (shared) throw Error('Practice ballots are unavailable in the shared rehearsal.');
@@ -490,6 +490,8 @@
       if (!r.ok) throw Error('Access to this attachment is unavailable.');
       return URL.createObjectURL(await r.blob());
     }
+    // Practice version: the fictional pictures on the sample projects are carried inside the page.
+    if (/^sample-photo-\d+$/.test(meta.key) && globalThis.ECESSamplePhotos?.[meta.key]) return globalThis.ECESSamplePhotos[meta.key];
     if (meta.key === 'sample-sheet') {
       const sample = document.getElementById('embedded-school-example');
       if (!sample) return 'assets/sample-collection-sheet.pdf';

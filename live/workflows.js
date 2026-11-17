@@ -338,13 +338,12 @@
   function autoReply(item) {
     if (item.kind) {
       const what = item.kind === 'inspection' ? 'request' : item.kind,
-        desk = item.kind !== 'inspection' && ['chair', 'vice'].includes(item.assigned),
-        who = desk ? deskName : recipients[item.assigned] || roles[item.assigned] || 'reviewer',
-        shared = desk && item.forwarded ? ' They also shared it with the School Head.' : '';
+        // A parent is only told it went to the SPTA, never which officers read it.
+        who = onDesk(item) ? 'SPTA' : recipients[item.assigned] || roles[item.assigned] || 'reviewer';
       if (item.status === 'withdrawn') return 'You withdrew this ' + what + '. Nothing more will happen with it.';
-      if (item.status === 'resolved') return 'Your ' + what + ' was marked resolved by the ' + who + '.' + shared;
-      if (item.status === 'assigned') return 'Your ' + what + ' was reviewed by the ' + who + '.' + shared;
-      return 'Thank you. Your ' + what + ' was received privately by the ' + who + '.' + shared;
+      if (item.status === 'resolved') return 'Your ' + what + ' was marked resolved by the ' + who + '.';
+      if (item.status === 'assigned') return 'Your ' + what + ' was reviewed by the ' + who + '.';
+      return 'Thank you. Your ' + what + ' was received privately by the ' + who + '.';
     }
     if (item.direct && item.status === 'awaiting_head') return 'Added by the chairperson. It is now with the School Head for approval.';
     return proposalReplies[item.status] || '';
@@ -640,6 +639,28 @@
       remainder: p.status === 'cancelled' ? p.cancelReason || 'See the original project record.' : '',
       changed: p.date || '2026-11-07'
     }));
+    // Practice version only (the pictures are carried inside the demo page): the completed sample project, and the reading corner, each show an illustrated picture.
+    if (!old && globalThis.ECESSamplePhotos) {
+      const pic = (key, caption, stage, by) => ({
+        id: 'PH-1',
+        file: {
+          key,
+          name: key + '.jpg',
+          type: 'image/jpeg',
+          size: 45000
+        },
+        caption,
+        stage,
+        by,
+        date: '2026-10-20',
+        status: 'approved',
+        approvedBy: 'chair'
+      });
+      const done = projects.find(p => p.id === 'PR-02'),
+        reading = projects.find(p => p.id === 'PR-01');
+      if (done) done.photos = [pic('sample-photo-1', 'The refreshed handwashing station, ready for use', 'completed', 'chair')];
+      if (reading) reading.photos = [pic('sample-photo-2', 'Shelves and floor mats in place for the reading corner', 'in_progress', 'chair')];
+    }
     if (!old) {
       const mural = projects.find(p => p.id === 'PR-04');
       if (mural) {
@@ -694,7 +715,9 @@
         body: c.description,
         category: c.category,
         owner: c.owner === 'Demo Parent' ? 'parent' : 'parent-2',
-        assigned: 'head',
+        assigned: 'chair',
+        forwarded: null,
+        notes: [],
         status: c.status === 'completed' ? 'resolved' : 'received',
         created: c.date,
         due: plusDays(c.date, 5),
@@ -820,6 +843,10 @@
         if ((old.supported || []).includes(p.id)) p.supporters = ['parent'];
       }
     }
+    // Officers' practice copy: the School Head, chairperson and Vice-Chairperson profiles are switched off, so nobody can sign in as them.
+    if (globalThis.ECES_OFFICERS_ONLY === true) db.accounts.filter(x => ['head', 'chair', 'vice'].includes(x.id)).forEach(x => {
+      x.active = false;
+    });
     return db;
   }
   // context.device is the device the app recognised. The server and the browser store supply it; it never comes from a form.
@@ -1788,7 +1815,7 @@
             audit(db, a, 'Hidden-name sending turned off for the sender of a case', c.id);
           }
           if (moved) tell(db, c);
-          if (reply) note(db, c.owner, c.id + ' · A personal reply from the ' + (recipients[a.role] || roles[a.role]) + ' is ready.');
+          if (reply) note(db, c.owner, c.id + ' · A personal reply from the ' + (onDesk(c) ? 'SPTA' : recipients[a.role] || roles[a.role]) + ' is ready.');
           changed('Private case updated');
           break;
         }
@@ -1815,7 +1842,6 @@
           });
           // The School Head and the secretary see it from now on.
           db.accounts.filter(x => x.active && ['head', 'secretary'].includes(x.role)).forEach(x => note(db, x.id, c.id + ' · A ' + c.kind + ' was passed on to the School Head by the ' + (roles[a.role] || a.role) + '.' + (text ? ' A note is attached.' : '')));
-          tell(db, c);
           changed('Private case passed on to the School Head');
           break;
         }
