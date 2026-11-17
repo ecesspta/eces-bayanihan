@@ -550,6 +550,37 @@
     });
     return id;
   }
+  // A project that was set aside or cancelled before the app was in use. It appears under Cancelled with the public reason and what became of the money.
+  function addCancelledProject(db, v) {
+    const title = words(v.title, 'Project title', 4, 100),
+      text = words(v.text, 'Project description', 8, 700),
+      reason = words(v.reason, 'Public cancellation reason', 6, 350),
+      remainder = words(v.remainder, 'What happened to the money', 3, 300),
+      done = dateValue(v.date),
+      budget = v.budget === undefined || v.budget === '' ? 0 : amount(v.budget, true),
+      spent = v.spent === undefined || v.spent === '' ? 0 : amount(v.spent, true);
+    check(done <= today(), 'The cancellation date cannot be in the future.');
+    check(spent <= budget || budget === 0, 'The amount spent cannot be more than the amount that had been set aside.');
+    const id = newId(db, 'PR');
+    db.projects.unshift({
+      id,
+      title,
+      text,
+      budget,
+      owner: 'chair',
+      phase: 'Cancelled',
+      status: 'cancelled',
+      progress: 0,
+      changed: done,
+      created: done,
+      icon: 'sprout',
+      reason,
+      remainder,
+      spentAtCancellation: spent,
+      recorded: true
+    });
+    return id;
+  }
   // A project the officers already voted on, and the School Head already approved, before the app was in use.
   // It goes straight to a draft resolution, so the secretary can release it and the officers can sign. Returns the new record.
   function importVoted(db, v) {
@@ -2429,6 +2460,7 @@
     addSeats,
     setOpening,
     addPastProject,
+    addCancelledProject,
     importVoted,
     planners,
     officerJoin,

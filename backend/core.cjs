@@ -496,6 +496,21 @@ function createApi(store, config = {}) {
             people
           });
         }
+        if (route === '/api/admin/cancelled-project' && req.method === 'POST') {
+          // A project cancelled before the app was in use, recorded for transparency.
+          const v = JSON.parse((req.body || Buffer.alloc(0)).toString() || '{}');
+          const out = await store.atomic(async tx => {
+            const fresh = await tx.load();
+            if (!fresh || !fresh.accounts.some(a => !a.demo && E.liveRoles.includes(a.role))) throw new HttpError(409, 'Start the real record first.');
+            const id = E.addCancelledProject(fresh, v);
+            await tx.save(fresh);
+            return id;
+          });
+          await logAdmin('Cancelled project recorded from paper', out);
+          return send(201, {
+            id: out
+          });
+        }
         if (route === '/api/admin/voted-project' && req.method === 'POST') {
           // A project voted and approved on paper before the app: it goes straight to a draft resolution for signatures.
           const v = JSON.parse((req.body || Buffer.alloc(0)).toString() || '{}');

@@ -20,6 +20,8 @@ document.getElementById('opening').onclick=function(){var g=function(i){return d
  if(g('ptitle')||g('ptext')||g('psponsor')||g('pdate')){body.project={title:g('ptitle'),text:g('ptext'),sponsor:g('psponsor'),date:g('pdate')}}
  if(!body.amount&&!body.project){say('Fill in the balance or the finished project.');return}
  say('Working…');call('POST','/api/admin/opening',body).then(function(){say('Saved.')}).catch(function(e){if(e)say(e.message)})};
+document.getElementById('cancelled').onclick=function(){var g=function(i){return document.getElementById(i).value.trim()},m=function(i){return g(i).replace(/[,₱\s]/g,'')};
+ say('Working…');call('POST','/api/admin/cancelled-project',{title:g('ctitle'),text:g('ctext'),reason:g('creason'),remainder:g('cremainder'),budget:m('cbudget'),spent:m('cspent'),date:g('cdate')}).then(function(){say('Saved. It now shows under Cancelled on the Projects page.')}).catch(function(e){if(e)say(e.message)})};
 var allPeople=[];
 var LABEL={active:'Can sign in',invited:'Invited, not joined yet',vacant:'Vacant seat',deactivated:'Deactivated',sample:'Sample profile',no_access:'No sign-in'};
 var ROLE={parent:'Parent',head:'School Head',chair:'Chairperson',vice:'Vice-Chairperson',secretary:'Secretary',treasurer:'Treasurer',collector:'Collecting officer',bod:'HPTA president'};

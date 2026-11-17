@@ -25,6 +25,15 @@ button.alt{background:#fff;color:#102b59;border:1px solid #102b59}pre{white-spac
 <label for="ptitle">Finished project: title</label><input id="ptitle"><label for="ptext">What was done</label><textarea id="ptext" rows="3" style="width:100%;padding:10px;font-size:16px;border:1px solid #9aa9c4;border-radius:8px;box-sizing:border-box"></textarea>
 <label for="psponsor">Paid for by</label><input id="psponsor"><label for="pdate">Completed on</label><input id="pdate" type="date">
 <button id="opening">Save</button>
+<h2 style="font-size:18px;margin-top:28px">Project cancelled before the app</h2>
+<p class="note">For a project that was cancelled earlier, so parents can see it for transparency. It shows under Cancelled with the reason and what became of the money. It has no vote and no signatures, and it does not change the SPTA balance. Add one project at a time.</p>
+<label for="ctitle">Project title</label><input id="ctitle"><label for="ctext">What the project was going to be</label><textarea id="ctext" rows="3" style="width:100%;padding:10px;font-size:16px;border:1px solid #9aa9c4;border-radius:8px;box-sizing:border-box"></textarea>
+<label for="creason">Why it was cancelled (shown to parents)</label><textarea id="creason" rows="3" style="width:100%;padding:10px;font-size:16px;border:1px solid #9aa9c4;border-radius:8px;box-sizing:border-box"></textarea>
+<label for="cbudget">Amount that had been set aside (pesos, leave empty if none)</label><input id="cbudget" inputmode="decimal" placeholder="0">
+<label for="cspent">Amount already spent (pesos, leave empty if none)</label><input id="cspent" inputmode="decimal" placeholder="0">
+<label for="cremainder">What happened to the money?</label><textarea id="cremainder" rows="2" style="width:100%;padding:10px;font-size:16px;border:1px solid #9aa9c4;border-radius:8px;box-sizing:border-box" placeholder="Example: No money was spent. The funds stay in the general SPTA fund."></textarea>
+<label for="cdate">Cancelled on</label><input id="cdate" type="date">
+<button id="cancelled">Add cancelled project</button>
 <h2 style="font-size:18px;margin-top:28px">New code for one officer</h2>
 <p class="note">For a lost phone or forgotten sign-in, or to add the collecting officer later. Add the name only for a new officer.</p>
 <label for="orole">Role</label><input id="orole" placeholder="collector"><label for="oname">Name (new officer only)</label><input id="oname">
