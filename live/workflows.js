@@ -482,8 +482,14 @@
   function publicProposal(p) {
     return Boolean(p.published && p.publicTitle);
   }
+  // A proposal that is still waiting for a decision is shown only to people who are signed in. One the chairperson added for the School Head
+  // is shown only to the officers, the School Head and its sender: parents and guests see it once it is approved and becomes a project.
+  const undecided = ['screened', 'voting', 'awaiting_head'];
   function readableProposal(p, a) {
-    return leaders.includes(a.role) || p.owner === a.id || publicProposal(p);
+    if (leaders.includes(a.role) || p.owner === a.id) return true;
+    if (!publicProposal(p)) return false;
+    if (undecided.includes(p.status) && (a.guest || a.role === 'guest' || p.direct && a.role === 'parent')) return false;
+    return true;
   }
   // The school's list of HPTA presidents, one seat per section. A seat waits, vacant, until that president registers and is matched to it
   // by the School Head or chairperson. A vacant seat never votes, signs or counts toward a quorum.
@@ -1370,7 +1376,7 @@
       case 'support':
         {
           const p = get(db.proposals, id);
-          check(publicProposal(p), 'This proposal has not been screened.');
+          check(publicProposal(p) && readableProposal(p, a), 'This proposal has not been screened.');
           if (!p.supporters.includes(a.id)) {
             p.supporters.push(a.id);
             p.supports++;

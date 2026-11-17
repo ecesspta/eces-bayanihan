@@ -661,7 +661,7 @@
     const fund = E.funding(db()),
       name = id => db().projects.find(p => p.id === id)?.title || (db().activities || []).find(x => x.id === id)?.title;
     const active = db().projects.filter(p => fund.projects[p.id]),
-      waiting = db().proposals.filter(p => E.publicProposal(p) && p.budget > 0 && ['screened', 'voting', 'awaiting_head'].includes(p.status));
+      waiting = db().proposals.filter(p => E.publicProposal(p) && E.readableProposal(p, me()) && p.budget > 0 && ['screened', 'voting', 'awaiting_head'].includes(p.status));
     const projectLines = active.map(p => {
       const spent = E.projectSpend(db(), p.id),
         f = fund.projects[p.id];
@@ -1237,7 +1237,7 @@
     openDialog('attachment', id);
   }
   function csvExport() {
-    const rows = [['Reference', 'Title', 'Status'], ...db().proposals.filter(E.publicProposal).map(p => [p.id, p.publicTitle, labels[p.status] || p.status])];
+    const rows = [['Reference', 'Title', 'Status'], ...db().proposals.filter(p => E.publicProposal(p) && E.readableProposal(p, me())).map(p => [p.id, p.publicTitle, labels[p.status] || p.status])];
     const safe = v => {
       let s = String(v ?? '');
       if (/^[\s]*[=+@\-\t\r]/.test(s)) s = "'" + s;
