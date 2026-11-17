@@ -143,6 +143,16 @@ function visible(db, me) {
     history: c.history.map(h => ({
       ...h
     }))
+  } : c).map(c => c.owner === me.id && !E.canSeeCase({
+    id: '',
+    role: me.role
+  }, c) ? {
+    ...c,
+    // Notes between the officers and the School Head are not for the sender.
+    notes: undefined,
+    forwarded: c.forwarded ? {
+      at: c.forwarded.at
+    } : null
   } : c);
   out.trends = {};
   if (lead) for (const c of db.cases) out.trends[c.category] = (out.trends[c.category] || 0) + 1;
@@ -648,7 +658,7 @@ function createApi(store, config = {}) {
           if (!active || active.id !== me.id) throw new HttpError(400, 'Sign in again to continue.');
           if (v.action === 'financeReview' && v.payload.decision === 'post') {
             const batch = fresh.batches.find(d => d.id === v.payload.id);
-            if (batch?.status === 'pending' && !(await tx.seen(tokenH, E.openStamp(batch)))) throw new HttpError(400, 'Open the current supporting original with the chairperson’s own sign-in before posting.');
+            if (batch?.status === 'pending' && !batch.noPaper && !(await tx.seen(tokenH, E.openStamp(batch)))) throw new HttpError(400, 'Open the current supporting original with the chairperson’s own sign-in before posting.');
           }
           if (v.payload.file) {
             const f = await tx.fileMeta(v.payload.file.key);

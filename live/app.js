@@ -210,6 +210,11 @@
   function ownCases() {
     return db().cases.filter(c => E.canSeeCase(me(), c) || standIn() && c.assigned === standIn());
   }
+  // May this person change the status of, or reply to, a case? And may they add an internal note?
+  const caseHandler = c => E.caseHandler(db(), me(), c);
+  const caseNoter = c => E.caseNoter(db(), me(), c);
+  // Suggestions and concerns that the chairperson and Vice-Chairperson passed on, as the School Head and secretary see them.
+  const passedOn = () => ownCases().filter(c => E.onDesk(c) && c.forwarded && c.owner !== S.me);
   // SPTA Projects page: a short summary, then projects grouped by where they stand.
   // Each card shows the few things people look for first; the rest opens under Details.
   // What changed on an approved project, in plain words.
@@ -232,7 +237,7 @@
     ['Who we are', ['This app is run by the East Central Elementary School SPTA in San Fabian, Pangasinan, with the approval of the School Head. For any privacy question, ask the SPTA chairperson or the School Head’s office.']],
     ['What we collect', ['Your name, mobile number, and your child’s grade and section. You may also list the name, grade and section of your other children. Only you can see that list.', 'What you send us: proposals, suggestions, private concerns and requests.', 'If you are an SPTA officer: your drawn signature, votes counted as results only, finance records, meeting minutes and photos of project work.', 'A code that identifies your phone, so one phone cannot create many accounts, and a sign-in cookie.', 'If you choose to add one, a profile picture. Only you can see it, and you can remove it at any time.']],
     ['Why we collect it', ['To run SPTA proposals, officer voting and fund reports openly, to answer what you send, and to keep records of officer decisions.']],
-    ['Who can see it', ['Everyone can see approved projects, fund entries, announcements and signed resolutions. They do not show receipts, contributors’ names or your private messages.', 'Your private concern or suggestion goes only to the officer it is assigned to. Officers see only what their role needs.']],
+    ['Who can see it', ['Everyone can see approved projects, fund entries, announcements and signed resolutions. They do not show receipts, contributors’ names or your private messages.', 'Your private concern or suggestion goes first only to the SPTA chairperson and Vice-Chairperson. They decide whether to share it with the School Head. Officers see only what their role needs.']],
     ['Children’s information', ['We ask only for the name, grade and section of your own children. Please do not upload photos that show pupils’ faces, names or uniforms.']],
     ['How long we keep it', ['As long as needed for the purposes above and as the school’s record rules require. Official records such as published fund entries and filed resolutions are kept.']],
     ['Your rights', ['Under the Data Privacy Act of 2012 you may ask to see, correct, or delete your information, object to its use, and ask for a copy. Ask the SPTA chairperson. You may also complain to the National Privacy Commission at privacy.gov.ph.']],
@@ -415,7 +420,8 @@
   const lead = () => onRole(E.leaders);
   function tabs() {
     const arr = [['home', 'Home', 'home'], ['proposals', 'Proposals', 'lightbulb'], ['projects', 'Projects', 'sprout'], ['funds', 'Funds', 'chart']];
-    if (lead()) arr.push(['cases', 'Assigned feedback', 'shield'], ['insights', 'School pulse', 'chart']);
+    if (lead()) arr.push(['cases', me().role === 'head' ? 'Passed-on feedback' : 'Assigned feedback', 'shield'], ['insights', 'School pulse', 'chart']);
+    else if (holds('secretary')) arr.push(['cases', 'Passed-on feedback', 'shield']);
     if (onRole(E.boardRoles) || lead()) arr.push(['board', 'Officer voting', 'users'], ['resolutions', 'Resolutions', 'file']);
     if (onRole(['secretary', 'head', 'chair', 'vice'])) arr.push(['records', 'Minutes & notices', 'clipboard']);
     if (onRole(['head', 'chair'])) arr.push(['roster', 'BOD requests', 'users']);
@@ -462,6 +468,7 @@
   function approvals() {
     const role=me().role, chair=canChair(), list=[];
     if(role==='head')db().proposals.filter(p=>p.status==='awaiting_head').forEach(p=>list.push(['check','For your approval · '+cash(p.budget),proposalName(p),'dlg:head',p.id,'Project Proposal']));
+    if(role==='head')passedOn().filter(c=>c.status==='received').forEach(c=>list.push(['message','Passed on by the chairperson',c.subject,'dlg:reply',c.id,c.kind==='concern'?'Private Concern':'Suggestion']));
     if(chair||role==='vice')db().batches.filter(canPost).forEach(d=>list.push(['clipboard','To publish · Money '+d.direction+' · '+cash(d.cents),d.purpose,'dlg:post',d.id,'Fund Posting']));
     db().minutes.filter(m=>chair&&m.state==='for_chair'||role==='head'&&m.state==='for_head').forEach(m=>list.push(['file',(m.state==='for_chair'?'To approve':'To note and file')+' · Meeting of '+date(m.date),m.title,'dlg:minute',m.id,'Minutes of the Meeting']));
     if(chair)db().projects.forEach(p=>(p.photos||[]).filter(x=>photoState(x)==='pending'&&x.by!==me().id).forEach(x=>list.push(['camera','To approve · Photo',p.title+' · '+x.caption,'dlg:photo',p.id+'|'+x.id,'Project Photo'])));
@@ -476,6 +483,7 @@
       db().resolutions.filter(r=>r.state==='draft').forEach(r=>list.push(['file','To review and publish · Version '+r.version,r.title,'dlg:freeze',r.id,'Resolution']));
       db().resolutions.filter(r=>r.state==='signing'&&E.signaturesPending(r).length===0).forEach(r=>list.push(['check','Fully signed · Ready to file',r.title,'dlg:fileResolution',r.id,'Resolution']));
       ownCases().filter(c=>c.kind==='inspection'&&c.assigned==='secretary'&&!['resolved','withdrawn'].includes(c.status)).forEach(c=>list.push(['search','To answer',c.subject,'dlg:reply',c.id,'Records Request']));
+      passedOn().filter(c=>!['resolved','withdrawn'].includes(c.status)).forEach(c=>list.push(['message','Passed to the School Head · follow up',c.subject,'dlg:caseNote',c.id,c.kind==='concern'?'Private Concern':'Suggestion']));
     }
     if(holds('treasurer'))db().batches.filter(d=>d.status==='for_treasurer'&&d.owner!==S.me).forEach(d=>list.push(['clipboard','To approve · '+cash(d.cents),d.purpose,'dlg:check',d.id,'Collection Handover']));
     if(holds('treasurer')||holds('collector'))db().batches.filter(d=>d.status==='returned'&&d.owner===S.me).forEach(d=>list.push(['alert','Returned for correction · '+cash(d.cents),d.purpose,'dlg:finance',d.id,'Fund Record']));
@@ -492,11 +500,11 @@
     if(!ui.dialog||!me()||isGuest())return null;
     const list=todo(), at=list.findIndex(x=>x[3]==='dlg:'+ui.dialog&&x[4]===ui.id);
     if(at>=0)return {kind:list[at][5],at,list};
-    const c=ui.dialog==='reply'&&db().cases.find(x=>x.id===ui.id);
+    const c=['reply','forward','caseNote'].includes(ui.dialog)&&db().cases.find(x=>x.id===ui.id);
     const kind=c?(c.kind==='inspection'?'Records Request':c.kind==='concern'?'Private Concern':'Suggestion'):{head:'Project Proposal',screen:'Project Proposal',vote:'Project Proposal',proposalReply:'Project Proposal',resubmit:'Project Proposal',post:'Fund Posting',check:'Collection Handover',freeze:'Resolution',sign:'Resolution',fileResolution:'Resolution',reviseResolution:'Resolution',resolution:'Resolution',minute:'Minutes of the Meeting',roster:'Officer Access Request'}[ui.dialog];
     return kind?{kind,at:-1,list}:null;
   }
-  const openCases=kind=>ownCases().filter(c=>c.assigned===me().role&&!['resolved','withdrawn'].includes(c.status)&&c.kind===kind).length;
+  const openCases=kind=>ownCases().filter(c=>c.kind===kind&&c.owner!==S.me&&caseHandler(c)&&!['resolved','withdrawn'].includes(c.status)).length;
   function waitingSummary(list) {
     const count={};
     list.forEach(x=>count[x[5]]=(count[x[5]]||0)+1);
@@ -544,12 +552,17 @@
   }
   function caseCard(c) {
     const gone = c.status === 'withdrawn',
-      assigned = holds(c.assigned),
-      mine = c.owner === S.me;
+      assigned = caseHandler(c),
+      mine = c.owner === S.me,
+      desk = E.onDesk(c),
+      noter = caseNoter(c) && !(mine && !assigned);
     const late = assigned && db().settings.reminders && !gone && c.status !== 'resolved' && c.due < t();
-    const who = E.recipients[c.replyBy || c.assigned] || E.roles[c.assigned];
-    const body = para(c.body) + (c.hidden ? '<div class="entry-meta hidden-name">' + icon('lock', 'sm') + esc(mine ? 'You hid your name from the reviewer.' : 'Name hidden by the sender. Reply here in the app.') + '</div>' : assigned && !mine ? fromLine(c) : '') + (mine ? tracker(c) : c.reply ? '<div class="portal-note personal"><b>Personal Reply Sent</b>' + para(c.reply) + '</div>' : '') + '<div class="entry-meta">Sent to the ' + esc(E.recipients[c.assigned] || E.roles[c.assigned]) + (assigned && !gone ? ' · Next update by ' + esc(date(c.due)) : '') + (late ? ' · <b class="overdue">Overdue</b>' : '') + '</div>';
-    return card(c.subject, body, c.id + ' · ' + (c.kind === 'inspection' ? 'Records inspection request' : c.kind === 'concern' ? 'Private concern' : 'Private suggestion'), c.status, (assigned && !gone ? btn(c.status === 'received' ? 'Mark reviewed or reply' : 'Update or reply', 'dlg:reply', c.id) : '') + (canWithdraw(c) ? btn('Withdraw', 'dlg:withdraw', c.id) : ''));
+    const to = desk ? E.deskName : E.recipients[c.assigned] || E.roles[c.assigned];
+    const notes = (c.notes || []).map(x => '<div class="portal-note' + (x.followUp ? ' personal' : '') + '"><b>' + esc((x.followUp ? 'Follow-up · ' : x.toHead ? 'Note for the School Head · ' : 'Note · ') + (E.roles[x.role] || x.role)) + '</b>' + para(x.text) + '<small>' + esc(date(x.at.slice(0, 10))) + '</small></div>').join('');
+    const body = para(c.body) + (c.hidden ? '<div class="entry-meta hidden-name">' + icon('lock', 'sm') + esc(mine ? 'You hid your name from the reviewer.' : 'Name hidden by the sender. Reply here in the app.') + '</div>' : (assigned || noter) && !mine ? fromLine(c) : '') + (mine ? tracker(c) : c.reply ? '<div class="portal-note personal"><b>Personal Reply Sent</b>' + para(c.reply) + '</div>' : '') + (!mine || noter ? notes : '') + '<div class="entry-meta">Sent to the ' + esc(to) + (c.forwarded ? ' · Passed on to the School Head' + (c.forwarded.role && noter ? ' by the ' + esc(E.roles[c.forwarded.role] || '') : '') + ' ' + esc(date(c.forwarded.at.slice(0, 10))) : '') + (assigned && !gone ? ' · Next update by ' + esc(date(c.due)) : '') + (late ? ' · <b class="overdue">Overdue</b>' : '') + '</div>';
+    const canForward = desk && !c.forwarded && ['chair', 'vice'].includes(me().role) && ['received', 'assigned'].includes(c.status);
+    const actions = (assigned && !gone ? btn(c.status === 'received' ? 'Mark reviewed or reply' : 'Update or reply', 'dlg:reply', c.id) : '') + (canForward ? btn('Pass on to the School Head', 'dlg:forward', c.id, 'primary') : '') + (noter && !gone && desk ? btn(holds('secretary') && !assigned ? 'Record follow-up' : c.forwarded ? 'Add a note' : 'Add a private note', 'dlg:caseNote', c.id) : '') + (canWithdraw(c) ? btn('Withdraw', 'dlg:withdraw', c.id) : '');
+    return card(c.subject, body, c.id + ' · ' + (c.kind === 'inspection' ? 'Records inspection request' : c.kind === 'concern' ? 'Private concern' : 'Private suggestion'), c.status, actions);
   }
   function pulse() {
     const tally = db().trends || {};
@@ -664,7 +677,7 @@
       if (d.owner === S.me && (d.handover ? ['for_treasurer', 'returned'] : ['pending', 'returned']).includes(d.status)) actions += btn('Withdraw', 'dlg:withdrawFinance', d.id, 'danger');
       if (d.status === 'withdrawn') actions += '<span class="entry-meta">Withdrawn ' + esc(date(d.withdrawn.at.slice(0, 10))) + '. ' + esc(d.withdrawn.reason) + '</span>';
       const list = (d.items || []).map(x => '<div class="list-line"><span>' + esc(x.description) + '</span><b>' + cash(x.cents) + '</b></div>').join('');
-      return card(d.purpose, para((d.direction === 'in' ? 'Money in · ' : 'Money out · ') + cash(d.cents)) + steps(d) + list + para(d.reason) + (d.history.length ? para(d.history.length + ' earlier submission version(s) retained.') : '') + para(d.file?.name || 'Original file required'), d.id + ' · ' + d.receipt, d.status, actions);
+      return card(d.purpose, para((d.direction === 'in' ? 'Money in · ' : 'Money out · ') + cash(d.cents)) + steps(d) + list + para(d.reason) + (d.history.length ? para(d.history.length + ' earlier submission version(s) retained.') : '') + para(d.noPaper ? 'No paper original · ' + d.noPaper : d.file?.name || 'Original file required'), d.id + ' · ' + d.receipt, d.status, actions);
     };
     const all = db().batches.filter(d => !officer || d.owner === S.me),
       waiting = treas ? all.filter(d => d.status === 'for_treasurer') : [],
@@ -704,10 +717,12 @@
   function assignedCases() {
     const late = c => db().settings.reminders && c.status !== 'resolved' && c.due < t();
     const kind = ui.caseFilter;
-    const mine = ownCases().filter(c => c.assigned === me().role && (!kind || c.kind === kind)).sort((a, b) => (a.status === 'resolved') - (b.status === 'resolved') || late(b) - late(a));
+    const mine = ownCases().filter(c => c.kind !== 'inspection' && c.owner !== S.me && (caseHandler(c) || caseNoter(c)) && (!kind || c.kind === kind)).sort((a, b) => (a.status === 'resolved') - (b.status === 'resolved') || late(b) - late(a));
     const others = kind ? btn('Show all assigned feedback', 'tab:cases') : '';
     const settings = me().role === 'head' ? section('Follow-up settings', ['ack', 'reminders'].map(k => '<div class="list-line"><span>' + esc(k === 'ack' ? 'In-app submission acknowledgements' : 'Flag overdue feedback first') + '</span>' + btn(db().settings[k] ? 'Turn off' : 'Turn on', 'setting', k) + '</div>').join('')) : '';
-    return section(kind === 'suggestion' ? 'Suggestions sent to you' : kind === 'concern' ? 'Concerns sent to you' : 'Assigned to you', mine.map(caseCard).join('') || empty(kind ? 'Nothing here yet.' : 'No private cases assigned to you.')) + others + (kind ? '' : settings);
+    const passed = !['chair', 'vice'].includes(me().role);
+    const intro = passed ? para('The chairperson and Vice-Chairperson read every suggestion and private concern first. They pass on the ones worth your attention, with a note when they need more from you.') : para('Only you and the ' + (me().role === 'chair' ? 'Vice-Chairperson' : 'chairperson') + ' can read what parents send. Pass an item on to the School Head if it is worth their time. You can leave a note for the School Head, and the secretary follows up with them.');
+    return intro + section(kind === 'suggestion' ? (passed ? 'Suggestions passed on' : 'Suggestions sent to you') : kind === 'concern' ? (passed ? 'Concerns passed on' : 'Concerns sent to you') : passed ? 'Passed on to the School Head' : 'Sent to you', mine.map(caseCard).join('') || empty(kind ? 'Nothing here yet.' : passed ? 'Nothing has been passed on yet.' : 'No private cases sent to you.')) + others + (kind ? '' : settings);
   }
   // Change history: who acted, in which role, on what, what was decided and why. Only the School Head, chairperson and Vice-Chairperson see it.
   const HISTORY_AREAS = {
@@ -805,13 +820,15 @@
     const dir = officer ? 'in' : read?.direction || (orig ? orig.direction === 'in' ? 'out' : 'in' : prior?.direction || 'in');
     let source = (prior ? para('Existing original: ' + (prior.file?.name || 'missing')) : '') + upload('Original receipt or contribution sheet');
     if (prior?.file) source = para('Current file: ' + prior.file.name) + upload('Replace original (optional)', false);
+    // Only the treasurer may record without a paper original, and must say why. The chairperson sees the reason before approving.
+    if (!scan && !officer && holds('treasurer')) source = select('paper', 'Supporting document', [['yes', 'I have the original (photo or PDF)'], ['no', 'There is no paper original']], prior && !prior.file ? 'no' : 'yes') + '<div data-when="paper" data-values="yes">' + source + '</div><div data-when="paper" data-values="no">' + area('noPaperReason', 'Why is there no paper original?', prior?.noPaper || '', 'required minlength="6" maxlength="200" placeholder="For example: a parent gave cash and asked for no receipt"') + notice('The chairperson reads this reason before approving. Write the receipt reference above as something you can find again, such as “Cash gift Nov 17”.') + '</div>';
     let intro = '';
     if (scan) {
       const flagged = read.items.filter(x => x.check).length;
       source = '<div class="scan-attached">' + scanPreview(scan, false) + '<div><b>Scanned Original</b>' + para(scan.file.name + ' is attached for the chairperson.') + btn('Scan a different photo', 'scanAgain', '', 'light', 'camera') + '</div></div>';
       intro = '<div class="scan-result">' + icon('check', 'sm') + '<span><b>' + read.items.length + ' Lines Filled In for You</b>' + esc(flagged ? flagged + ' line' + (flagged === 1 ? ' is' : 's are') + ' marked in gold because the writing was hard to read.' : 'Every line was read clearly.') + ' Compare each one with the paper and fix anything that is wrong.</span></div>' + (read.matchesImage ? '' : notice('Practice mode: this demo cannot read a real photo yet, so it filled in the fictional sample collection amounts. The live app will read the photo you took.'));
     } else if (kind === 'finance' && !id && !isLive()) intro = btn('Scan a photo instead', 'scanAgain', '', 'light', 'camera');
-    return intro + form('financeSubmit', (officer || orig ? hidden('direction', dir) + notice(officer ? 'Collection handover · Money in' : 'Linked correction for ' + orig.id + ' · Money ' + dir) : select('direction', 'Movement', [['in', 'Money in'], ['out', 'Money out']], dir)) + hidden('adjustment', orig?.id || prior?.adjustment || '') + input('date', officer ? 'Collection date' : 'Transaction date', read?.date || prior?.date || t(), 'date') + input('receipt', 'Receipt / batch reference', read?.receipt || prior?.receipt || '') + input('purpose', 'Purpose shown to parents', read?.purpose || prior?.purpose || (orig ? 'Correction · ' + orig.purpose : ''), 'text', 'required maxlength="140"') + (orig || officer ? hidden('project', '') : select('project', 'Expense allocation', [['', 'General fund'], ...db().projects.filter(x => x.status !== 'cancelled').map(x => [x.id, x.title])], prior?.project || '')) + '<fieldset><legend>' + (scan ? 'Scanned Line Items' : 'Private Line Items') + '</legend><div id="item-rows">' + initItems.map(row).join('') + '</div>' + btn(scan ? 'Add a missed line' : 'Add item', 'addItem', '', 'light', 'plus') + totalLine(lineSum(initItems), read ? read.writtenTotal : null) + '</fieldset>' + source + ck('verifiedItems', scan ? 'I compared every scanned line with the paper original and corrected anything that was wrong.' : 'I checked the amounts and item descriptions against the supporting document.', true), officer ? 'Submit to treasurer' : 'Submit to chairperson', prior?.id || '');
+    return intro + form('financeSubmit', (officer || orig ? hidden('direction', dir) + notice(officer ? 'Collection handover · Money in' : 'Linked correction for ' + orig.id + ' · Money ' + dir) : select('direction', 'Movement', [['in', 'Money in'], ['out', 'Money out']], dir)) + hidden('adjustment', orig?.id || prior?.adjustment || '') + input('date', officer ? 'Collection date' : 'Transaction date', read?.date || prior?.date || t(), 'date') + input('receipt', 'Receipt / batch reference', read?.receipt || prior?.receipt || '') + input('purpose', 'Purpose shown to parents', read?.purpose || prior?.purpose || (orig ? 'Correction · ' + orig.purpose : ''), 'text', 'required maxlength="140"') + (orig || officer ? hidden('project', '') : select('project', 'Expense allocation', [['', 'General fund (not for a project)'], ...db().projects.filter(x => x.status !== 'cancelled').map(x => [x.id, x.title])], prior?.project || '')) + '<fieldset><legend>' + (scan ? 'Scanned Line Items' : 'Private Line Items') + '</legend><div id="item-rows">' + initItems.map(row).join('') + '</div>' + btn(scan ? 'Add a missed line' : 'Add item', 'addItem', '', 'light', 'plus') + totalLine(lineSum(initItems), read ? read.writtenTotal : null) + '</fieldset>' + source + ck('verifiedItems', scan ? 'I compared every scanned line with the paper original and corrected anything that was wrong.' : 'I checked the amounts and item descriptions against the supporting document.', true), officer ? 'Submit to treasurer' : 'Submit to chairperson', prior?.id || '');
   }
   function cleanScan() {
     if (ui.scan?.url) URL.revokeObjectURL(ui.scan.url);
@@ -898,7 +915,7 @@
       return ['Voting seat', para(user.name) + form('setSeat', ck('voting', 'Include this officer in future votes.', false, user.boardSeat) + ck('verified', 'I checked the current school roster.', true), 'Save seat', id) + (user.role === 'bod' ? form('endBod', ck('confirm', 'This HPTA presidency has ended. Remove officer access and retain the parent profile.', true), 'End BOD term', id) : '')];
     }
     if (kind === 'proposal' || kind === 'resubmit') return [kind === 'proposal' ? 'Propose a project' : 'Revise proposal', form(kind === 'proposal' ? 'submitProposal' : 'resubmit', input('title', 'Project title', p?.title || '', 'text', 'required minlength="4" maxlength="100"') + (p ? '' : select('category', 'Category', E.categories)) + area('details', 'What does the school need?', p?.details || '', 'required minlength="8" maxlength="700"') + para('Leave out children’s names and private concerns. The review team checks proposals before sharing them.'), p ? 'Resubmit' : 'Send proposal', p?.id || '')];
-    if (['concern', 'suggestion'].includes(kind)) return [kind === 'concern' ? 'Report a private concern' : 'Make a suggestion', form('caseSubmit', hidden('kind', kind) + input('subject', 'Subject', '', 'text', 'required minlength="3" maxlength="100"') + select('category', 'Category', E.categories) + area('body', kind === 'concern' ? 'What happened?' : 'What would you like to improve?', '', 'required minlength="6" maxlength="700"') + select('assigned', 'Send privately to', Object.entries(E.recipients)) + ck('hideName', 'Hide my name from the reviewer') + '<div class="entry-meta">The officer will not see your name or section and will reply here in the app. You can do this ' + E.hiddenPerMonth + ' times a month.</div>' + notice('If the concern involves the usual recipient, choose another reviewer. For an urgent child-safety matter, contact the school’s designated safeguarding staff directly.'), 'Send privately')];
+    if (['concern', 'suggestion'].includes(kind)) return [kind === 'concern' ? 'Report a private concern' : 'Make a suggestion', form('caseSubmit', hidden('kind', kind) + input('subject', 'Subject', '', 'text', 'required minlength="3" maxlength="100"') + select('category', 'Category', E.categories) + area('body', kind === 'concern' ? 'What happened?' : 'What would you like to improve?', '', 'required minlength="6" maxlength="700"') + hidden('assigned', 'chair') + notice('Only the SPTA chairperson and Vice-Chairperson can read this. They decide whether to share it with the School Head.') + ck('hideName', 'Hide my name from the reviewer') + '<div class="entry-meta">The officer will not see your name or section and will reply here in the app. You can do this ' + E.hiddenPerMonth + ' times a month.</div>' + notice('For an urgent child-safety matter, contact the school’s designated safeguarding staff directly.'), 'Send privately')];
     if (kind === 'screen') return [p.title, '<div class="entry-meta step-line">For screening</div>' + para(p.details) + form('screen', select('decision', 'Next step', [['screen', 'Publish and open the officers’ vote'], ['return', 'Return for revision'], ['decline', 'Decline']]) + '<div data-when="decision" data-values="screen">' + input('title', 'Reviewed title', p.publicTitle || p.title) + area('text', 'Description safe to share', p.publicText || p.details) + input('budget', 'Proposed SPTA allocation (₱)', p.budget / 100, 'number', 'required min="0" step="0.01"') + '<div class="fund-check ok" id="screen-fund" data-available="' + E.funding(db()).available + '">' + icon('info', 'sm') + '<span><b>SPTA funds available now: ' + cash(E.funding(db()).available) + '</b><span id="screen-fund-note">An allocation above this amount will be marked as needing fundraising.</span></span></div>' + ck('fundraising', 'This proposal seeks voluntary contributions.', false, !!p.fundraising) + input('closes', 'Voting closes on', E.voteCloses({date: t()}), 'date', 'required min="' + t() + '"') + '<div class="entry-meta">Officers have one month to vote unless you change this date.</div></div><div data-when="decision" data-values="return decline">' + area('reason', 'Feedback for the parent') + '</div>', 'Save screening', id)];
     if (kind === 'vote') return [b.title, '<div class="entry-meta step-line">For your vote</div>' + para(b.body) + '<div class="entry-meta">Proposed SPTA allocation ' + cash(b.budget) + '</div>' + ballotFund(b) + notice('Voting closes on ' + date(E.voteCloses(b)) + '.') + form('vote', select('vote', 'Your vote', [['', 'Choose a response'], ['yes', 'Proceed'], ['no', 'Do not proceed'], ['abstain', 'Abstain']], '', 'required'), 'Submit once', id)];
     if (kind === 'close') return ['Close voting', para(b.title) + notice('Voting closes by itself once the result is decided. Closing early records the result with the votes received so far.') + form('closeBallot', ck('confirm', 'The voting period has ended. Record the result.', true), 'Close and record', id)];
@@ -918,6 +935,17 @@
       const c = db().cases.find(x => x.id === id);
       return ['Update status or reply', para(c.subject) + notice('The sender receives an automated response for each status. A personal reply is optional.') + form('caseReply', select('status', 'Status', [['assigned', 'Reviewed'], ['resolved', 'Resolved']], c.status === 'resolved' ? 'resolved' : 'assigned') + area('reply', 'Personal reply (optional)', '', 'maxlength="600"') + input('due', 'Next update by', c.due, 'date') + (c.hidden ? ck('block', 'This was a false or abusive report. Stop this sender from hiding their name again. Their name stays hidden.') : ''), 'Save', id)];
     }
+    if (kind === 'forward') {
+      const c = db().cases.find(x => x.id === id);
+      if (!c) return ['Pass on to the School Head', empty('This is no longer here.')];
+      return ['Pass on to the School Head', para(c.subject) + notice('The School Head and the secretary will be able to read this. ' + (c.hidden ? 'The sender’s name stays hidden. ' : '') + 'The sender is told it was passed on, but never sees your note.') + form('caseForward', area('note', 'Note for the School Head (optional)', '', 'maxlength="500" placeholder="What you need from the School Head, or what more you want to know"'), 'Pass on', id)];
+    }
+    if (kind === 'caseNote') {
+      const c = db().cases.find(x => x.id === id);
+      if (!c) return ['Note', empty('This is no longer here.')];
+      const follow = holds('secretary') && !caseHandler(c);
+      return [follow ? 'Record follow-up' : 'Add a note', para(c.subject) + notice(follow ? 'Write what you asked the School Head and what they answered. The chairperson and Vice-Chairperson can read it. The sender cannot.' : 'Seen by the chairperson, the Vice-Chairperson' + (c.forwarded ? ', the School Head and the secretary' : '') + '. The sender cannot read it.') + form('caseNote', area('note', follow ? 'Follow-up' : 'Note', '', 'required minlength="3" maxlength="500"'), 'Save note', id)];
+    }
     if (kind === 'proposalReply') return ['Personal reply', para(p.title) + notice('Optional. The person who proposed already receives an automated response at each status. Only they see this reply.') + form('proposalReply', area('reply', 'Your reply as ' + roleName(a), p.reply || '', 'required minlength="3" maxlength="600"'), 'Send personal reply', id)];
     if (kind === 'resolution') return ['Read resolution', resolutionPaper(r, true)];
     if (kind === 'freeze') return ['Edit and publish version ' + r.version, notice('This draft was created automatically from the approved proposal. Adjust the wording if needed. The allocation of ' + cash(r.budget) + ' stays as voted.') + form('freeze', hidden('version', r.version) + input('title', 'Project title', r.title, 'text', 'required minlength="4" maxlength="100"') + area('text', 'Project details', r.text, 'required minlength="8" maxlength="700"') + area('clause', 'Resolution wording', r.clause || E.resolutionText(r.title, r.budget, r.direct)) + select('signerRule', 'Required signatures', [['all', 'All officers'], ['policy', 'Named signers under a documented school rule']]) + '<div data-when="signerRule" data-values="policy">' + input('signerPolicy', 'School signer policy or resolution reference') + '<fieldset><legend>Designated Required Signers</legend><div class="roster-picker">' + r.signers.map(s => '<label class="tick"><input type="checkbox" name="requiredSigners" value="' + esc(s.id) + '"><span>' + esc(s.name) + '</span></label>').join('') + '</div></fieldset></div>' + ck('confirm', 'I verified the wording and required signers against the school record.', true), 'Publish for signatures', id)];
@@ -934,7 +962,7 @@
     if (kind === 'announce') return ['Publish announcement', form('announce', input('title', 'Announcement title') + area('body', 'Complete message', '', 'required minlength="6" maxlength="1600"') + select('audience', 'Audience', [['everyone', 'All parents and officers'], ['officers', 'Officers only']]) + input('until', 'Show until (optional)', '', 'date', 'min="' + t() + '"'), 'Publish announcement')];
     if (kind === 'finance' || kind === 'adjust') return financeDialog(kind, id);
     if (kind === 'check') return ['Review handover', para(d.purpose + ' · ' + cash(d.cents)) + (d.items || []).map(x => '<div class="list-line"><span>' + esc(x.description) + '</span><b>' + cash(x.cents) + '</b></div>').join('') + btn('Open scanned original', 'evidence', d.id) + form('financeCheck', select('decision', 'Decision', [['approve', 'Approve and send to the chairperson'], ['return', 'Return to the collecting officer']]) + '<div data-when="decision" data-values="approve">' + ck('received', 'I received ' + cash(d.cents) + ' and checked the lines against the scanned original.', true) + '</div><div data-when="decision" data-values="return">' + area('reason', 'What needs correcting?') + '</div>' + para('After your approval, the chairperson gives final approval before it shows in SPTA funds.'), 'Record review', id)];
-    if (kind === 'post') return ['Review for posting', para(d.purpose + ' · ' + cash(d.cents)) + btn('Open supporting original', 'evidence', d.id) + form('financeReview', select('decision', 'Decision', [['post', 'Approve for posting'], ['return', 'Return for correction']]) + '<div data-when="decision" data-values="post">' + ck('reviewed', 'I opened the supporting original and checked the entries.', true) + ck('publicSafe', 'The published purpose contains no identifying or bank details.', true) + '</div><div data-when="decision" data-values="return">' + area('reason', 'What needs correcting?') + '</div>' + para('Posting updates the parent fund view. Spending authorization is recorded in the school’s financial process.'), 'Record review', id)];
+    if (kind === 'post') return ['Review for posting', para(d.purpose + ' · ' + cash(d.cents)) + (d.noPaper ? notice('There is no paper original for this entry. The treasurer wrote: ' + d.noPaper) : btn('Open supporting original', 'evidence', d.id)) + form('financeReview', select('decision', 'Decision', [['post', 'Approve for posting'], ['return', 'Return for correction']]) + '<div data-when="decision" data-values="post">' + ck('reviewed', d.noPaper ? 'I read why there is no paper original and checked the entries.' : 'I opened the supporting original and checked the entries.', true) + ck('publicSafe', 'The published purpose contains no identifying or bank details.', true) + '</div><div data-when="decision" data-values="return">' + area('reason', 'What needs correcting?') + '</div>' + para('Posting updates the parent fund view. Spending authorization is recorded in the school’s financial process.'), 'Record review', id)];
     if (kind === 'attachment') {
       const f = ui.attachment,
         url = f?.url || '';
@@ -1073,6 +1101,8 @@
     minutesUpload: 'Minutes sent to the chairperson.',
     minutesReview: 'Minutes updated.',
     caseReply: 'Saved. The sender was told the new status.',
+    caseForward: 'Passed on. The School Head and the secretary can read it now.',
+    caseNote: 'Note saved.',
     proposalReply: 'Personal reply sent.',
     chairProposal: 'Sent to the School Head for approval.',
     projectUpdate: 'Project status published.',
@@ -1510,12 +1540,14 @@
         delete payload.itemDescription;
         delete payload.itemAmount;
         if (payload.direction === 'in') payload.project = '';
+        if (payload.paper === 'no') payload.noPaper = true;
+        delete payload.paper;
       }
       if (action === 'sign' && payload.response === 'acknowledged' && !payload.signature) throw Error('Draw your signature in the box first.');
       if (action === 'financeReview') {
         const batch = db().batches.find(x => x.id === payload.id);
         payload.stamp = E.openStamp(batch);
-        if (payload.decision === 'post' && !ui.reviewed.has(S.me + '|' + payload.stamp)) throw Error('Open the supporting original before approving this post.');
+        if (payload.decision === 'post' && !batch.noPaper && !ui.reviewed.has(S.me + '|' + payload.stamp)) throw Error('Open the supporting original before approving this post.');
       }
       let file = data.get('attachment');
       if (file?.size && action === 'projectPhoto') file = await shrinkImage(file);

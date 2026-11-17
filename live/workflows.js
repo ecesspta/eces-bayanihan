@@ -58,6 +58,9 @@
     chair: 'SPTA chairperson',
     vice: 'SPTA Vice-Chairperson'
   };
+  // Suggestions and private concerns go to the chairperson and the Vice-Chairperson only.
+  // They decide whether it is worth passing on to the School Head.
+  const deskName = 'SPTA chairperson and Vice-Chairperson';
   const duplicate = s => structuredClone(s);
   const today = () => new Intl.DateTimeFormat('en-CA', {
     timeZone: 'Asia/Manila',
@@ -335,11 +338,13 @@
   function autoReply(item) {
     if (item.kind) {
       const what = item.kind === 'inspection' ? 'request' : item.kind,
-        who = recipients[item.assigned] || roles[item.assigned] || 'reviewer';
+        desk = item.kind !== 'inspection' && ['chair', 'vice'].includes(item.assigned),
+        who = desk ? deskName : recipients[item.assigned] || roles[item.assigned] || 'reviewer',
+        shared = desk && item.forwarded ? ' They also shared it with the School Head.' : '';
       if (item.status === 'withdrawn') return 'You withdrew this ' + what + '. Nothing more will happen with it.';
-      if (item.status === 'resolved') return 'Your ' + what + ' was marked resolved by the ' + who + '.';
-      if (item.status === 'assigned') return 'Your ' + what + ' was reviewed by the ' + who + '.';
-      return 'Thank you. Your ' + what + ' was received privately by the ' + who + '.';
+      if (item.status === 'resolved') return 'Your ' + what + ' was marked resolved by the ' + who + '.' + shared;
+      if (item.status === 'assigned') return 'Your ' + what + ' was reviewed by the ' + who + '.' + shared;
+      return 'Thank you. Your ' + what + ' was received privately by the ' + who + '.' + shared;
     }
     if (item.direct && item.status === 'awaiting_head') return 'Added by the chairperson. It is now with the School Head for approval.';
     return proposalReplies[item.status] || '';
@@ -405,9 +410,21 @@
       size: bytes
     };
   }
+  const onDesk = c => c.kind !== 'inspection' && ['chair', 'vice'].includes(c.assigned);
+  // Who may read a case. The sender always can. Records requests go to the secretary.
+  // A suggestion or concern is read by the chairperson and Vice-Chairperson, and by the School Head and secretary only once it is passed on.
   function canSeeCase(actor, c) {
-    return actor.id === c.owner || actor.role === c.assigned;
+    if (actor.id === c.owner || actor.role === c.assigned) return true;
+    return onDesk(c) && (['chair', 'vice'].includes(actor.role) || !!c.forwarded && ['head', 'secretary'].includes(actor.role));
   }
+  // Who may change the status or reply to the sender: the desk, and the School Head once it has been passed on.
+  function caseHandler(db, a, c) {
+    if (!a?.active) return false;
+    if (!onDesk(c)) return holds(db, a, c.assigned);
+    return ['chair', 'vice'].includes(a.role) || !!c.forwarded && a.role === 'head';
+  }
+  // Who may add an internal note. The secretary joins once it has been passed on, to follow up with the School Head.
+  const caseNoter = (db, a, c) => !!a?.active && onDesk(c) && (caseHandler(db, a, c) || !!c.forwarded && holds(db, a, 'secretary'));
   function publicProposal(p) {
     return Boolean(p.published && p.publicTitle);
   }
@@ -1711,7 +1728,7 @@
         {
           const kind = choice(v.kind, ['suggestion', 'concern', 'inspection'], 'submission type');
           id = newId(db, kind === 'concern' ? 'C' : kind === 'inspection' ? 'I' : 'S');
-          const assigned = kind === 'inspection' ? 'secretary' : choice(v.assigned || 'head', Object.keys(recipients), 'recipient');
+          const assigned = kind === 'inspection' ? 'secretary' : 'chair';
           // A signed-in parent may hide their name from the reviewer. The record keeps the account for the IT administrator only.
           const hidden = v.hideName === true;
           if (hidden) {
@@ -1735,6 +1752,8 @@
             due: plusDays(today(), 5),
             status: 'received',
             reply: '',
+            forwarded: null,
+            notes: [],
             history: []
           });
           tell(db, db.cases[0]);
@@ -1743,7 +1762,7 @@
       case 'caseReply':
         {
           const c = get(db.cases, id);
-          check(holds(db, a, c.assigned), 'Only the assigned reviewer may update this case.');
+          check(caseHandler(db, a, c), 'Only the assigned reviewer may update this case.');
           const next = choice(v.status, ['assigned', 'resolved'], 'status');
           // A personal reply is optional. The automated response always tells the sender the new status.
           const reply = String(v.reply ?? '').trim() ? words(v.reply, 'Personal reply', 3, 600) : '';
@@ -1771,6 +1790,60 @@
           if (moved) tell(db, c);
           if (reply) note(db, c.owner, c.id + ' · A personal reply from the ' + (recipients[a.role] || roles[a.role]) + ' is ready.');
           changed('Private case updated');
+          break;
+        }
+      case 'caseForward':
+        {
+          // The chairperson or Vice-Chairperson decides a suggestion or concern is worth the School Head's time.
+          const c = get(db.cases, id);
+          check(onDesk(c) && ['chair', 'vice'].includes(a.role) && a.active, 'The chairperson or Vice-Chairperson passes this on to the School Head.');
+          check(!c.forwarded, 'This was already passed on to the School Head.');
+          check(['received', 'assigned'].includes(c.status), 'Only an open suggestion or concern can be passed on.');
+          const text = String(v.note ?? '').trim() ? words(v.note, 'Note for the School Head', 3, 500) : '';
+          c.forwarded = {
+            at: at(),
+            by: a.id,
+            role: a.role
+          };
+          c.notes = c.notes || [];
+          if (text) c.notes.push({
+            at: at(),
+            by: a.id,
+            role: a.role,
+            text,
+            toHead: true
+          });
+          // The School Head and the secretary see it from now on.
+          db.accounts.filter(x => x.active && ['head', 'secretary'].includes(x.role)).forEach(x => note(db, x.id, c.id + ' · A ' + c.kind + ' was passed on to the School Head by the ' + (roles[a.role] || a.role) + '.' + (text ? ' A note is attached.' : '')));
+          tell(db, c);
+          changed('Private case passed on to the School Head');
+          break;
+        }
+      case 'caseNote':
+        {
+          // Internal notes between the desk, the School Head and the secretary. The sender never sees them.
+          const c = get(db.cases, id);
+          check(caseNoter(db, a, c), 'You cannot add a note to this case.');
+          check(c.status !== 'withdrawn', 'The sender withdrew this.');
+          const text = words(v.note, 'Note', 3, 500);
+          c.notes = c.notes || [];
+          c.notes.push({
+            at: at(),
+            by: a.id,
+            role: a.role,
+            text,
+            ...(a.role === 'secretary' ? {
+              followUp: true
+            } : {}),
+            ...(c.forwarded && ['chair', 'vice'].includes(a.role) ? {
+              toHead: true
+            } : {})
+          });
+          // Tell the other people who can read it that there is something new.
+          const to = ['chair', 'vice'];
+          if (c.forwarded) to.push('head', 'secretary');
+          db.accounts.filter(x => x.active && to.includes(x.role) && x.id !== a.id).forEach(x => note(db, x.id, c.id + ' · A new note from the ' + (roles[a.role] || a.role) + '.'));
+          changed('Private case note added');
           break;
         }
       case 'proposalReply':
@@ -1886,7 +1959,11 @@
             const booked = db.batches.filter(x => x.id !== id && x.adjustment === orig.id && !['returned', 'withdrawn'].includes(x.status)).reduce((sum, x) => sum + x.cents, 0);
             check(booked + cents <= orig.cents, 'Corrections exceed the original entry.');
           }
-          const file = photo(v.file || prior?.file);
+          // The treasurer may record money that has no paper, such as a cash gift. She gives the reason and the chairperson sees it before posting.
+          const noPaper = v.noPaper === true;
+          if (noPaper) check(!collecting && holds(db, a, 'treasurer'), 'Only the treasurer can record an entry that has no paper original.');
+          const noPaperReason = noPaper ? words(v.noPaperReason, 'Why there is no paper original', 6, 200) : '';
+          const file = noPaper ? null : photo(v.file || prior?.file);
           id = prior?.id || newId(db, 'F');
           const history = prior ? [...prior.history, {
             reason: prior.reason,
@@ -1906,6 +1983,7 @@
             items,
             project: project || (v.adjustment ? get(db.batches, v.adjustment).project : ''),
             file,
+            noPaper: noPaperReason,
             owner: a.id,
             status: collecting ? 'for_treasurer' : 'pending',
             handover: collecting,
@@ -1954,7 +2032,7 @@
             d.status = 'returned';
           } else {
             choice(v.decision, ['post'], 'decision');
-            check(v.reviewed === true, 'Open the supporting file and confirm your review.');
+            check(v.reviewed === true, d.noPaper ? 'Confirm that you read why there is no paper original.' : 'Open the supporting file and confirm your review.');
             check(v.publicSafe === true, 'Confirm the purpose is safe to publish.');
             if (d.direction === 'out' && d.project) {
               const p = get(db.projects, d.project);
@@ -2041,6 +2119,10 @@
     publicProposal,
     readableProposal,
     canSeeCase,
+    caseHandler,
+    caseNoter,
+    onDesk,
+    deskName,
     isChair,
     canAnnounce,
     hasDelegation,
