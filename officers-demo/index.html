@@ -1,7 +1,6 @@
 <!doctype html>
 <html lang="en">
   <head>
-<meta name="robots" content="noindex, nofollow" />
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
     <meta name="theme-color" content="#102b59" />
@@ -3726,7 +3725,7 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
     delete a.inviteAt;
     a.consent = {
       at: at(),
-      version: '2026-11'
+      version: '2026-11b'
     };
     seenOn(db, a.id, device);
     audit(db, a, 'Officer account set up', a.id);
@@ -4125,7 +4124,7 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
           // Proof that the person agreed, and to which version of the notice.
           if (v.consent === true) user.consent = {
             at: at(),
-            version: '2026-11'
+            version: '2026-11b'
           };
           if (device) user.devices = [device];
           db.accounts.push(user);
@@ -6991,7 +6990,7 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
     return '<div class="funds-page">' + summary + '<p class="balance-note">SPTA officers manage these voluntary contributions and fundraising proceeds. They are not the school’s funds.</p>' +
       section('Approved Transactions', movements ? '<ul class="movement-list">' + movements + '</ul>' : empty('No approved transactions yet.')) +
       section('Project Funding', allocations + (projectLines || empty('No approved SPTA projects are waiting for funds.'))) + (activityLines ? section('Activity Budgets', activityLines) : '') +
-      (proposalLines ? section('Proposals Waiting for a Decision', proposalLines) : '') + section('SPTA records', btn('Request records inspection', 'dlg:inspection') + (has('resolutions') ? '' : db().resolutions.filter(r => r.published).map(r => card(r.title, upara(r.parentSummary), r.id + ' · Version ' + r.version, r.state, '', false, true)).join('')) + (has('records') ? '' : db().minutes.filter(m => m.state === 'filed').map(m => card(m.title, upara(m.summary), 'Meeting · ' + date(m.date), 'filed', '', false, true)).join(''))) + '</div>';
+      (proposalLines ? section('Proposals Waiting for a Decision', proposalLines) : '') + section('SPTA records', btn('Request records inspection', 'dlg:inspection') + (has('resolutions') ? '' : db().resolutions.filter(r => r.published).map(r => card(r.title, upara(r.parentSummary), r.id + ' · Version ' + r.version, r.state, '', false, true)).join(''))) + '</div>';
   }
   function finance() {
     const role = me().role,

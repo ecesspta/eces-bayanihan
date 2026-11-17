@@ -754,7 +754,7 @@
     delete a.inviteAt;
     a.consent = {
       at: at(),
-      version: '2026-11'
+      version: '2026-11b'
     };
     seenOn(db, a.id, device);
     audit(db, a, 'Officer account set up', a.id);
@@ -1153,7 +1153,7 @@
           // Proof that the person agreed, and to which version of the notice.
           if (v.consent === true) user.consent = {
             at: at(),
-            version: '2026-11'
+            version: '2026-11b'
           };
           if (device) user.devices = [device];
           db.accounts.push(user);

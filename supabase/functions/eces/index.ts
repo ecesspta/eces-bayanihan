@@ -815,7 +815,7 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
     delete a.inviteAt;
     a.consent = {
       at: at(),
-      version: '2026-11'
+      version: '2026-11b'
     };
     seenOn(db, a.id, device);
     audit(db, a, 'Officer account set up', a.id);
@@ -1214,7 +1214,7 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
           // Proof that the person agreed, and to which version of the notice.
           if (v.consent === true) user.consent = {
             at: at(),
-            version: '2026-11'
+            version: '2026-11b'
           };
           if (device) user.devices = [device];
           db.accounts.push(user);
@@ -2737,13 +2737,8 @@ function visible(db, me) {
     budget: x.budget,
     reason: x.reason
   });
-  out.minutes = db.minutes.filter(m => m.state === 'filed' || minuteReader).map(m => minuteReader ? m : {
-    id: m.id,
-    title: m.title,
-    date: m.date,
-    state: m.state,
-    summary: m.summary
-  });
+  // Meeting minutes are for the officers and the School Head only. Families never receive them.
+  out.minutes = minuteReader ? db.minutes : [];
   out.batches = finance ? db.batches : me.role === 'collector' ? db.batches.filter(d => d.owner === me.id) : [];
   out.remittances = ['collector', 'treasurer'].includes(me.role) ? db.remittances : [];
   out.ballots = governance ? db.ballots.filter(b => b.roster.includes(me.id) || lead || secretary).map(b => {
