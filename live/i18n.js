@@ -86,11 +86,82 @@
   const skip = el => el && el.closest && el.closest('script,style,textarea,[data-keep-language],.print-only'),
     skipTag = el => el && el.closest && el.closest('script,style,[data-keep-language],.print-only');
   const ATTRS = ['placeholder', 'aria-label', 'title', 'alt'];
+  // Text that officers typed for the community (marked class="ut") is translated by the server when it is available.
+  // Private suggestions and concerns, names and contact details are never marked, so they are never sent.
+  const UT_KEY = 'eces-ut-fil',
+    UT_LIMIT = 300;
+  let utCache = {},
+    utRemote = null,
+    utTimer = 0,
+    utOffUntil = 0;
+  try {
+    utCache = JSON.parse(root.localStorage.getItem(UT_KEY) || '{}') || {};
+  } catch (e) {}
+  const utDone = new Set(),
+    utWait = new Map();
+  const inUser = el => el && el.closest && el.closest('.ut');
+  const squeeze = v => v.trim().replace(/\s+/g, ' ');
+  function utApply(n, hit) {
+    const v = n.nodeValue;
+    utDone.add(hit);
+    n.nodeValue = v.match(/^\s*/)[0] + hit + v.match(/\s*$/)[0];
+  }
+  function utSave() {
+    const keys = Object.keys(utCache);
+    for (const k of keys.slice(0, Math.max(0, keys.length - UT_LIMIT))) delete utCache[k];
+    try {
+      root.localStorage.setItem(UT_KEY, JSON.stringify(utCache));
+    } catch (e) {}
+  }
+  function userText(n) {
+    const core = squeeze(n.nodeValue);
+    if (!core || !hasWords(core) || utDone.has(core)) return;
+    const hit = utCache[core];
+    if (hit) return utApply(n, hit);
+    if (!utRemote || Date.now() < utOffUntil) return;
+    let nodes = utWait.get(core);
+    if (!nodes) utWait.set(core, nodes = new Set());
+    nodes.add(n);
+    if (!utTimer) utTimer = setTimeout(utFlush, 250);
+  }
+  async function utFlush() {
+    utTimer = 0;
+    const batch = [...utWait.keys()].slice(0, 20);
+    if (!batch.length) return;
+    const nodes = new Map(batch.map(k => [k, utWait.get(k)]));
+    batch.forEach(k => utWait.delete(k));
+    let res = null;
+    try {
+      res = await utRemote(batch);
+    } catch (e) {
+      res = null;
+    }
+    // undefined means "not signed in yet": try again after the next screen is drawn, without waiting.
+    if (res !== undefined && (!Array.isArray(res) || res.length !== batch.length)) {
+      utOffUntil = Date.now() + 5 * 60 * 1000;
+      utWait.clear();
+      return;
+    }
+    if (Array.isArray(res)) {
+      batch.forEach((k, i) => {
+        const t = res[i];
+        if (typeof t !== 'string' || !t.trim()) return;
+        delete utCache[k];
+        utCache[k] = t.trim();
+        nodes.get(k).forEach(n => {
+          if (lang === 'fil' && n.isConnected && squeeze(n.nodeValue) === k) utApply(n, t.trim());
+        });
+      });
+      utSave();
+      if (observer) observer.takeRecords();
+    }
+    if (utWait.size) utTimer = setTimeout(utFlush, 50);
+  }
   function node(n) {
     if (n.nodeType === 3) {
       if (!skip(n.parentNode)) {
         const out = translate(n.nodeValue);
-        if (out !== n.nodeValue) n.nodeValue = out;
+        if (out !== n.nodeValue) n.nodeValue = out;else if (inUser(n.parentNode)) userText(n);
       }
     } else if (n.nodeType === 1) {
       if (skipTag(n)) return;
@@ -144,6 +215,9 @@
     toggle: () => set(lang === 'fil' ? 'en' : 'fil'),
     t: text => lang === 'fil' ? translate(text) : text,
     apply,
+    setRemote: fn => {
+      utRemote = typeof fn === 'function' ? fn : null;
+    },
     start(rerender) {
       onChange = rerender || onChange;
       if (root.document && root.document.documentElement) root.document.documentElement.lang = lang === 'fil' ? 'fil' : 'en';

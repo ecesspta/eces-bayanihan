@@ -252,6 +252,8 @@ const hex = n => randomBytes(n).toString('hex');
 /* store: async methods (see backend/sqlite-store.cjs and backend/postgres-store.cjs).
    config: { originOk(req) -> bool, cookies: bool, secure: bool, adminKey: string, sampleSheet: () -> Buffer|null } */
 function createApi(store, config = {}) {
+  // Translations already made, kept in memory so the same text is not translated twice.
+  const translated = new Map();
   const cfg = {
     originOk: () => true,
     cookies: false,
@@ -719,6 +721,38 @@ function createApi(store, config = {}) {
         await store.delSession(tokenH);
         if (cfg.cookies) out.cookies.push('eces_session=; Path=/; Max-Age=0; HttpOnly; SameSite=Strict');
         return send(200, state(db, null));
+      }
+      if (route === '/api/translate') {
+        // Turns text that officers typed (project titles, minutes, announcements) into Filipino for people who chose Filipino.
+        // The app never sends private suggestions or concerns, names or contact details here. It is off until a key is set.
+        if (typeof cfg.translate !== 'function') throw new HttpError(503, 'Automatic translation is not turned on.');
+        const list = Array.isArray(v.texts) ? v.texts : [];
+        if (!list.length || list.length > 20 || list.some(x => typeof x !== 'string' || !x.trim() || x.length > 1700)) throw new HttpError(400, 'Send between 1 and 20 short texts.');
+        await brake('tr:' + me.id, 400, 86400000, 'Translation limit reached for today. The text stays in English.');
+        await brake('tr-ip:' + (req.ip || 'unknown'), 1500, 86400000, 'Translation limit reached for today. The text stays in English.');
+        const out = [];
+        const need = [];
+        list.forEach((x, i) => {
+          const hit = translated.get(x);
+          if (hit) out[i] = hit;else need.push(i);
+        });
+        if (need.length) {
+          let got = null;
+          try {
+            got = await cfg.translate(need.map(i => list[i]));
+          } catch (e) {
+            got = null;
+          }
+          if (!Array.isArray(got) || got.length !== need.length || got.some(x => typeof x !== 'string' || !x.trim())) throw new HttpError(502, 'Translation is not available right now.');
+          need.forEach((i, k) => {
+            out[i] = got[k];
+            if (translated.size >= 800) translated.delete(translated.keys().next().value);
+            translated.set(list[i], got[k]);
+          });
+        }
+        return send(200, {
+          translations: out
+        });
       }
       if (route === '/api/action') {
         if (v.action === 'register') throw new HttpError(403, 'Use the registration form.');

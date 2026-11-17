@@ -1227,11 +1227,82 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
   const skip = el => el && el.closest && el.closest('script,style,textarea,[data-keep-language],.print-only'),
     skipTag = el => el && el.closest && el.closest('script,style,[data-keep-language],.print-only');
   const ATTRS = ['placeholder', 'aria-label', 'title', 'alt'];
+  // Text that officers typed for the community (marked class="ut") is translated by the server when it is available.
+  // Private suggestions and concerns, names and contact details are never marked, so they are never sent.
+  const UT_KEY = 'eces-ut-fil',
+    UT_LIMIT = 300;
+  let utCache = {},
+    utRemote = null,
+    utTimer = 0,
+    utOffUntil = 0;
+  try {
+    utCache = JSON.parse(root.localStorage.getItem(UT_KEY) || '{}') || {};
+  } catch (e) {}
+  const utDone = new Set(),
+    utWait = new Map();
+  const inUser = el => el && el.closest && el.closest('.ut');
+  const squeeze = v => v.trim().replace(/\s+/g, ' ');
+  function utApply(n, hit) {
+    const v = n.nodeValue;
+    utDone.add(hit);
+    n.nodeValue = v.match(/^\s*/)[0] + hit + v.match(/\s*$/)[0];
+  }
+  function utSave() {
+    const keys = Object.keys(utCache);
+    for (const k of keys.slice(0, Math.max(0, keys.length - UT_LIMIT))) delete utCache[k];
+    try {
+      root.localStorage.setItem(UT_KEY, JSON.stringify(utCache));
+    } catch (e) {}
+  }
+  function userText(n) {
+    const core = squeeze(n.nodeValue);
+    if (!core || !hasWords(core) || utDone.has(core)) return;
+    const hit = utCache[core];
+    if (hit) return utApply(n, hit);
+    if (!utRemote || Date.now() < utOffUntil) return;
+    let nodes = utWait.get(core);
+    if (!nodes) utWait.set(core, nodes = new Set());
+    nodes.add(n);
+    if (!utTimer) utTimer = setTimeout(utFlush, 250);
+  }
+  async function utFlush() {
+    utTimer = 0;
+    const batch = [...utWait.keys()].slice(0, 20);
+    if (!batch.length) return;
+    const nodes = new Map(batch.map(k => [k, utWait.get(k)]));
+    batch.forEach(k => utWait.delete(k));
+    let res = null;
+    try {
+      res = await utRemote(batch);
+    } catch (e) {
+      res = null;
+    }
+    // undefined means "not signed in yet": try again after the next screen is drawn, without waiting.
+    if (res !== undefined && (!Array.isArray(res) || res.length !== batch.length)) {
+      utOffUntil = Date.now() + 5 * 60 * 1000;
+      utWait.clear();
+      return;
+    }
+    if (Array.isArray(res)) {
+      batch.forEach((k, i) => {
+        const t = res[i];
+        if (typeof t !== 'string' || !t.trim()) return;
+        delete utCache[k];
+        utCache[k] = t.trim();
+        nodes.get(k).forEach(n => {
+          if (lang === 'fil' && n.isConnected && squeeze(n.nodeValue) === k) utApply(n, t.trim());
+        });
+      });
+      utSave();
+      if (observer) observer.takeRecords();
+    }
+    if (utWait.size) utTimer = setTimeout(utFlush, 50);
+  }
   function node(n) {
     if (n.nodeType === 3) {
       if (!skip(n.parentNode)) {
         const out = translate(n.nodeValue);
-        if (out !== n.nodeValue) n.nodeValue = out;
+        if (out !== n.nodeValue) n.nodeValue = out;else if (inUser(n.parentNode)) userText(n);
       }
     } else if (n.nodeType === 1) {
       if (skipTag(n)) return;
@@ -1285,6 +1356,9 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
     toggle: () => set(lang === 'fil' ? 'en' : 'fil'),
     t: text => lang === 'fil' ? translate(text) : text,
     apply,
+    setRemote: fn => {
+      utRemote = typeof fn === 'function' ? fn : null;
+    },
     start(rerender) {
       onChange = rerender || onChange;
       if (root.document && root.document.documentElement) root.document.documentElement.lang = lang === 'fil' ? 'fil' : 'en';
@@ -5403,7 +5477,8 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
   const endpoint = p => (apiBase || '') + '/api/' + p;
   // Network trouble is explained in plain words, never as "Failed to fetch" or a stray JSON error.
   const WAIT = 30000, WAIT_FILE = 120000;
-  let down = false;
+  let down = false,
+    translateOff = false;
   function trouble(kind, status) {
     const e = Error(kind === 'offline' ? 'You are offline. Check your phone’s internet connection, then try again.' : kind === 'slow' ? 'The connection is too slow and the request timed out. Try again when your signal is better.' : kind === 'server' ? 'The SPTA server had a problem. Please try again in a few minutes.' : kind === 'reply' ? 'The server sent a reply the app could not read. Please try again in a few minutes.' : 'The app could not reach the SPTA server. Check your internet connection, then try again.');
     e.network = kind;
@@ -5904,6 +5979,21 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
     get unreachable() {
       return down;
     },
+    // Filipino for text that officers typed. Returns the translations, undefined when nobody is signed in yet,
+    // or null when the server cannot translate (not turned on, limit reached, or no connection).
+    async translateTexts(texts) {
+      if (!shared || translateOff) return null;
+      if (!actorId) return undefined;
+      try {
+        const r = await api('translate', {
+          texts
+        });
+        return Array.isArray(r.translations) ? r.translations : null;
+      } catch (e) {
+        if (/not turned on/i.test(String(e && e.message))) translateOff = true;
+        return null;
+      }
+    },
     get shared() {
       return shared;
     }
@@ -6221,7 +6311,7 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
     if (!waiting.length || ui.dialog) return '';
     const x = waiting[0],
       from = E.recipients[x.role] || E.roles[x.role] || E.roles[E.account(db(), x.author)?.role] || 'SPTA';
-    return '<div class="portal-overlay announce-overlay"><section class="portal-modal announce-pop" role="alertdialog" aria-modal="true" aria-labelledby="announce-title"><div class="announce-head"><span class="notice-symbol">' + icon('megaphone') + '</span><div><small>SPTA Announcement' + (waiting.length > 1 ? ' · 1 of ' + waiting.length : '') + '</small><h2 id="announce-title">' + esc(titleCase(x.title)) + '</h2></div></div><div class="modal-inner"><div class="entry-meta">' + esc(date(x.date)) + ' · From the ' + esc(from) + (x.audience === 'officers' ? ' · Officers only' : '') + '</div>' + para(x.body) + '<div class="form-end">' + btn(waiting.length > 1 ? 'Next' : 'Got it', 'announceSeen', x.id, 'primary') + '</div></div></section></div>';
+    return '<div class="portal-overlay announce-overlay"><section class="portal-modal announce-pop" role="alertdialog" aria-modal="true" aria-labelledby="announce-title"><div class="announce-head"><span class="notice-symbol">' + icon('megaphone') + '</span><div><small>SPTA Announcement' + (waiting.length > 1 ? ' · 1 of ' + waiting.length : '') + '</small><h2 id="announce-title">' + ut(titleCase(x.title)) + '</h2></div></div><div class="modal-inner"><div class="entry-meta">' + esc(date(x.date)) + ' · From the ' + esc(from) + (x.audience === 'officers' ? ' · Officers only' : '') + '</div>' + upara(x.body) + '<div class="form-end">' + btn(waiting.length > 1 ? 'Next' : 'Got it', 'announceSeen', x.id, 'primary') + '</div></div></section></div>';
   }
   const oldView = new URLSearchParams(location.search).get('view');
   function btn(label, action, id = '', style = 'light', ic = '') {
@@ -6230,10 +6320,14 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
   const empty = s => '<div class="portal-empty">' + esc(s) + '</div>';
   const notice = s => '<div class="portal-note">' + esc(s) + '</div>';
   const section = (title, body) => '<section class="portal-section"><h2>' + esc(titleCase(title)) + '</h2>' + body + '</section>';
-  function card(title, body, meta = '', status = '', actions = '', sentence = false) {
-    return '<article class="entry"><div class="entry-top"><span class="entry-meta">' + esc(meta) + '</span>' + (status ? badge(status) : '') + '</div><h3>' + esc(sentence ? title : titleCase(title)) + '</h3>' + body + (actions ? '<div class="entry-actions">' + actions + '</div>' : '') + '</article>';
+  function card(title, body, meta = '', status = '', actions = '', sentence = false, user = false) {
+    return '<article class="entry"><div class="entry-top"><span class="entry-meta">' + esc(meta) + '</span>' + (status ? badge(status) : '') + '</div><h3' + (user ? ' class="ut"' : '') + '>' + esc(sentence ? title : titleCase(title)) + '</h3>' + body + (actions ? '<div class="entry-actions">' + actions + '</div>' : '') + '</article>';
   }
   const para = s => s ? '<p class="wrap-lines">' + esc(s) + '</p>' : '';
+  // Text that officers typed for the community. With Filipino chosen and the server able to translate, it is translated.
+  // Private suggestions and concerns, names and contact details are never marked.
+  const upara = s => s ? '<p class="wrap-lines ut">' + esc(s) + '</p>' : '';
+  const ut = s => '<span class="ut">' + esc(s) + '</span>';
   const actionCard = (label, act, ic, id = '') => '<button class="action-tile" data-do="' + esc(act) + '" data-id="' + esc(id) + '">' + icon(ic) + '<span>' + esc(titleCase(label)) + '</span>' + icon('chevron', 'sm') + '</button>';
   const input = (name, title, value = '', type = 'text', attrs = 'required') => {
     const field = '<input type="' + type + '" name="' + esc(name) + '" value="' + esc(value) + '" ' + attrs + '>';
@@ -6473,7 +6567,7 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
     const manage = onRole(E.leaders) ? form('projectPhotoRemove', hidden('photo', ph.id), 'Remove photo', pid) : '';
     const state = photoState(ph);
     const review = state === 'pending' ? (canChair() && ph.by !== S.me ? notice('Added by ' + n(ph.by) + '. It is public once you approve it.') + form('projectPhotoReview', hidden('photo', ph.id) + select('decision', 'Decision', [['approve', 'Approve for the public'], ['return', 'Return with a reason']]) + '<div data-when="decision" data-values="return">' + area('reason', 'Reason for return', '', 'minlength="4" maxlength="300"') + '</div>', 'Save decision', pid) : notice('Waiting for the chairperson’s approval. Only the School Head, chairperson and Vice-Chairperson can see it until then.')) : state === 'returned' ? notice('Returned by the chairperson. ' + (ph.reason || '')) : '';
-    return [proj.title, photoImg(ph, ph.caption, 'attachment-image') + '<p class="photo-caption"><b>' + esc(ph.caption) + '</b></p><div class="entry-meta">' + esc((ph.stage === 'completed' ? 'Completed project' : 'In progress') + ' · ' + date(ph.date)) + (list.length > 1 ? ' · Photo ' + (at + 1) + ' of ' + list.length : '') + '</div>' + (list.length > 1 ? '<div class="entry-actions">' + step('Previous', list[at - 1]) + step('Next', list[at + 1]) + '</div>' : '') + review + manage];
+    return [proj.title, photoImg(ph, ph.caption, 'attachment-image') + '<p class="photo-caption"><b class="ut">' + esc(ph.caption) + '</b></p><div class="entry-meta">' + esc((ph.stage === 'completed' ? 'Completed project' : 'In progress') + ' · ' + date(ph.date)) + (list.length > 1 ? ' · Photo ' + (at + 1) + ' of ' + list.length : '') + '</div>' + (list.length > 1 ? '<div class="entry-actions">' + step('Previous', list[at - 1]) + step('Next', list[at + 1]) + '</div>' : '') + review + manage];
   }
   function photoAddDialog(id) {
     const proj = db().projects.find(x => x.id === id);
@@ -6493,11 +6587,11 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
     if (onRole(E.leaders) && p.status === 'completed' && !p.past) buttons += btn('Reopen project', 'dlg:reopen', p.id);
     if (canChair() && active) buttons += btn('Change project', 'dlg:amend', p.id);
     if (me().role === 'head' && active) buttons += btn('Cancel project', 'dlg:cancel', p.id, 'danger');
-    const top = '<div class="proj-top"><span class="project-symbol">' + icon(p.icon || 'sprout') + '</span><div><h3>' + esc(titleCase(p.title)) + '</h3><small>' + esc(cancelled ? 'Cancelled' : p.phase || labels[p.status]) + '</small></div>' + badge(p.status) + '</div>';
+    const top = '<div class="proj-top"><span class="project-symbol">' + icon(p.icon || 'sprout') + '</span><div><h3>' + ut(titleCase(p.title)) + '</h3><small>' + esc(cancelled ? 'Cancelled' : p.phase || labels[p.status]) + '</small></div>' + badge(p.status) + '</div>';
     const progress = p.past ? '<div class="proj-nums"><span><b>Completed</b> before this app</span><span>No SPTA funds used</span></div>' : cancelled ? '' : '<div class="proj-bar" role="img" aria-label="' + done + '% done"><div style="width:' + done + '%"></div></div><div class="proj-nums"><span><b>' + done + '%</b> done</span><span><b>' + cash(spent) + '</b> of ' + cash(p.budget) + ' spent</span></div>';
     const cancel = cancelled ? '<div class="cancel-note"><b>Why It Was Cancelled</b>' + para(p.reason) + '<b>Unused Funds</b>' + para(p.remainder) + '</div>' : '';
     const flag = f?.short > 0 ? fundCheck(f.need, f.short) : '';
-    const details = '<details class="proj-details"><summary>Details</summary>' + para(p.text) + row('Project lead', n(p.owner)) + (p.past ? (p.sponsor ? row('Paid for by', p.sponsor) : '') + row('Completed on', date(p.changed)) + row('SPTA funds used', cash(0)) : row('SPTA allocation', cash(p.budget)) + row(cancelled ? 'Spent by cancellation' : 'Spent so far', cash(cancelled ? p.spentAtCancellation ?? spent : spent)) + (cancelled ? '' : row('Not yet spent', cash(p.budget - spent)))) + (f && !f.short ? row('Funding', 'Covered by SPTA funds') : '') + changeLog(p) + (E.amendOpen(db(), p.id) ? '<div class="entry-meta">' + icon('info', 'sm') + 'A change to this project is waiting for a new officer vote or the School Head’s decision. The allocation stays ' + esc(cash(p.budget)) + ' until then.</div>' : '') + row('Reference', p.id + ' · updated ' + date(p.changed)) + (buttons ? '<div class="entry-actions">' + buttons + '</div>' : '') + '</details>';
+    const details = '<details class="proj-details"><summary>Details</summary>' + upara(p.text) + row('Project lead', n(p.owner)) + (p.past ? (p.sponsor ? row('Paid for by', p.sponsor) : '') + row('Completed on', date(p.changed)) + row('SPTA funds used', cash(0)) : row('SPTA allocation', cash(p.budget)) + row(cancelled ? 'Spent by cancellation' : 'Spent so far', cash(cancelled ? p.spentAtCancellation ?? spent : spent)) + (cancelled ? '' : row('Not yet spent', cash(p.budget - spent)))) + (f && !f.short ? row('Funding', 'Covered by SPTA funds') : '') + changeLog(p) + (E.amendOpen(db(), p.id) ? '<div class="entry-meta">' + icon('info', 'sm') + 'A change to this project is waiting for a new officer vote or the School Head’s decision. The allocation stays ' + esc(cash(p.budget)) + ' until then.</div>' : '') + row('Reference', p.id + ' · updated ' + date(p.changed)) + (buttons ? '<div class="entry-actions">' + buttons + '</div>' : '') + '</details>';
     return '<article class="proj is-' + esc(p.status) + '">' + top + progress + photoStrip(p) + flag + cancel + details + '</article>';
   }
   function projects() {
@@ -6613,9 +6707,9 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
     const feedback='<div class="mobile-shortcuts">'+(leader?actionCard('Suggestions ('+openCases('suggestion')+')','tab:cases','message','suggestion')+actionCard('Private concerns ('+openCases('concern')+')','tab:cases','shield','concern'):actionCard('Make a suggestion','dlg:suggestion','message')+actionCard('Private concern','dlg:concern','shield'))+'</div>';
     const approvalList=officer&&(leader||waiting.length)?section('Needs your action',waiting.map(([shape,kicker,name,act,id,kind])=>'<button class="notice-row" data-do="'+esc(act)+'" data-id="'+esc(id)+'" data-queue="1"><span class="notice-symbol">'+icon(shape)+'</span><span>'+kindChip(kind)+'<strong>'+esc(titleCase(name))+'</strong><small>'+esc(kicker)+'</small></span>'+icon('chevron','sm')+'</button>').join('')||empty('Nothing is waiting for you.')):'';
     const latest=notices()[0];
-    const announcement=latest?'<button class="notice-row" data-do="tab:updates"><span class="notice-symbol">'+icon('megaphone')+'</span><span><small>'+esc(date(latest.date))+'</small><strong>'+esc(titleCase(latest.title))+'</strong></span>'+icon('chevron','sm')+'</button>':empty('No announcements yet.');
-    const soon=allActivities().filter(isUpcoming).sort((x,y)=>x.date.localeCompare(y.date)).slice(0,2).map(x=>'<button class="project-row" data-do="tab:activities"><span class="project-symbol">'+icon('calendar')+'</span><span><strong>'+esc(titleCase(x.title))+'</strong><small>'+esc(whenLine(x)+(x.audience==='officers'?' · Officers only':''))+'</small></span>'+icon('chevron','sm')+'</button>').join('');
-    const projectsList=db().projects.slice(0,2).map(p=>'<button class="project-row" data-do="tab:projects"><span class="project-symbol">'+icon(p.icon||'sprout')+'</span><span><strong>'+esc(titleCase(p.title))+'</strong>'+badge(p.status)+'</span>'+icon('chevron','sm')+'</button>').join('');
+    const announcement=latest?'<button class="notice-row" data-do="tab:updates"><span class="notice-symbol">'+icon('megaphone')+'</span><span><small>'+esc(date(latest.date))+'</small><strong>'+ut(titleCase(latest.title))+'</strong></span>'+icon('chevron','sm')+'</button>':empty('No announcements yet.');
+    const soon=allActivities().filter(isUpcoming).sort((x,y)=>x.date.localeCompare(y.date)).slice(0,2).map(x=>'<button class="project-row" data-do="tab:activities"><span class="project-symbol">'+icon('calendar')+'</span><span><strong>'+ut(titleCase(x.title))+'</strong><small>'+esc(whenLine(x)+(x.audience==='officers'?' · Officers only':''))+'</small></span>'+icon('chevron','sm')+'</button>').join('');
+    const projectsList=db().projects.slice(0,2).map(p=>'<button class="project-row" data-do="tab:projects"><span class="project-symbol">'+icon(p.icon||'sprout')+'</span><span><strong>'+ut(titleCase(p.title))+'</strong>'+badge(p.status)+'</span>'+icon('chevron','sm')+'</button>').join('');
     const join=isGuest()?'<div class="join-bod"><strong>Parent or SPTA Officer?</strong>'+btn('Sign in','tab:account')+'</div>':'';
     const cover=standIn()?notice('You are standing in for the '+E.roles[standIn()]+' until '+date(db().cover.until)+'. Their tasks appear in your list.'):'';
     return hero+cover+feedback+approvalList+section('Latest announcement',announcement)+section('Upcoming activities',soon||empty('No activities are planned yet.'))+section('SPTA projects',projectsList||empty('Approved SPTA projects will appear here.'))+join;
@@ -6634,13 +6728,13 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
       if (p.status === 'awaiting_head' && me().role === 'head') actions += btn('Record decision', 'dlg:head', p.id, 'primary');
       if (E.publicProposal(p)) actions += btn(p.supporters?.includes(S.me) ? 'Supported' : 'Support idea', 'support', p.id, 'light', 'heart');
       if (me().role === 'head' || canChair()) actions += btn(p.reply ? 'Edit personal reply' : 'Send personal reply', 'dlg:proposalReply', p.id);
-      return card(proposalName(p), para(p.publicText || p.details) + (lead() && !own ? fromLine(p) : '') + (own || lead() ? para(p.reason) : '') + (p.direct ? '<div class="entry-meta direct-note">' + icon('info', 'sm') + 'Added by the chairperson</div>' : '') + (p.budget > 0 ? '<div class="entry-meta">Proposed SPTA allocation ' + cash(p.budget) + '</div>' : '') + proposalFund(p) + (lead() && p.reply ? '<div class="portal-note personal"><b>Personal Reply Sent</b>' + para(p.reply) + '</div>' : '') + (E.publicProposal(p) ? '<div class="entry-meta">' + Number(p.supports || 0) + ' parent supporters</div>' : ''), p.id + ' · ' + p.category, p.status, actions);
+      return card(proposalName(p), (p.publicText ? upara(p.publicText) : para(p.details)) + (lead() && !own ? fromLine(p) : '') + (own || lead() ? para(p.reason) : '') + (p.direct ? '<div class="entry-meta direct-note">' + icon('info', 'sm') + 'Added by the chairperson</div>' : '') + (p.budget > 0 ? '<div class="entry-meta">Proposed SPTA allocation ' + cash(p.budget) + '</div>' : '') + proposalFund(p) + (lead() && p.reply ? '<div class="portal-note personal"><b>Personal Reply Sent</b>' + para(p.reply) + '</div>' : '') + (E.publicProposal(p) ? '<div class="entry-meta">' + Number(p.supports || 0) + ' parent supporters</div>' : ''), p.id + ' · ' + p.category, p.status, actions, false, !!p.publicTitle);
     }).join('') + '</div>';
   }
   function updates() {
     const mine = db().proposals.filter(p => p.owner === S.me),
       cases = ownCases().filter(c => c.owner === S.me);
-    const announcements = section('SPTA announcements', notices().map(x => card(x.title, para(x.body) + (x.edited ? '<div class="entry-meta">Edited ' + esc(date(x.edited)) + '</div>' : '') + (publisher() && x.until ? '<div class="entry-meta">' + (ended(x) ? 'Ended ' + esc(date(x.until)) + ' · No longer shown to others' : 'Shown until ' + esc(date(x.until))) + '</div>' : ''), date(x.date) + (me().role === 'parent' ? '' : ' · ' + (x.audience === 'everyone' ? 'School community' : 'Officers only')), ended(x) ? 'closed' : '', publisher() ? btn('Edit', 'dlg:announceEdit', x.id) + btn('Remove', 'dlg:announceRemove', x.id) : '')).join('') || empty('No announcements yet.'));
+    const announcements = section('SPTA announcements', notices().map(x => card(x.title, upara(x.body) + (x.edited ? '<div class="entry-meta">Edited ' + esc(date(x.edited)) + '</div>' : '') + (publisher() && x.until ? '<div class="entry-meta">' + (ended(x) ? 'Ended ' + esc(date(x.until)) + ' · No longer shown to others' : 'Shown until ' + esc(date(x.until))) + '</div>' : ''), date(x.date) + (me().role === 'parent' ? '' : ' · ' + (x.audience === 'everyone' ? 'School community' : 'Officers only')), ended(x) ? 'closed' : '', publisher() ? btn('Edit', 'dlg:announceEdit', x.id) + btn('Remove', 'dlg:announceRemove', x.id) : '', false, true)).join('') || empty('No announcements yet.'));
     if (isGuest()) return section('My submissions', signInPrompt('Sign in to send a proposal, suggestion or concern and to follow its status here.')) + announcements;
     return section('My submissions', mine.map(p => card(proposalName(p), tracker(p) + (p.reason ? '<div class="portal-note"><b>Note from the Reviewer</b>' + para(p.reason) + '</div>' : ''), p.id + ' · Project proposal', p.status, (p.status === 'returned' ? btn('Revise', 'dlg:resubmit', p.id) : '') + (canWithdraw(p) ? btn('Withdraw', 'dlg:withdraw', p.id) : ''))).join('') + cases.map(caseCard).join('') || empty('You have no submissions yet.')) + section('Notifications', db().notes.filter(x => x.owner === S.me).slice(0, 20).map(x => card(x.text, '', date(x.at), '', '', true)).join('') || empty('Updates will appear here.')) + announcements;
   }
@@ -6677,12 +6771,12 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
         voted = b.participated.includes(S.me),
         turnout = b.turnout ?? b.participated.length,
         need = E.yesNeeded(b);
-      const text = para(b.body) + '<div class="entry-meta">Secret ballot · ' + b.present.length + ' officers · ' + need + ' yes votes needed (51%) · SPTA allocation ' + cash(b.budget) + '</div>' + (open ? ballotFund(b) : '') + (open ? para(turnout + ' of ' + b.present.length + ' officers have voted.' + (voted ? ' Your vote was received.' : '')) + '<div class="entry-meta vote-closes">' + icon('info', 'sm') + 'Voting closes on ' + esc(date(E.voteCloses(b))) + '</div>' : '<div class="vote-summary"><b>' + b.counts.yes + ' Yes</b><b>' + b.counts.no + ' No</b><b>' + b.counts.abstain + ' Abstain</b></div>' + para(b.withdrawn ? 'The proposer withdrew this proposal, so the vote was closed.' : b.passed ? 'Reached 51% of all officers. Sent to the School Head for approval.' : 'Yes votes did not reach 51% of all officers' + (b.expired ? ' by the closing date.' : '.')));
+      const text = upara(b.body) + '<div class="entry-meta">Secret ballot · ' + b.present.length + ' officers · ' + need + ' yes votes needed (51%) · SPTA allocation ' + cash(b.budget) + '</div>' + (open ? ballotFund(b) : '') + (open ? para(turnout + ' of ' + b.present.length + ' officers have voted.' + (voted ? ' Your vote was received.' : '')) + '<div class="entry-meta vote-closes">' + icon('info', 'sm') + 'Voting closes on ' + esc(date(E.voteCloses(b))) + '</div>' : '<div class="vote-summary"><b>' + b.counts.yes + ' Yes</b><b>' + b.counts.no + ' No</b><b>' + b.counts.abstain + ' Abstain</b></div>' + para(b.withdrawn ? 'The proposer withdrew this proposal, so the vote was closed.' : b.passed ? 'Reached 51% of all officers. Sent to the School Head for approval.' : 'Yes votes did not reach 51% of all officers' + (b.expired ? ' by the closing date.' : '.')));
       let buttons = '';
       if (open && member && !voted) buttons += btn('Cast vote', 'dlg:vote', b.id, 'primary');
       if (open && canChair() && !S.shared && b.present.some(m => !b.participated.includes(m) && !S.practiceProfiles.includes(m))) buttons += btn('Add practice ballots', 'practiceBallots', b.id);
       if (open && canChair()) buttons += btn('Change closing date', 'dlg:deadline', b.id) + btn('Close voting', 'dlg:close', b.id);
-      return card(b.title, text, b.proposal + ' · ' + (open ? 'Opened ' : 'Closed ') + date(b.date), open ? 'voting' : b.withdrawn ? 'withdrawn' : b.passed ? 'approved' : 'closed', buttons);
+      return card(b.title, text, b.proposal + ' · ' + (open ? 'Opened ' : 'Closed ') + date(b.date), open ? 'voting' : b.withdrawn ? 'withdrawn' : b.passed ? 'approved' : 'closed', buttons, false, true);
     }).join('') || empty('No proposals are open for voting.'));
   }
   const officers = () => onRole(E.boardRoles) || me().role === 'head';
@@ -6703,7 +6797,7 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
     }
     if (canPrint() && r.state !== 'draft') acts += btn('Print / save PDF', 'print', r.id, 'light', 'file');
     const signed = r.signers ? Object.values(r.signatures || {}).filter(x => x.status === 'acknowledged').length : 0;
-    return card(r.title, para(r.clause || 'The secretary is reviewing the draft.') + (r.state !== 'draft' && r.signers ? '<div class="entry-meta">' + signed + ' of ' + r.signers.length + ' officers have signed</div>' : ''), r.id + ' · Version ' + r.version, r.state, acts);
+    return card(r.title, para(r.clause || 'The secretary is reviewing the draft.') + (r.state !== 'draft' && r.signers ? '<div class="entry-meta">' + signed + ' of ' + r.signers.length + ' officers have signed</div>' : ''), r.id + ' · Version ' + r.version, r.state, acts, false, true);
   }
   // The resolution paper follows the school's own format (see SPTA Resolution No. 2, s. 2026): heading, title, the text,
   // the officers' signatures, the members present with their signatures, and the witnesses.
@@ -6754,14 +6848,14 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
     const projectLines = active.map(p => {
       const spent = E.projectSpend(db(), p.id),
         f = fund.projects[p.id];
-      return '<article class="fund-project"><h3>' + esc(titleCase(p.title)) + '</h3><div class="fund-bar"><div style="width:' + Math.max(0, Math.min(100, p.budget ? spent / p.budget * 100 : 0)) + '%"></div></div><div class="money-inline"><span>Allocation <b>' + cash(p.budget) + '</b></span><span>Spent <b>' + cash(spent) + '</b></span><span>Still to pay <b>' + cash(f.need) + '</b></span></div>' + fundCheck(f.need, f.short, 'Covered by SPTA funds') + '</article>';
+      return '<article class="fund-project"><h3>' + ut(titleCase(p.title)) + '</h3><div class="fund-bar"><div style="width:' + Math.max(0, Math.min(100, p.budget ? spent / p.budget * 100 : 0)) + '%"></div></div><div class="money-inline"><span>Allocation <b>' + cash(p.budget) + '</b></span><span>Spent <b>' + cash(spent) + '</b></span><span>Still to pay <b>' + cash(f.need) + '</b></span></div>' + fundCheck(f.need, f.short, 'Covered by SPTA funds') + '</article>';
     }).join('');
     const activityLines = allActivities().filter(x => x.status === 'scheduled' && x.budget > 0).map(x => {
       const spent = E.projectSpend(db(), x.id),
         f = fund.activities?.[x.id] || {need: 0, short: 0};
-      return '<article class="fund-project"><h3>' + esc(titleCase(x.title)) + '</h3><div class="entry-meta">Activity · ' + esc(whenLine(x)) + (x.audience === 'officers' ? ' · Officers only' : '') + '</div><div class="fund-bar"><div style="width:' + Math.max(0, Math.min(100, spent / x.budget * 100)) + '%"></div></div><div class="money-inline"><span>Budget <b>' + cash(x.budget) + '</b></span><span>Spent <b>' + cash(spent) + '</b></span><span>Still to pay <b>' + cash(f.need) + '</b></span></div>' + fundCheck(f.need, f.short, 'Covered by SPTA funds') + '</article>';
+      return '<article class="fund-project"><h3>' + ut(titleCase(x.title)) + '</h3><div class="entry-meta">Activity · ' + esc(whenLine(x)) + (x.audience === 'officers' ? ' · Officers only' : '') + '</div><div class="fund-bar"><div style="width:' + Math.max(0, Math.min(100, spent / x.budget * 100)) + '%"></div></div><div class="money-inline"><span>Budget <b>' + cash(x.budget) + '</b></span><span>Spent <b>' + cash(spent) + '</b></span><span>Still to pay <b>' + cash(f.need) + '</b></span></div>' + fundCheck(f.need, f.short, 'Covered by SPTA funds') + '</article>';
     }).join('');
-    const proposalLines = waiting.map(p => '<article class="fund-project"><h3>' + esc(titleCase(proposalName(p))) + '</h3><div class="entry-meta">' + esc(labels[p.status]) + ' · Proposed allocation ' + cash(p.budget) + '</div>' + proposalFund(p) + '</article>').join('');
+    const proposalLines = waiting.map(p => '<article class="fund-project"><h3>' + ut(titleCase(proposalName(p))) + '</h3><div class="entry-meta">' + esc(labels[p.status]) + ' · Proposed allocation ' + cash(p.budget) + '</div>' + proposalFund(p) + '</article>').join('');
     const movements = rows.map(entry => {
       const incoming = entry.direction === 'in';
       const project = entry.project && name(entry.project);
@@ -6780,7 +6874,7 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
     return '<div class="funds-page">' + summary + '<p class="balance-note">SPTA officers manage these voluntary contributions and fundraising proceeds. They are not the school’s funds.</p>' +
       section('Approved Transactions', movements ? '<ul class="movement-list">' + movements + '</ul>' : empty('No approved transactions yet.')) +
       section('Project Funding', allocations + (projectLines || empty('No approved SPTA projects are waiting for funds.'))) + (activityLines ? section('Activity Budgets', activityLines) : '') +
-      (proposalLines ? section('Proposals Waiting for a Decision', proposalLines) : '') + section('SPTA records', btn('Request records inspection', 'dlg:inspection') + (has('resolutions') ? '' : db().resolutions.filter(r => r.published).map(r => card(r.title, para(r.parentSummary), r.id + ' · Version ' + r.version, r.state)).join('')) + (has('records') ? '' : db().minutes.filter(m => m.state === 'filed').map(m => card(m.title, para(m.summary), 'Meeting · ' + date(m.date), 'filed')).join(''))) + '</div>';
+      (proposalLines ? section('Proposals Waiting for a Decision', proposalLines) : '') + section('SPTA records', btn('Request records inspection', 'dlg:inspection') + (has('resolutions') ? '' : db().resolutions.filter(r => r.published).map(r => card(r.title, upara(r.parentSummary), r.id + ' · Version ' + r.version, r.state, '', false, true)).join('')) + (has('records') ? '' : db().minutes.filter(m => m.state === 'filed').map(m => card(m.title, upara(m.summary), 'Meeting · ' + date(m.date), 'filed', '', false, true)).join(''))) + '</div>';
   }
   function finance() {
     const role = me().role,
@@ -6815,14 +6909,14 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
   function activityCard(x) {
     const spent = E.projectSpend(db(), x.id),
       mine = x.by === S.me || canChair() || onRole(['head', 'vice']);
-    let body = (x.place ? '<div class="entry-meta">' + icon('info', 'sm') + esc(x.place) + '</div>' : '') + para(x.details);
+    let body = (x.place ? '<div class="entry-meta">' + icon('info', 'sm') + '<span class="ut">' + esc(x.place) + '</span></div>' : '') + upara(x.details);
     if (x.budget > 0) body += '<div class="money-inline"><span>Budget <b>' + cash(x.budget) + '</b></span><span>Spent <b>' + cash(spent) + '</b></span><span>Left <b>' + cash(Math.max(0, x.budget - spent)) + '</b></span></div>';
     else if (officerLike() && x.status === 'scheduled') body += '<div class="entry-meta">No budget set aside yet</div>';
     if (x.status === 'cancelled' && x.reason) body += para('Cancelled. ' + x.reason);
     let acts = '';
     if (holds('treasurer') && x.status === 'scheduled') acts += btn(x.budget > 0 ? 'Change budget' : 'Set budget', 'dlg:activityBudget', x.id, 'primary');
     if (planner() && x.status === 'scheduled' && mine) acts += btn('Edit', 'dlg:activity', x.id) + btn('Cancel activity', 'dlg:activityCancel', x.id, 'danger');
-    return card(x.title, body, whenLine(x) + (x.audience === 'officers' ? ' · Officers only' : ''), x.status === 'cancelled' ? 'cancelled' : '', acts);
+    return card(x.title, body, whenLine(x) + (x.audience === 'officers' ? ' · Officers only' : ''), x.status === 'cancelled' ? 'cancelled' : '', acts, false, true);
   }
   function activitiesView() {
     const list = allActivities(),
@@ -6839,7 +6933,7 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
       if (m.state === 'for_chair' && canChair()) acts += btn('Approve minutes', 'minutesReview', m.id, 'primary');
       if (m.state === 'for_head' && me().role === 'head') acts += btn('Note and file', 'minutesReview', m.id, 'primary');
       if (['for_chair', 'for_head'].includes(m.state) && (m.secretary === S.me || holds('secretary'))) acts += btn('Withdraw', 'dlg:withdrawMinutes', m.id, 'danger');
-      return card(m.title, para(m.summary) + para('Due ' + date(m.due) + (!['filed', 'withdrawn'].includes(m.state) && m.due < t() ? ' · Overdue' : '')) + (m.state === 'withdrawn' ? para('Withdrawn. ' + m.withdrawn.reason) : ''), m.id + ' · ' + date(m.date), m.state, acts);
+      return card(m.title, upara(m.summary) + para('Due ' + date(m.due) + (!['filed', 'withdrawn'].includes(m.state) && m.due < t() ? ' · Overdue' : '')) + (m.state === 'withdrawn' ? para('Withdrawn. ' + m.withdrawn.reason) : ''), m.id + ' · ' + date(m.date), m.state, acts, false, true);
     }).join('') || empty('No minutes uploaded.')) + (sec ? section('Records inspection requests', ownCases().filter(c => c.kind === 'inspection' && c.assigned === 'secretary').map(caseCard).join('') || empty('No inspection requests.')) : '');
   }
   function roster() {
@@ -7066,11 +7160,11 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
     if (kind === 'proposal' || kind === 'resubmit') return [kind === 'proposal' ? 'Propose a project' : 'Revise proposal', form(kind === 'proposal' ? 'submitProposal' : 'resubmit', input('title', 'Project title', p?.title || '', 'text', 'required minlength="4" maxlength="100"') + (p ? '' : select('category', 'Category', E.categories)) + area('details', 'What does the school need?', p?.details || '', 'required minlength="8" maxlength="700"') + para('Leave out children’s names and private concerns. The review team checks proposals before sharing them.'), p ? 'Resubmit' : 'Send proposal', p?.id || '')];
     if (['concern', 'suggestion'].includes(kind)) return [kind === 'concern' ? 'Report a private concern' : 'Make a suggestion', form('caseSubmit', hidden('kind', kind) + input('subject', 'Subject', '', 'text', 'required minlength="3" maxlength="100"') + select('category', 'Category', E.categories) + area('body', kind === 'concern' ? 'What happened?' : 'What would you like to improve?', '', 'required minlength="6" maxlength="700"') + '<fieldset class="evidence"><legend>Photo evidence (optional, up to ' + E.photosPerCase + ')</legend><label>Photo 1<input type="file" name="evidence1" accept="image/jpeg,image/png,image/webp"></label><label>Photo 2<input type="file" name="evidence2" accept="image/jpeg,image/png,image/webp"></label><div class="entry-meta">Please do not photograph children’s faces. A photo can show who you are, so if you hide your name, choose photos that do not.</div></fieldset>' + hidden('assigned', 'chair') + notice('This goes privately to the SPTA. Only the officers who handle feedback can read it.') + ck('hideName', 'Hide my name from the reviewer') + '<div class="entry-meta">The officer will not see your name or section and will reply here in the app. You can do this ' + E.hiddenPerMonth + ' times a month.</div>' + notice('For an urgent child-safety matter, contact the school’s designated safeguarding staff directly.'), 'Send privately')];
     if (kind === 'screen') return [p.title, '<div class="entry-meta step-line">For screening</div>' + para(p.details) + form('screen', select('decision', 'Next step', [['screen', 'Publish and open the officers’ vote'], ['return', 'Return for revision'], ['decline', 'Decline']]) + '<div data-when="decision" data-values="screen">' + input('title', 'Reviewed title', p.publicTitle || p.title) + area('text', 'Description safe to share', p.publicText || p.details) + input('budget', 'Proposed SPTA allocation (₱)', p.budget / 100, 'number', 'required min="0" step="0.01"') + '<div class="fund-check ok" id="screen-fund" data-available="' + E.funding(db()).available + '">' + icon('info', 'sm') + '<span><b>SPTA funds available now: ' + cash(E.funding(db()).available) + '</b><span id="screen-fund-note">An allocation above this amount will be marked as needing fundraising.</span></span></div>' + ck('fundraising', 'This proposal seeks voluntary contributions.', false, !!p.fundraising) + input('closes', 'Voting closes on', E.voteCloses({date: t()}), 'date', 'required min="' + t() + '"') + '<div class="entry-meta">Officers have one month to vote unless you change this date.</div></div><div data-when="decision" data-values="return decline">' + area('reason', 'Feedback for the parent') + '</div>', 'Save screening', id)];
-    if (kind === 'vote') return [b.title, '<div class="entry-meta step-line">For your vote</div>' + para(b.body) + '<div class="entry-meta">Proposed SPTA allocation ' + cash(b.budget) + '</div>' + ballotFund(b) + notice('Voting closes on ' + date(E.voteCloses(b)) + '.') + form('vote', select('vote', 'Your vote', [['', 'Choose a response'], ['yes', 'Proceed'], ['no', 'Do not proceed'], ['abstain', 'Abstain']], '', 'required'), 'Submit once', id)];
+    if (kind === 'vote') return [b.title, '<div class="entry-meta step-line">For your vote</div>' + upara(b.body) + '<div class="entry-meta">Proposed SPTA allocation ' + cash(b.budget) + '</div>' + ballotFund(b) + notice('Voting closes on ' + date(E.voteCloses(b)) + '.') + form('vote', select('vote', 'Your vote', [['', 'Choose a response'], ['yes', 'Proceed'], ['no', 'Do not proceed'], ['abstain', 'Abstain']], '', 'required'), 'Submit once', id)];
     if (kind === 'close') return ['Close voting', para(b.title) + notice('Voting closes by itself once the result is decided. Closing early records the result with the votes received so far.') + form('closeBallot', ck('confirm', 'The voting period has ended. Record the result.', true), 'Close and record', id)];
     if (kind === 'chairProposal' && E.directUsed(db()) >= E.directPerYear) return ['Add for School-Head approval', notice('All ' + E.directPerYear + ' direct proposals for this school year have been used. Send this one through the officers’ vote with “Propose a Project”.') + btn('Propose a project', 'dlg:proposal', '', 'primary', 'plus')];
     if (kind === 'chairProposal') return ['Add for School-Head approval', notice('Direct proposal ' + (E.directUsed(db()) + 1) + ' of ' + E.directPerYear + ' for this school year.') + notice('Use this for a project the officers have already agreed on. It skips screening and the officers’ vote and goes straight to the School Head. On the resolution, everyone who signs counts as agreeing.') + form('chairProposal', input('title', 'Project title', '', 'text', 'required minlength="4" maxlength="100"') + select('category', 'Category', E.categories) + area('details', 'Project details', '', 'required minlength="8" maxlength="700"') + input('budget', 'Proposed SPTA allocation (₱)', '', 'number', 'required min="0" step="0.01"') + '<div class="fund-check ok" id="screen-fund" data-available="' + E.funding(db()).available + '">' + icon('info', 'sm') + '<span><b>SPTA funds available now: ' + cash(E.funding(db()).available) + '</b><span id="screen-fund-note">An allocation above this amount will be marked as needing fundraising.</span></span></div>' + ck('fundraising', 'This proposal seeks voluntary contributions.'), 'Send to the School Head')];
-    if (kind === 'head') return [p.publicTitle, '<div class="entry-meta step-line">For the School Head’s decision</div>' + para(p.publicText) + (p.direct ? notice('Added by the chairperson.') : '') + '<div class="entry-meta">Proposed SPTA allocation ' + cash(p.budget) + '</div>' + proposalFund(p) + form('headDecision', select('decision', 'Decision', [['approve', 'Approve project'], ['return', 'Return for revised proposal and new vote'], ['decline', 'Decline']]) + (p.fundraising ? '<div data-when="decision" data-values="approve">' + input('ga', 'General Assembly agreement reference') + ck('concur', 'I record School-Head concurrence for the voluntary contributions.', true) + '</div>' : '') + '<div data-when="decision" data-values="return decline">' + area('reason', 'Reason for the parent') + '</div>', 'Record decision', id)];
+    if (kind === 'head') return [p.publicTitle, '<div class="entry-meta step-line">For the School Head’s decision</div>' + upara(p.publicText) + (p.direct ? notice('Added by the chairperson.') : '') + '<div class="entry-meta">Proposed SPTA allocation ' + cash(p.budget) + '</div>' + proposalFund(p) + form('headDecision', select('decision', 'Decision', [['approve', 'Approve project'], ['return', 'Return for revised proposal and new vote'], ['decline', 'Decline']]) + (p.fundraising ? '<div data-when="decision" data-values="approve">' + input('ga', 'General Assembly agreement reference') + ck('concur', 'I record School-Head concurrence for the voluntary contributions.', true) + '</div>' : '') + '<div data-when="decision" data-values="return decline">' + area('reason', 'Reason for the parent') + '</div>', 'Record decision', id)];
     if (kind === 'project' || kind === 'cancel') {
       const proj = db().projects.find(x => x.id === id);
       return [kind === 'cancel' ? 'Cancel project' : 'Update project', para(proj.title) + form('projectUpdate', kind === 'cancel' ? hidden('status', 'cancelled') + area('reason', 'Public cancellation reason') + area('remainder', 'What happened to the remaining ' + cash(proj.budget - E.projectSpend(db(), id)) + '?') : select('status', 'Status', [['in_progress', 'In progress'], ['completed', 'Completed']]) + select('owner', 'Project lead', db().accounts.filter(x => x.active && E.leaders.includes(x.role)).map(x => [x.id, x.name]), proj.owner) + area('phase', 'Public progress update', proj.phase) + input('progress', 'Progress (%)', proj.progress, 'number', 'required min="0" max="100" step="1"'), kind === 'cancel' ? 'Publish cancellation' : 'Publish progress', id)];
@@ -7105,7 +7199,7 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
       const m = db().minutes.find(x => x.id === id);
       if (!m) return ['Minutes of the meeting', empty('These minutes are no longer waiting.')];
       const mine = m.state === 'for_chair' && canChair() || m.state === 'for_head' && a.role === 'head';
-      return [m.state === 'for_chair' ? 'Approve minutes' : m.state === 'for_head' ? 'Note and file minutes' : 'Minutes of the meeting', '<div class="entry-meta">' + esc(m.id + ' · Meeting of ' + date(m.date)) + '</div><h3>' + esc(titleCase(m.title)) + '</h3>' + para(m.summary) + para('Due ' + date(m.due) + (m.state !== 'filed' && m.due < t() ? ' · Overdue' : '')) + '<div class="entry-actions">' + btn('Read original', 'minuteFile', m.id) + (mine ? btn(m.state === 'for_chair' ? 'Approve minutes' : 'Note and file', 'minutesReview', m.id, 'primary') : '') + '</div>'];
+      return [m.state === 'for_chair' ? 'Approve minutes' : m.state === 'for_head' ? 'Note and file minutes' : 'Minutes of the meeting', '<div class="entry-meta">' + esc(m.id + ' · Meeting of ' + date(m.date)) + '</div><h3 class="ut">' + esc(titleCase(m.title)) + '</h3>' + upara(m.summary) + para('Due ' + date(m.due) + (m.state !== 'filed' && m.due < t() ? ' · Overdue' : '')) + '<div class="entry-actions">' + btn('Read original', 'minuteFile', m.id) + (mine ? btn(m.state === 'for_chair' ? 'Approve minutes' : 'Note and file', 'minutesReview', m.id, 'primary') : '') + '</div>'];
     }
     if (kind === 'minutes') return ['Upload meeting minutes', form('minutesUpload', input('title', 'Meeting title', '', 'text', 'required minlength="3" maxlength="120" placeholder="Example: SPTA General Meeting"') + input('date', 'Meeting date', t(), 'date', 'required max="' + t() + '"') + upload('Signed minutes (photo or PDF)') + notice('Write 3 to 5 short sentences in plain words: when the officers met, what was discussed and what was decided. Only the officers and the School Head can read the minutes.') + area('summary', 'Summary of the meeting', '', 'required rows="7" minlength="6" maxlength="700" placeholder="Example: On November 17, 2026, the SPTA officers met at the school. They talked about the year-end raffle and the new ECES Bayanihan app. They agreed to hold the General Assembly on December 7, 2026. The next officers’ meeting will be in January."') + ck('confirm', me().role === 'secretary' ? 'I sign these minutes as secretary and submit them for chair approval.' : 'I sign these minutes while standing in for the secretary and send them to the School Head to be noted and filed.', true), 'Submit minutes')];
     if (kind === 'activity') {
@@ -7117,7 +7211,7 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
       if (!act) return ['Set a budget', empty('This activity is no longer available.')];
       const spent = E.projectSpend(db(), act.id),
         before = Math.max(0, (act.budget || 0) - spent);
-      return ['Set a budget', '<h3>' + esc(titleCase(act.title)) + '</h3>' + para('Already spent: ' + cash(spent)) + notice('The budget is set aside from SPTA funds that are not already committed to projects. Available for this activity: ' + cash(E.funding(db()).available + before) + '.') + form('activityBudget', input('budget', 'Budget (pesos)', act.budget ? String(act.budget / 100) : '', 'text', 'required inputmode="decimal" placeholder="3000"'), 'Save budget', id)];
+      return ['Set a budget', '<h3>' + ut(titleCase(act.title)) + '</h3>' + para('Already spent: ' + cash(spent)) + notice('The budget is set aside from SPTA funds that are not already committed to projects. Available for this activity: ' + cash(E.funding(db()).available + before) + '.') + form('activityBudget', input('budget', 'Budget (pesos)', act.budget ? String(act.budget / 100) : '', 'text', 'required inputmode="decimal" placeholder="3000"'), 'Save budget', id)];
     }
     if (kind === 'activityCancel') {
       const act = (db().activities || []).find(i => i.id === id);
@@ -7833,6 +7927,8 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
   });
   ECESLang.start(render);
   S.init().then(() => {
+    // Only the live app has a server that can translate typed text.
+    if (S.shared) ECESLang.setRemote(texts => S.translateTexts(texts));
     if (!S.shared && oldView) {
       const route = {
         head: ['head', 'insights'],

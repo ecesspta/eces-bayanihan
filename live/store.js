@@ -111,7 +111,8 @@
   const endpoint = p => (apiBase || '') + '/api/' + p;
   // Network trouble is explained in plain words, never as "Failed to fetch" or a stray JSON error.
   const WAIT = 30000, WAIT_FILE = 120000;
-  let down = false;
+  let down = false,
+    translateOff = false;
   function trouble(kind, status) {
     const e = Error(kind === 'offline' ? 'You are offline. Check your phone’s internet connection, then try again.' : kind === 'slow' ? 'The connection is too slow and the request timed out. Try again when your signal is better.' : kind === 'server' ? 'The SPTA server had a problem. Please try again in a few minutes.' : kind === 'reply' ? 'The server sent a reply the app could not read. Please try again in a few minutes.' : 'The app could not reach the SPTA server. Check your internet connection, then try again.');
     e.network = kind;
@@ -611,6 +612,21 @@
     },
     get unreachable() {
       return down;
+    },
+    // Filipino for text that officers typed. Returns the translations, undefined when nobody is signed in yet,
+    // or null when the server cannot translate (not turned on, limit reached, or no connection).
+    async translateTexts(texts) {
+      if (!shared || translateOff) return null;
+      if (!actorId) return undefined;
+      try {
+        const r = await api('translate', {
+          texts
+        });
+        return Array.isArray(r.translations) ? r.translations : null;
+      } catch (e) {
+        if (/not turned on/i.test(String(e && e.message))) translateOff = true;
+        return null;
+      }
     },
     get shared() {
       return shared;

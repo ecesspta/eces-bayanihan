@@ -6,6 +6,7 @@ globalThis.Buffer = Buffer;
 
 const { createApi } = require('../backend/core.cjs');
 const { postgresStore } = require('../backend/postgres-store.cjs');
+const { anthropicTranslator } = require('../backend/translate.cjs');
 
 const env = k => Deno.env.get(k) || '';
 // Pages allowed to talk to this server. Add more in the ALLOWED_ORIGINS secret, comma separated.
@@ -14,6 +15,8 @@ const sql = postgres(env('SUPABASE_DB_URL'), { max: 3, prepare: false, idle_time
 const api = createApi(postgresStore(sql), {
   cookies: false,
   adminKey: env('ADMIN_KEY'),
+  // Optional. Set the ANTHROPIC_API_KEY secret to translate typed text into Filipino. Without it, typed text stays as typed.
+  translate: anthropicTranslator({ key: env('ANTHROPIC_API_KEY'), model: env('TRANSLATE_MODEL') || undefined }),
   // The fictional sample collection sheet that the rehearsal records point to. Filled in when the file is bundled.
   sampleSheet: () => globalThis.__SAMPLE_SHEET ? Buffer.from(globalThis.__SAMPLE_SHEET, 'base64') : null,
   originOk: req => !req.headers.origin || origins.includes(req.headers.origin)
