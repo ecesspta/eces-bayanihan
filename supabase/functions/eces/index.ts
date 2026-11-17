@@ -2305,6 +2305,27 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
           changed('Minutes submitted');
           break;
         }
+      case 'minutesEdit':
+        {
+          const m = get(db.minutes, id);
+          check(m.secretary === a.id || holds(db, a, 'secretary'), 'Only the secretary who uploaded these minutes can correct them.');
+          check(['for_chair', 'for_head'].includes(m.state), 'These minutes are already filed or withdrawn. Ask the School Head if a correction is still needed.');
+          const date = dateValue(v.date);
+          check(date <= today(), 'Meeting date cannot be in the future.');
+          m.title = words(v.title, 'Meeting title', 3, 120);
+          m.summary = words(v.summary, 'Community summary', 6, 700);
+          m.date = date;
+          m.due = plusDays(date, 7);
+          m.corrected = at();
+          if (m.state === 'for_head' && !m.covered) {
+            // The chairperson approved the earlier wording, so the corrected minutes go back for approval.
+            m.state = 'for_chair';
+            delete m.chair;
+            delete m.chairAt;
+          }
+          changed('Minutes corrected');
+          break;
+        }
       case 'minutesReview':
         {
           const m = get(db.minutes, id);

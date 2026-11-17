@@ -755,7 +755,7 @@
       let acts = btn('Read original', 'minuteFile', m.id);
       if (m.state === 'for_chair' && canChair()) acts += btn('Approve minutes', 'minutesReview', m.id, 'primary');
       if (m.state === 'for_head' && me().role === 'head') acts += btn('Note and file', 'minutesReview', m.id, 'primary');
-      if (['for_chair', 'for_head'].includes(m.state) && (m.secretary === S.me || holds('secretary'))) acts += btn('Withdraw', 'dlg:withdrawMinutes', m.id, 'danger');
+      if (['for_chair', 'for_head'].includes(m.state) && (m.secretary === S.me || holds('secretary'))) acts += btn('Edit', 'dlg:minutesEdit', m.id, 'light') + btn('Withdraw', 'dlg:withdrawMinutes', m.id, 'danger');
       return card(m.title, upara(m.summary) + para('Due ' + date(m.due) + (!['filed', 'withdrawn'].includes(m.state) && m.due < t() ? ' · Overdue' : '')) + (m.state === 'withdrawn' ? para('Withdrawn. ' + m.withdrawn.reason) : ''), m.id + ' · ' + date(m.date), m.state, acts, false, true);
     }).join('') || empty('No minutes uploaded.')) + (sec ? section('Records inspection requests', ownCases().filter(c => c.kind === 'inspection' && c.assigned === 'secretary').map(caseCard).join('') || empty('No inspection requests.')) : '');
   }
@@ -794,7 +794,7 @@
     money: ['financeSubmit', 'financeCheck', 'financeReview'],
     projects: ['activitySave', 'activityBudget', 'activityCancel', 'projectUpdate', 'projectPhoto', 'projectPhotoRemove', 'projectReopen', 'amendProject'],
     proposals: ['screen', 'chairProposal', 'resubmit', 'withdraw', 'headDecision', 'closeBallot', 'voteDeadline', 'proposalReply'],
-    records: ['minutesUpload', 'minutesReview', 'freeze', 'reviseResolution', 'sign', 'unsign', 'finalizeResolution', 'announce', 'announceEdit', 'announceRemove'],
+    records: ['minutesUpload', 'minutesEdit', 'minutesReview', 'freeze', 'reviseResolution', 'sign', 'unsign', 'finalizeResolution', 'announce', 'announceEdit', 'announceRemove'],
     people: ['rosterReview', 'setSeat', 'endBod', 'acting', 'cover']
   };
   const RETRACTED = ['withdraw', 'withdrawRecord', 'unsign', 'projectPhotoRemove', 'announceRemove', 'projectReopen'];
@@ -1027,6 +1027,11 @@
       const mine = m.state === 'for_chair' && canChair() || m.state === 'for_head' && a.role === 'head';
       return [m.state === 'for_chair' ? 'Approve minutes' : m.state === 'for_head' ? 'Note and file minutes' : 'Minutes of the meeting', '<div class="entry-meta">' + esc(m.id + ' · Meeting of ' + date(m.date)) + '</div><h3 class="ut">' + esc(titleCase(m.title)) + '</h3>' + upara(m.summary) + para('Due ' + date(m.due) + (m.state !== 'filed' && m.due < t() ? ' · Overdue' : '')) + '<div class="entry-actions">' + btn('Read original', 'minuteFile', m.id) + (mine ? btn(m.state === 'for_chair' ? 'Approve minutes' : 'Note and file', 'minutesReview', m.id, 'primary') : '') + '</div>'];
     }
+    if (kind === 'minutesEdit') {
+      const m = db().minutes.find(x => x.id === id);
+      if (!m || !['for_chair', 'for_head'].includes(m.state)) return ['Correct minutes', empty('These minutes can no longer be edited.')];
+      return ['Correct minutes', form('minutesEdit', input('title', 'Meeting title', m.title, 'text', 'required minlength="3" maxlength="120"') + input('date', 'Meeting date', m.date, 'date', 'required max="' + t() + '"') + area('summary', 'Summary of the meeting', m.summary, 'required rows="7" minlength="6" maxlength="700"') + notice(m.covered ? 'The signed file stays the same. The corrected minutes go to the School Head.' : 'The signed file stays the same. The corrected minutes go back to the chairperson for approval. To change the signed file, withdraw these minutes and upload them again.'), 'Save correction', id)];
+    }
     if (kind === 'minutes') return ['Upload meeting minutes', form('minutesUpload', input('title', 'Meeting title', '', 'text', 'required minlength="3" maxlength="120" placeholder="Example: SPTA General Meeting"') + input('date', 'Meeting date', t(), 'date', 'required max="' + t() + '"') + upload('Signed minutes (photo or PDF)') + area('summary', 'Summary of the meeting', '', 'required rows="7" minlength="6" maxlength="700" placeholder="Example: On November 17, 2026, the SPTA officers met at the school. They talked about the year-end raffle and the new ECES Bayanihan app. They agreed to hold the General Assembly on December 7, 2026. The next officers’ meeting will be in January."') + ck('confirm', me().role === 'secretary' ? 'I sign these minutes as secretary and submit them for chair approval.' : 'I sign these minutes while standing in for the secretary and send them to the School Head to be noted and filed.', true), 'Submit minutes')];
     if (kind === 'activity') {
       const act = (db().activities || []).find(i => i.id === id);
@@ -1192,6 +1197,7 @@
     announce: 'Published. It will pop up on screen for its audience.',
     minutesUpload: 'Minutes sent to the chairperson.',
     minutesReview: 'Minutes updated.',
+    minutesEdit: 'Minutes corrected.',
     caseReply: 'Saved. The sender was told the new status.',
     caseForward: 'Passed on. The School Head and the secretary can read it now.',
     caseNote: 'Note saved.',
