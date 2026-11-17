@@ -109,8 +109,44 @@
     return h;
   }
   const endpoint = p => (apiBase || '') + '/api/' + p;
-  async function api(path, body) {
-    const response = await fetch(endpoint(path), {
+  // Network trouble is explained in plain words, never as "Failed to fetch" or a stray JSON error.
+  const WAIT = 30000, WAIT_FILE = 120000;
+  let down = false;
+  function trouble(kind, status) {
+    const e = Error(kind === 'offline' ? 'You are offline. Check your phone’s internet connection, then try again.' : kind === 'slow' ? 'The connection is too slow and the request timed out. Try again when your signal is better.' : kind === 'server' ? 'The SPTA server had a problem. Please try again in a few minutes.' : kind === 'reply' ? 'The server sent a reply the app could not read. Please try again in a few minutes.' : 'The app could not reach the SPTA server. Check your internet connection, then try again.');
+    e.network = kind;
+    e.status = status || 0;
+    return e;
+  }
+  async function reach(url, options, wait = WAIT) {
+    const control = typeof AbortController === 'function' ? new AbortController() : null;
+    const timer = control ? setTimeout(() => control.abort(), wait) : 0;
+    try {
+      const r = await fetch(url, control ? { ...options, signal: control.signal } : options);
+      down = false;
+      return r;
+    } catch (e) {
+      down = true;
+      throw trouble(e && e.name === 'AbortError' ? 'slow' : typeof navigator !== 'undefined' && navigator.onLine === false ? 'offline' : 'unreachable');
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+  async function reply(response, fallback) {
+    let data = null;
+    try {
+      data = await response.json();
+    } catch (_) {}
+    if (response.ok && data) return data;
+    if (data && data.error) throw Error(data.error);
+    if (response.status >= 500) throw trouble('server', response.status);
+    if (response.status === 404 || response.status === 405) throw Error('The app could not find its server. Please tell an SPTA officer.');
+    if (response.status === 429) throw Error('Too many tries. Please wait a minute, then try again.');
+    throw response.ok ? trouble('reply', response.status) : Error(fallback || 'The request could not be completed. Please try again.');
+  }
+  // Reading and saving an action are safe to repeat once: the server remembers the request number, so nothing is saved twice.
+  async function api(path, body, again = false) {
+    const go = () => reach(endpoint(path), {
       method: body ? 'POST' : 'GET',
       cache: 'no-store',
       credentials: apiBase ? 'omit' : 'same-origin',
@@ -119,9 +155,19 @@
       } : {}),
       body: body ? JSON.stringify(body) : undefined
     });
-    const data = await response.json();
-    if (!response.ok) throw Error(data.error || 'Request failed.');
-    return data;
+    let response;
+    try {
+      response = await go();
+    } catch (e) {
+      if (!again || e.network === 'offline') throw e;
+      await new Promise(r => setTimeout(r, 1500));
+      response = await go();
+    }
+    if (again && response.status >= 502 && response.status <= 504) {
+      await new Promise(r => setTimeout(r, 1500));
+      response = await go();
+    }
+    return reply(response);
   }
   function session(v) {
     if (apiBase && v.token) keep.set('eces-live-token', v.token);
@@ -186,7 +232,7 @@
     current = base;
   }
   async function refresh() {
-    if (shared) return session(await api('state'));
+    if (shared) return session(await api('state', undefined, true));
     if (handle) current = await request(handle.transaction('state').objectStore('state').get('school'));
     await sweep().catch(() => {});
     if (!E.account(current, actorId)?.active) actorId = '';
@@ -198,13 +244,14 @@
         action,
         payload,
         requestId
-      });
+      }, true);
       session(res);
       return res.id;
     }
     if (!handle) {
       const result = E.transition(current, actorId, action, payload, requestId, {
-        device: device()
+        device: device(),
+        practice: true
       });
       current = result.db;
       return result.id;
@@ -215,7 +262,8 @@
     try {
       const base = await request(store.get('school'));
       const res = E.transition(base, actorId, action, payload, requestId, {
-        device: device()
+        device: device(),
+        practice: true
       });
       store.put(res.db, 'school');
       await finished;
@@ -428,7 +476,7 @@
     const valid = meta.type === 'image/jpeg' ? starts([255, 216, 255]) : meta.type === 'image/png' ? starts([137, 80, 78, 71, 13, 10, 26, 10]) : meta.type === 'application/pdf' ? starts([37, 80, 68, 70, 45]) : starts([82, 73, 70, 70]) && String.fromCharCode(...s.slice(8, 12)) === 'WEBP';
     if (!valid) throw Error('The file contents do not match its type.');
     if (shared) {
-      const res = await fetch(endpoint('files'), {
+      const res = await reach(endpoint('files'), {
         method: 'POST',
         credentials: apiBase ? 'omit' : 'same-origin',
         headers: liveHeaders({
@@ -436,10 +484,8 @@
           'X-Filename': encodeURIComponent(meta.name)
         }),
         body: f
-      });
-      const data = await res.json();
-      if (!res.ok) throw Error(data.error);
-      return data;
+      }, WAIT_FILE);
+      return reply(res, 'The file could not be uploaded. Please try again.');
     }
     if (!handle) {
       memoryFiles.set(meta.key, f);
@@ -454,40 +500,38 @@
   // A profile picture, already cropped and shrunk to a small JPEG. Only the owner can read it back.
   async function setAvatar(blob) {
     if (!shared) throw Error('Profile pictures are available in the live app.');
-    const res = await fetch(endpoint('avatar'), {
+    const res = await reach(endpoint('avatar'), {
       method: 'POST',
       credentials: apiBase ? 'omit' : 'same-origin',
       headers: liveHeaders({
         'Content-Type': blob.type
       }),
       body: blob
-    });
-    const data = await res.json();
-    if (!res.ok) throw Error(data.error || 'The picture could not be saved.');
+    }, WAIT_FILE);
+    const data = await reply(res, 'The picture could not be saved. Please try again.');
     await refresh();
     return data;
   }
   async function removeAvatar() {
-    const res = await fetch(endpoint('avatar-remove'), {
+    const res = await reach(endpoint('avatar-remove'), {
       method: 'POST',
       credentials: apiBase ? 'omit' : 'same-origin',
       headers: liveHeaders({}),
       body: ''
     });
-    const data = await res.json();
-    if (!res.ok) throw Error(data.error || 'The picture could not be removed.');
+    const data = await reply(res, 'The picture could not be removed. Please try again.');
     await refresh();
     return data;
   }
   // keep: a public project photo may be remembered by the phone, because each photo has its own one-time key.
   async function fileURL(meta, keep = false) {
     if (shared) {
-      const r = await fetch(endpoint('files/' + encodeURIComponent(meta.key)), {
+      const r = await reach(endpoint('files/' + encodeURIComponent(meta.key)), {
         cache: keep ? 'default' : 'no-store',
         credentials: apiBase ? 'omit' : 'same-origin',
         headers: liveHeaders()
-      });
-      if (!r.ok) throw Error('Access to this attachment is unavailable.');
+      }, WAIT_FILE);
+      if (!r.ok) throw r.status >= 500 ? trouble('server', r.status) : Error('Access to this attachment is unavailable.');
       return URL.createObjectURL(await r.blob());
     }
     // Practice version: the fictional pictures on the sample projects are carried inside the page.
@@ -564,6 +608,9 @@
     },
     get device() {
       return device();
+    },
+    get unreachable() {
+      return down;
     },
     get shared() {
       return shared;

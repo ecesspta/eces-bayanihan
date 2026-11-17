@@ -2,6 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
+    <meta name="robots" content="noindex, nofollow" />
     <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
     <meta name="theme-color" content="#102b59" />
     <meta name="description" content="ECES Bayanihan — An East Central Elementary SPTA Initiative for participatory school improvement at East Central Elementary School." />
@@ -1069,8 +1070,57 @@ img[data-photo].failed {visibility:visible}
 @keyframes photo-wait {to {background-position:-200% 0}}
 @media (prefers-reduced-motion:reduce) {.proj-photo {animation:none}}
 
+/* Resolution paper, in the school's format */
+.rs-head {margin:10px 0 0;font-size:13px;line-height:1.5;text-align:center;padding-bottom:10px;border-bottom:1px solid #9aa9bd}
+.rs-seal {display:block;margin:0 auto 6px;width:72px;height:72px;object-fit:contain}
+.rs-gothic {font-family:'Old English Text MT','UnifrakturCook','Times New Roman',serif;font-size:15px}
+.rs-head p,.rs-no,.rs-title,.rs-text p,.rs-label {margin:0}
+.rs-no {margin-top:14px;font-weight:700;font-size:14px}
+.rs-title {margin-top:14px;font-weight:700;font-size:14px;line-height:1.45;text-transform:uppercase}
+.rs-text {margin-top:14px;display:grid;gap:11px;font-size:13.5px;line-height:1.55;text-align:justify}
+.rs-text p {white-space:pre-line}
+.rs-label {margin-top:18px;font-size:13.5px}
+.rs-officers {display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:18px 14px;margin-top:10px}
+.rs-witness {display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:18px 14px;margin-top:10px}
+.rs-sign {display:grid;align-content:end;text-align:center;font-size:12px;break-inside:avoid}
+.rs-sign b {border-top:1px solid #243a5e;padding-top:3px;font-size:12px;color:var(--navy);min-height:1.3em}
+.rs-sign span {color:var(--muted)}
+.rs-mark {height:44px;display:flex;align-items:flex-end;justify-content:center}
+.rs-mark svg {max-height:44px;max-width:100%}
+.rs-mark .sig-empty,.rs-table .sig-empty {font-size:11px;color:var(--muted)}
+.rs-table {width:100%;border-collapse:collapse;margin-top:8px;font-size:11.5px}
+.rs-table th,.rs-table td {border:1px solid #9aa9bd;padding:4px 5px;text-align:left;vertical-align:middle}
+.rs-table th {background:#eef2f7;font-weight:700}
+.rs-table td:first-child,.rs-table th:first-child {text-align:center;width:2.4em}
+.rs-table td:last-child {min-width:84px;height:34px}
+.rs-table td svg {max-height:30px;max-width:96px;display:block}
+.rs-table tr {break-inside:avoid}
+.rs-count {margin-top:14px}
+@media print {
+  .resolution-sheet {font-family:Arial,Helvetica,sans-serif;color:#000}
+  .rs-text {text-align:justify;font-size:11.5pt}
+  .rs-officers {grid-template-columns:repeat(3,1fr)}
+  .rs-witness {grid-template-columns:repeat(2,1fr)}
+  .rs-table {font-size:9.5pt}
+  .rs-table td:last-child {height:11mm}
+  .rs-sign b {border-top-color:#000}
+  .rs-table th {background:#eee!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .rs-count {display:none}
+}
+
+/* Connection trouble: a thin bar above the app, and a calm screen when the app cannot open. */
+.link-banner {position:sticky;top:0;z-index:60;display:flex;align-items:center;gap:10px;justify-content:space-between;padding:9px 14px;background:#fff4d6;color:#4a3500;border-bottom:1px solid #e6c766;font-size:13.5px;line-height:1.4}
+.link-banner[hidden] {display:none}
+.link-banner button {flex:none;min-height:34px;padding:0 12px;border:1px solid #4a3500;border-radius:8px;background:#fff;color:#4a3500;font:inherit;font-weight:600}
+.link-banner button:disabled {opacity:.6}
+.boot-error {text-align:center;margin-top:12vh}
+.boot-error .boot-seal {display:block;margin:0 auto 10px;border-radius:50%}
+.boot-error .entry-actions {justify-content:center;margin:14px 0}
+.evidence {border:1px solid #cdd6e6;border-radius:10px;padding:8px 12px 12px;margin:10px 0}
+.evidence legend {font-weight:600;padding:0 6px}
+.case-photos {margin-top:8px}
+
 </style>
-      <meta name="robots" content="noindex, nofollow" />
   </head>
   <body>
     <div id="app"><main class="school-launch"><h1>ECES Bayanihan</h1><p role="status">Loading…</p></main></div>
@@ -1436,7 +1486,7 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
  "Abstain": "Hindi boboto",
  "Submit once": "I-submit nang isang beses",
  "Officer Voting": "Botohan ng mga officer",
- "Every SPTA officer can vote on a screened proposal. It proceeds to the School Head once yes votes reach 50% of all officers.": "Puwedeng bumoto ang bawat officer ng SPTA sa isang na-review na proposal. Tutuloy ito sa School Head kapag umabot sa 50% ng lahat ng officer ang boto ng oo.",
+ "Every SPTA officer can vote on a screened proposal. It proceeds to the School Head once yes votes reach 51% of all officers.": "Puwedeng bumoto ang bawat officer ng SPTA sa isang na-review na proposal. Tutuloy ito sa School Head kapag umabot sa 51% ng lahat ng officer ang boto ng oo.",
  "Proposals for Officer Vote": "Mga Proposal na Iboboto ng mga officer",
  "Secret ballot": "Lihim na ballot",
  "Cast vote": "Bumoto",
@@ -1632,7 +1682,7 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
  "That record is no longer available.": "Wala na ang record na iyon.",
  "Your current profile cannot perform this action.": "Hindi magagawa ng ongoing mong profile ang aksyong ito.",
  "Add officers to the roster before opening a vote.": "Magdagdag ng mga officer sa list bago magbukas ng botohan.",
- "50% of all officers": "50% ng lahat ng officer",
+ "51% of all officers": "51% ng lahat ng officer",
  "In-app officer vote": "Boto ng mga officer sa app",
  "In app": "Sa app",
  "The proposal is no longer on this ballot.": "Wala na ang proposal sa balotang ito.",
@@ -1647,7 +1697,7 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
  "The SPTA project from your proposal was cancelled. The reason is posted under Projects.": "Kinansela ang proyekto ng SPTA mula sa iyong proposal. Nakapost sa Mga Proyekto ang dahilan.",
  "Your proposal was reviewed and needs a revision. Read the note, then revise and resubmit.": "Na-review ang iyong proposal at kailangan ng rebisyon. Basahin ang tala, saka baguhin at i-submit muli.",
  "Your proposal was reviewed and will not proceed. Read the note for the reason.": "Na-review ang iyong proposal at hindi ito itutuloy. Basahin ang tala para sa dahilan.",
- "The SPTA officers’ vote did not reach 50%, so the proposal will not proceed for now.": "Hindi umabot sa 50% ang boto ng mga officer ng SPTA, kaya hindi muna itutuloy ang proposal.",
+ "The SPTA officers’ vote did not reach 51%, so the proposal will not proceed for now.": "Hindi umabot sa 51% ang boto ng mga officer ng SPTA, kaya hindi muna itutuloy ang proposal.",
  "You withdrew this proposal. Nothing more will happen with it.": "Na-withdraw mo ang proposal na ito. Wala nang susunod na mangyayari rito.",
  "Added by the chairperson. It is now with the School Head for approval.": "Idinagdag ng Chairperson. Nasa School Head na ito para sa approval.",
  "Chairperson posting authority is required.": "Kailangan ang awtoridad ng Chairperson sa pag-post.",
@@ -2056,7 +2106,7 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
  "Added by the chairperson · No officer vote": "Idinagdag ng Chairperson · Walang boto ng mga officer",
  "Proposals for officer vote": "Mga proposal na iboboto ng mga officer",
  "The proposer withdrew this proposal, so the vote was closed.": "Na-withdraw ng nagmungkahi ang proposal, kaya isinara ang botohan.",
- "Reached 50% of all officers. Sent to the School Head for approval.": "Umabot sa 50% ng lahat ng officer. Ipinadala sa School Head para sa approval.",
+ "Reached 51% of all officers. Sent to the School Head for approval.": "Umabot sa 51% ng lahat ng officer. Ipinadala sa School Head para sa approval.",
  "Edit personal reply": "I-edit ang personal na sagot",
  "Supported": "Sinuportahan",
  "Revise proposal": "Baguhin ang proposal",
@@ -2302,6 +2352,55 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
  "Project Photo": "Project Photo",
  "This photo was already reviewed.": "Na-review na ang photo na ito.",
  "A photo you added needs no approval.": "Hindi na kailangan ng approval ang photo na idinagdag mo.",
+ "Activities": "Mga Aktibidad",
+ "Add an activity": "Magdagdag ng aktibidad",
+ "Coming up": "Paparating",
+ "Past and cancelled": "Tapos na at kinansela",
+ "No activities are planned yet.": "Wala pang nakaplanong aktibidad.",
+ "Upcoming activities": "Mga paparating na aktibidad",
+ "Activities for everyone are shown to all parents. Officers-only activities, such as an officers’ party, are visible only to the officers and the School Head.": "Ang mga aktibidad para sa lahat ay makikita ng lahat ng magulang. Ang mga aktibidad para sa mga officer lamang, tulad ng party ng mga officer, ay makikita lamang ng mga officer at ng School Head.",
+ "Dates for SPTA activities that parents and guardians are invited to.": "Mga petsa ng mga aktibidad ng SPTA na inaanyayahan ang mga magulang at Guardian.",
+ "Budget": "Badyet",
+ "Left": "Natitira",
+ "No budget set aside yet": "Wala pang nakalaang badyet",
+ "Set budget": "Maglaan ng badyet",
+ "Change budget": "Baguhin ang badyet",
+ "Cancel activity": "Kanselahin ang aktibidad",
+ "Activity Budgets": "Mga Badyet ng Aktibidad",
+ "Set Aside for Projects and Activities": "Nakalaan para sa mga Proyekto at Aktibidad",
+ "Edit activity": "I-edit ang aktibidad",
+ "Activity name": "Pangalan ng aktibidad",
+ "Date": "Petsa",
+ "Time (optional)": "Oras (opsyonal)",
+ "Place (optional)": "Lugar (opsyonal)",
+ "Details (optional)": "Mga detalye (opsyonal)",
+ "Who is it for?": "Para kanino ito?",
+ "The treasurer sets the budget after the activity is added. Please do not include children’s names or photos.": "Ang treasurer ang maglalaan ng badyet pagkatapos madagdag ang aktibidad. Huwag maglagay ng pangalan o photo ng mga bata.",
+ "Add activity": "Idagdag ang aktibidad",
+ "Set a budget": "Maglaan ng badyet",
+ "Budget (pesos)": "Badyet (piso)",
+ "Save budget": "I-save ang badyet",
+ "Why is it cancelled?": "Bakit ito kinansela?",
+ "Cancelling removes it from the calendar and releases any budget that is not spent.": "Kapag kinansela, aalisin ito sa kalendaryo at ilalabas ang badyet na hindi nagastos.",
+ "This activity is no longer available.": "Wala na ang aktibidad na ito.",
+ "Activity saved.": "Na-save ang aktibidad.",
+ "Budget saved.": "Na-save ang badyet.",
+ "Activity cancelled.": "Nakansela ang aktibidad.",
+ "Photo evidence": "Photo na ebidensya",
+ "Photo 1": "Photo 1",
+ "Photo 2": "Photo 2",
+ "Please do not photograph children’s faces. A photo can show who you are, so if you hide your name, choose photos that do not.": "Huwag kunan ng photo ang mukha ng mga bata. Puwedeng makilala ka sa photo, kaya kung itatago mo ang pangalan mo, pumili ng photo na hindi ka makikilala.",
+ "Photos must be JPG, PNG or WEBP.": "Dapat JPG, PNG o WEBP ang mga photo.",
+ "Saving the photo took too long. Check your connection and try again.": "Natagalan ang pag-save ng photo. Tingnan ang koneksyon mo at subukan muli.",
+ "Please do not photograph children’s faces.": "Huwag kunan ng photo ang mukha ng mga bata.",
+ "You can attach up to 2 photos.": "Puwede kang maglakip ng hanggang 2 photo.",
+ "A records request does not take photos.": "Hindi tumatanggap ng photo ang request na tingnan ang mga record.",
+ "Choose two different photos.": "Pumili ng dalawang magkaibang photo.",
+ "Choose today or a later date.": "Pumili ng ngayon o mas huling petsa.",
+ "This activity is already cancelled.": "Kinansela na ang aktibidad na ito.",
+ "Choose an activity that is still on the calendar.": "Pumili ng aktibidad na nasa kalendaryo pa.",
+ "The treasurer has not set aside a budget for this activity yet.": "Hindi pa naglalaan ng badyet ang treasurer para sa aktibidad na ito.",
+ "This exceeds the remaining budget for this activity.": "Lampas ito sa natitirang badyet ng aktibidad na ito.",
  "I am an officer with an invite code": "Officer ako at may invite code",
  "Officer sign-up": "Officer sign-up",
  "Use the invite code the chairperson gave you. Choose your own mobile number and password. Nobody else will know your password.": "Gamitin ang invite code na ibinigay ng Chairperson. Pumili ng sarili mong mobile number at password. Walang ibang makakaalam ng password mo.",
@@ -2366,7 +2465,31 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
  "Why is there no paper original?": "Bakit walang papel na original?",
  "The chairperson reads this reason before approving. Write the receipt reference above as something you can find again, such as “Cash gift Nov 17”.": "Babasahin ng Chairperson ang dahilang ito bago mag-approve. Isulat sa receipt reference sa itaas ang madali mong mahahanap muli, tulad ng “Cash gift Nov 17”.",
  "General fund (not for a project)": "General fund (hindi para sa proyekto)",
- "I read why there is no paper original and checked the entries.": "Nabasa ko kung bakit walang papel na original at na-review ko ang mga entry."
+ "I read why there is no paper original and checked the entries.": "Nabasa ko kung bakit walang papel na original at na-review ko ang mga entry.",
+ "You are offline. Check your phone’s internet connection, then try again.": "Offline ka. Tingnan ang internet connection ng iyong phone, saka subukan muli.",
+ "The connection is too slow and the request timed out. Try again when your signal is better.": "Masyadong mabagal ang koneksyon kaya nag-time out. Subukan muli kapag mas maganda na ang signal.",
+ "The SPTA server had a problem. Please try again in a few minutes.": "Nagkaroon ng problema ang server ng SPTA. Subukan muli sa loob ng ilang minutes.",
+ "The server sent a reply the app could not read. Please try again in a few minutes.": "May reply ang server na hindi mabasa ng app. Subukan muli sa loob ng ilang minutes.",
+ "The app could not reach the SPTA server. Check your internet connection, then try again.": "Hindi maabot ng app ang server ng SPTA. Tingnan ang iyong internet connection, saka subukan muli.",
+ "The app could not find its server. Please tell an SPTA officer.": "Hindi mahanap ng app ang server nito. Pakisabi sa isang officer ng SPTA.",
+ "Too many tries. Please wait a minute, then try again.": "Masyadong maraming pagsubok. Maghintay ng isang minutes, saka subukan muli.",
+ "The request could not be completed. Please try again.": "Hindi makumpleto ang request. Subukan muli.",
+ "The file could not be uploaded. Please try again.": "Hindi ma-upload ang file. Subukan muli.",
+ "The picture could not be saved. Please try again.": "Hindi ma-save ang photo. Subukan muli.",
+ "The picture could not be removed. Please try again.": "Hindi maalis ang photo. Subukan muli.",
+ "You are offline. What you see may be out of date, and changes cannot be saved until you are back online.": "Offline ka. Puwedeng luma na ang nakikita mo, at hindi ma-save ang mga pagbabago hanggang makakonekta ka muli.",
+ "The SPTA server is having a problem. What you see may be out of date. The app will keep trying.": "May problema ang server ng SPTA. Puwedeng luma na ang nakikita mo. Patuloy na susubok ang app.",
+ "The connection is slow. What you see may be out of date. The app will keep trying.": "Mabagal ang koneksyon. Puwedeng luma na ang nakikita mo. Patuloy na susubok ang app.",
+ "Try again": "Subukan muli",
+ "Trying…": "Sinusubukan…",
+ "Reload": "I-reload",
+ "You are offline": "Offline ka",
+ "ECES Bayanihan could not open": "Hindi mabuksan ang ECES Bayanihan",
+ "The app needs the internet to show the latest SPTA information. Connect to Wi-Fi or mobile data, then try again.": "Kailangan ng app ang internet para ipakita ang pinakabagong impormasyon ng SPTA. Kumonekta sa Wi-Fi o mobile data, saka subukan muli.",
+ "The SPTA server is having a problem right now. Your information is safe. Please try again in a few minutes.": "May problema ang server ng SPTA ngayon. Ligtas ang iyong impormasyon. Subukan muli sa loob ng ilang minutes.",
+ "The connection is too slow. Move to a place with better signal, then try again.": "Masyadong mabagal ang koneksyon. Pumunta sa lugar na mas maganda ang signal, saka subukan muli.",
+ "If this keeps happening, please tell an SPTA officer.": "Kung patuloy itong mangyari, pakisabi sa isang officer ng SPTA.",
+ "The practice version could not open its saved data. Allow this site to save data in your browser settings, then reload the page.": "Hindi mabuksan ng practice version ang naka-save nitong datos. Payagan ang site na mag-save ng datos sa settings ng browser, saka i-reload ang page."
 },
     rules: [
       [/^East Central Elementary School SPTA · (.+)$/, "SPTA ng East Central Elementary School · {1}"],
@@ -2458,8 +2581,8 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
       [/^(\d+) Yes$/, "{1} Oo"],
       [/^(\d+) No$/, "{1} Hindi"],
       [/^(\d+) Abstain$/, "{1} Hindi Boboto"],
-      [/^Yes votes did not reach 50% of all officers by the closing date\.$/, "Hindi umabot sa 50% ng lahat ng officer ang boto ng oo pagsapit ng petsa ng pagsasara."],
-      [/^Yes votes did not reach 50% of all officers$/, "Hindi umabot sa 50% ng lahat ng officer ang boto ng oo"],
+      [/^Yes votes did not reach 51% of all officers by the closing date\.$/, "Hindi umabot sa 51% ng lahat ng officer ang boto ng oo pagsapit ng petsa ng pagsasara."],
+      [/^Yes votes did not reach 51% of all officers$/, "Hindi umabot sa 51% ng lahat ng officer ang boto ng oo"],
       [/^Replaced by resolution (.+) after the project’s allocation changed\. This one records what was approved at the time\.$/, "Pinalitan ng resolusyong {1} matapos magbago ang allocation ng proyekto. Nire-record ng isang ito kung ano ang na-approve noon."],
       [/^(\d+) earlier submission version\(s\) retained\.$/, "{1} naunang version ng na-submit ang itinatago."],
       [/^Next update by (.+)$/, "Susunod na update sa {1}"],
@@ -2502,7 +2625,23 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
       [/^Open photo: (.+)$/, "Buksan ang photo: {1}"],
       [/^Sample (.+)$/, "Sample {1}"],
       [/^Added by (.+)\. It is public once you approve it\.$/, "Idinagdag ni {1}. Magiging public ito kapag in-approve mo."],
-      [/^Student: (.+)$/, "Estudyante: {1}"]
+      [/^Student: (.+)$/, "Estudyante: {1}"],
+      [/^This phone has reached today’s limit of (\d+) submissions\. Please try again tomorrow\.$/, "Naabot na ng phone na ito ang limitasyon ngayong araw na {1} na ipinadala. Subukan muli bukas."],
+      [/^This phone has reached this week’s limit of (\d+) submissions\. Please try again next week\.$/, "Naabot na ng phone na ito ang limitasyon ngayong linggo na {1} na ipinadala. Subukan muli sa susunod na linggo."],
+      [/^Photo evidence \(optional, up to (\d+)\)$/, "Photo na ebidensya (opsyonal, hanggang {1})"],
+      [/^You can attach up to (\d+) photos\.$/, "Puwede kang maglakip ng hanggang {1} photo."],
+      [/^Already spent: (.+)$/, "Nagastos na: {1}"],
+      [/^The budget is set aside from SPTA funds that are not already committed to projects\. Available for this activity: (.+)\.$/, "Ang badyet ay inilalaan mula sa pondo ng SPTA na hindi pa nakalaan sa mga proyekto. Magagamit para sa aktibidad na ito: {1}."],
+      [/^Activity · (.+)$/, "Aktibidad · {1}"],
+      [/^Activity: (.+)$/, "Aktibidad: {1}"],
+      [/^Cancelled\. (.+)$/, "Kinansela. {1}"],
+      [/^(.+) · Photo (\d+) of (\d+)$/, "{1} · Photo {2} ng {3}"],
+      [/^Photo (\d+) of (\d+)$/, "Photo {1} ng {2}"],
+      [/^Open photo (\d+)$/, "Buksan ang photo {1}"],
+      [/^Photo evidence (\d+)$/, "Photo na ebidensya {1}"],
+      [/^The treasurer sets an activity’s budget\. The chairperson may stand in while the treasurer is away\.$/, "Ang treasurer ang naglalaan ng badyet ng aktibidad. Puwedeng pumalit ang chairperson kapag wala ang treasurer."],
+      [/^SPTA funds that are not already set aside come to (.+)\. Choose a smaller budget\.$/, "Ang pondo ng SPTA na hindi pa nakalaan ay {1}. Pumili ng mas maliit na badyet."],
+      [/^The budget cannot go below (.+), which is already spent\.$/, "Hindi puwedeng mas mababa sa {1} ang badyet dahil nagastos na ito."]
     ]
   };
 })(globalThis);
@@ -2629,6 +2768,7 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
   const boardRoles = ['chair', 'vice', 'secretary', 'treasurer', 'collector', 'bod'];
   const leaders = ['head', 'chair', 'vice'];
   const printers = ['head', 'chair', 'vice', 'secretary'];
+  const minuteReaders = ['head', ...boardRoles];
   const labels = {
     received: 'Received',
     returned: 'Needs revision',
@@ -2723,6 +2863,8 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
   }
   // Sarah's rules: two accounts a phone, a month to vote unless the date is changed,
   // four direct chairperson proposals a school year, and the chairperson may stand in for three officers.
+  // Anti-spam: one phone may send only a few proposals, suggestions and concerns, however many accounts it uses.
+  const submissionsPerDay = 3, submissionsPerWeek = 8, photosPerCase = 2;
   const hiddenPerMonth = 2,
     accountsPerDevice = 2,
     voteDays = 30,
@@ -2780,8 +2922,8 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
   function requiredYes(n) {
     return majority(n);
   }
-  // Sarah's rule: a proposal proceeds when yes votes reach 50% of all officers on the roster.
-  const halfOf = n => Math.ceil(n / 2);
+  // Sarah's rule: a proposal proceeds when yes votes reach 51% of all officers on the roster, which is more than half.
+  const halfOf = n => majority(n);
   const yesNeeded = b => b.minimumYes || requiredYes(b.present.length);
   // Opens the in-app officer vote for a screened proposal.
   function openVote(db, p, closes) {
@@ -2789,7 +2931,7 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
     check(roster.length > 0, 'Add officers to the roster before opening a vote.');
     const b = {
       minimumYes: halfOf(roster.length),
-      rule: '50% of all officers',
+      rule: '51% of all officers',
       id: newId(db, 'B'),
       proposal: p.id,
       rev: p.rev,
@@ -2867,12 +3009,31 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
   function homeroomKey(value) {
     return String(value || '').normalize('NFKC').toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '');
   }
-  function resolutionText(title, budget, direct = false) {
-    return 'The SPTA records ' + (direct ? 'the chairperson’s proposal “' + title + '”, added without an officer vote,' : 'the board decision on “' + title + '”') + ' and School-Head approval for the project with an allocation of ₱' + (budget / 100).toLocaleString('en-PH', {
+  const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  const longDate = iso => /^\d{4}-\d{2}-\d{2}/.test(String(iso || '')) ? monthNames[Number(iso.slice(5, 7)) - 1] + ' ' + Number(iso.slice(8, 10)) + ', ' + iso.slice(0, 4) : '';
+  // The resolution follows the school's own format: a Filipino resolution with SAPAGKAT clauses and numbered SEKSYON.
+  // info (all optional): date of the vote, how it was held, the count, the School Head's approval date, and the project details.
+  function resolutionText(title, budget, direct = false, info = {}) {
+    const money = '₱' + (budget / 100).toLocaleString('en-PH', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
-    }) + '.';
+    });
+    const on = longDate(info.date);
+    const inApp = !info.meeting || info.meeting === 'In-app officer vote';
+    // Project details are quoted only when they carry no peso figure that differs from the voted amount.
+    const found = String(info.text || '').match(/₱\s?[\d,]+(?:\.\d+)?/g) || [];
+    const detail = info.text && found.every(x => Math.round(Number(x.replace(/[₱\s,]/g, '')) * 100) === budget) ? ': ' + String(info.text).trim().replace(/\s+/g, ' ').replace(/[.;:]+$/, '') : '';
+    const t = info.tally;
+    const parts = [direct ? 'KAMI, mga opisyales ng SPTA ng East Central Elementary School, ay nagpasiya na:' : 'KAMI, mga opisyales at miyembro ng SPTA ng East Central Elementary School, sa ' + (inApp ? 'isang botohan ng mga opisyal' : 'isang pagpupulong') + (on ? ' na ginanap noong ' + on : '') + ', ay nagpasiya na:', 'SAPAGKAT, ang proyektong “' + title + '” ay iminungkahi para sa ikabubuti ng mga mag-aaral ng East Central Elementary School' + detail + ';', direct ? 'SAPAGKAT, ang panukalang ito ay direktang inihain ng Chairperson nang walang botohan ng mga opisyal, ayon sa panuntunan ng SPTA, at ipinadala sa School Head para sa pag-apruba;' : 'SAPAGKAT, sa botohan ng mga opisyal ng SPTA, ang panukala ay nakakuha ng ' + (t ? t.yes + ' pagsang-ayon, ' + t.no + ' pagtutol at ' + t.abstain + ' hindi pumanig' + (info.officers ? ' mula sa ' + info.officers + ' na opisyal' : '') + ', at umabot sa hinihinging 51% ng lahat ng opisyal' : 'sapat na pagsang-ayon ng mga opisyal') + ';', 'SAPAGKAT, inaprubahan ng School Head ang panukala' + (info.approved ? ' noong ' + longDate(info.approved) : '') + ';', 'SAPAGKAT, ang inilaang halaga para sa proyekto ay ' + money + ', mula sa mga boluntaryong kontribusyon at pondo ng SPTA na hiwalay sa badyet ng paaralan' + (info.fundraising ? ', at ang karagdagang kakailanganin ay malilikom sa pamamagitan ng boluntaryong fundraising' : '') + ';', 'KAYA’T, SA KAPASYAHAN NG NAKARARAMI, AY NAPAGKAYARIAN NA:', 'SEKSYON 1. Ang SPTA ay pumapayag at nagpapatibay sa proyektong “' + title + '” na may inilaang halagang ' + money + '.', 'SEKSYON 2. Ang pondo ay gagamitin lamang para sa nasabing proyekto. Ang bawat gastos ay itatala at ipapakita sa mga magulang, at magkakaroon ng maayos na liquidation.', 'SEKSYON 3. Ang pagbabago sa halaga o layunin ng proyekto ay mangangailangan ng bagong botohan ng mga opisyal at bagong pag-apruba ng School Head.', 'SEKSYON 4. Ang resolusyong ito ay kusang-loob naming pinagtibay.', 'Pinagtibay ngayong araw ng ' + longDate(info.signed || today()) + ' sa San Fabian, Pangasinan.'];
+    return parts.join('\n\n');
   }
+  // The title line of the resolution, in the school's format.
+  const resolutionHeading = r => 'ISANG RESOLUSYON NA NAGPAPATIBAY SA PROYEKTONG “' + String(r.title || '').toUpperCase() + '” AT SA PAGLALAAN NG ' + ('₱' + (r.budget / 100).toLocaleString('en-PH', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  }));
+  // Resolutions are numbered through the school year, as on the school's paper copies. The secretary can change the number before release.
+  const nextResolutionNumber = (db, year) => 1 + db.resolutions.filter(x => x.sy === year).reduce((n, x) => Math.max(n, x.no || 0), 0);
   const peso = cents => '₱' + (cents / 100).toLocaleString('en-PH', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
@@ -2922,12 +3083,25 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
         short: need - covered
       };
     });
+    // An activity's budget is set aside the same way, after the projects.
+    const activities = {};
+    (db.activities || []).filter(x => x.status === 'scheduled' && x.budget > 0).forEach(x => {
+      const need = Math.max(0, x.budget - projectSpend(db, x.id)),
+        covered = Math.min(need, cash);
+      cash -= covered;
+      committed += need;
+      activities[x.id] = {
+        need,
+        short: need - covered
+      };
+    });
     const available = Math.max(0, balance - committed);
     return {
       balance,
       committed,
       available,
       projects,
+      activities,
       shortFor: cents => Math.max(0, (Number(cents) || 0) - available)
     };
   }
@@ -2943,7 +3117,7 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
     cancelled: 'The SPTA project from your proposal was cancelled. The reason is posted under Projects.',
     returned: 'Your proposal was reviewed and needs a revision. Read the note, then revise and resubmit.',
     declined: 'Your proposal was reviewed and will not proceed. Read the note for the reason.',
-    not_adopted: 'The SPTA officers’ vote did not reach 50%, so the proposal will not proceed for now.',
+    not_adopted: 'The SPTA officers’ vote did not reach 51%, so the proposal will not proceed for now.',
     withdrawn: 'You withdrew this proposal. Nothing more will happen with it.'
   };
   function autoReply(item) {
@@ -2982,6 +3156,7 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
     if (isChair(db, a)) return untouched;
     return a?.role === 'vice' && a.active && untouched && [d.owner, d.checkedBy].some(x => account(db, x)?.role === 'chair');
   }
+  const planners = ['head', 'chair', 'vice', 'secretary', 'treasurer'];
   const canAnnounce = (db, a) => !!a?.active && (a.role === 'head' || a.role === 'secretary' || isChair(db, a));
   function financeReview(db, a) {
     check(isChair(db, a), 'Chairperson posting authority is required.');
@@ -3019,6 +3194,14 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
       type: meta.type,
       size: bytes
     };
+  }
+  function throttle(db, a, device, context) {
+    if (context.practice === true || !device || !['parent', 'bod'].includes(a.role)) return;
+    const now = Date.now();
+    const times = [...db.cases, ...db.proposals].filter(x => x.sent && (x.owner === a.id || x.device === device)).map(x => Date.parse(x.sent)).filter(Number.isFinite);
+    const inLast = ms => times.filter(t => now - t < ms).length;
+    check(inLast(86400000) < submissionsPerDay, 'This phone has reached today’s limit of ' + submissionsPerDay + ' submissions. Please try again tomorrow.');
+    check(inLast(7 * 86400000) < submissionsPerWeek, 'This phone has reached this week’s limit of ' + submissionsPerWeek + ' submissions. Please try again next week.');
   }
   const onDesk = c => c.kind !== 'inspection' && ['chair', 'vice'].includes(c.assigned);
   // Who may read a case. The sender always can. Records requests go to the secretary.
@@ -3106,6 +3289,91 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
     });
     return id;
   }
+  // A project the officers already voted on, and the School Head already approved, before the app was in use.
+  // It goes straight to a draft resolution, so the secretary can release it and the officers can sign. Returns the new record.
+  function importVoted(db, v) {
+    const title = words(v.title, 'Project title', 4, 100),
+      text = words(v.text, 'Project description', 8, 700),
+      budget = amount(v.budget, true),
+      voted = dateValue(v.date),
+      approved = dateValue(v.approved),
+      meeting = words(v.meeting || 'SPTA meeting', 'Meeting name', 3, 100),
+      n = Number(v.officers),
+      yes = Number(v.yes),
+      no = Number(v.no || 0),
+      abstain = Number(v.abstain || 0);
+    check(Number.isInteger(n) && n >= 1 && n <= 200, 'Enter how many officers were on the roster for the vote.');
+    check([yes, no, abstain].every(x => Number.isInteger(x) && x >= 0) && yes + no + abstain <= n, 'The votes cannot add up to more than the officers on the roster.');
+    check(yes >= majority(n), 'Yes votes did not reach 51% of the officers (' + majority(n) + ' of ' + n + '), so this project was not adopted.');
+    check(approved >= voted && approved <= today(), 'The School Head approval cannot be before the vote or in the future.');
+    check(db.accounts.some(x => x.role === 'head' && x.active) && db.accounts.some(x => x.role === 'chair' && x.active), 'The School Head and chairperson must be set up first.');
+    const draft = duplicate(db);
+    const proposal = {
+      id: newId(draft, 'P'),
+      title,
+      details: text,
+      category: 'Other',
+      owner: 'chair',
+      sender: sender(account(draft, 'chair')),
+      device: '',
+      created: voted,
+      budget,
+      fundraising: false,
+      status: 'awaiting_head',
+      published: true,
+      supports: 0,
+      supporters: [],
+      rev: 1,
+      history: [],
+      publicTitle: title,
+      publicText: text,
+      imported: true
+    };
+    const ballot = {
+      minimumYes: majority(n),
+      rule: '51% of all officers',
+      id: newId(draft, 'B'),
+      proposal: proposal.id,
+      rev: 1,
+      title,
+      body: text,
+      budget,
+      roster: [],
+      present: Array.from({ length: n }, (_, i) => 'recorded-' + i),
+      participated: [],
+      counts: { yes, no, abstain },
+      named: [],
+      method: 'meeting',
+      date: voted,
+      closes: voted,
+      meeting,
+      mode: 'Recorded from paper',
+      status: 'closed',
+      passed: true,
+      closed: voted + 'T00:00:00.000Z',
+      opened: voted + 'T00:00:00.000Z'
+    };
+    draft.proposals.unshift(proposal);
+    draft.ballots.push(ballot);
+    proposal.status = 'awaiting_head';
+    proposal.ballot = ballot.id;
+    const x = transition(draft, 'head', 'headDecision', { id: proposal.id, decision: 'approve' }, 'import-' + proposal.id);
+    const out = x.db,
+      res = out.resolutions.find(r => r.proposal === proposal.id),
+      p = out.proposals.find(r => r.id === proposal.id);
+    p.approved = approved + 'T00:00:00.000Z';
+    res.approved = p.approved;
+    res.imported = true;
+    if (v.no_ !== undefined && v.no_ !== '') {
+      const num = Number(v.no_);
+      check(Number.isInteger(num) && num >= 1 && num <= 999, 'Enter the resolution number, from 1 to 999.');
+      check(!out.resolutions.some(r => r !== res && r.sy === res.sy && r.no === num), 'Another resolution already has number ' + num + ' this year.');
+      res.no = num;
+    }
+    res.clause = resolutionText(title, budget, false, { date: voted, meeting, tally: { yes, no, abstain }, officers: n, approved, fundraising: false, text });
+    out.audit.push({ who: 'IT administrator', role: '', event: 'Voted project recorded from paper', ref: res.id, at: at() });
+    return { db: out, id: res.id, project: res.project };
+  }
   // The real school record: no sample content, only the officers, each waiting for a one-time invite.
   const liveRoles = ['head', 'chair', 'vice', 'secretary', 'treasurer', 'collector'];
   function createLive(officers) {
@@ -3158,6 +3426,7 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
         date: today()
       }],
       minutes: [],
+      activities: [],
       batches: [],
       remittances: [],
       notes: [],
@@ -3181,6 +3450,7 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
     const login = mobileNumber(v.mobile);
     check(!db.accounts.some(x => x.login === login && x !== a), 'An account already uses this mobile number.');
     a.login = login;
+    a.joinedAt = at();
     delete a.invite;
     delete a.inviteAt;
     a.consent = {
@@ -3344,6 +3614,7 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
         date: '2026-11-10'
       }],
       minutes: [],
+      activities: [],
       batches: [],
       remittances: [],
       notes: [],
@@ -3407,7 +3678,7 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
             abstain: 2
           },
           minimumYes: halfOf(roster.length),
-          rule: '50% of all officers',
+          rule: '51% of all officers',
           named: [],
           method: 'secret',
           status: 'open',
@@ -3455,6 +3726,37 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
       }
     }
     // Officers' practice copy: the School Head, chairperson and Vice-Chairperson profiles are switched off, so nobody can sign in as them.
+    // Practice version only: a few sample activities, so the new Activities page is not empty.
+    if (!old && globalThis.ECESSamplePhotos) {
+      const ga = today() <= '2026-12-07' ? '2026-12-07' : plusDays(today(), 14);
+      db.activities = [{
+        id: 'AC-1',
+        title: 'Year-end party for SPTA officers',
+        date: plusDays(today(), 30),
+        time: '4:00 PM',
+        place: 'School covered court',
+        details: 'A thank-you get-together for the officers. Bring a dish to share.',
+        audience: 'officers',
+        status: 'scheduled',
+        budget: 0,
+        by: 'secretary',
+        role: 'secretary',
+        created: at()
+      }, {
+        id: 'AC-2',
+        title: 'SPTA General Assembly',
+        date: ga,
+        time: '2:00 PM',
+        place: 'School grounds',
+        details: 'All parents are invited. The officers will report on projects and SPTA funds.',
+        audience: 'everyone',
+        status: 'scheduled',
+        budget: 0,
+        by: 'chair',
+        role: 'chair',
+        created: at()
+      }];
+    }
     if (globalThis.ECES_OFFICERS_ONLY === true) db.accounts.filter(x => ['head', 'chair', 'vice'].includes(x.id)).forEach(x => {
       x.active = false;
     });
@@ -3473,6 +3775,7 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
     } : null);
     check(a?.active, 'Sign in to continue.');
     expire(db);
+    db.activities = db.activities || [];
     const key = requestId ? actorId + '|' + action + '|' + requestId : '';
     if (key && db.receipts.some(r => r.key === key)) return {
       db: original,
@@ -3543,7 +3846,8 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
             role: 'parent',
             active: true,
             boardSeat: false,
-            demo: false
+            demo: false,
+            joinedAt: at()
           };
           if (homeroom) user.homeroom = homeroom;
           if (childName) user.childName = childName;
@@ -3663,6 +3967,7 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
         }
       case 'submitProposal':
         {
+          throttle(db, a, device, context);
           const p = {
             id: newId(db, 'P'),
             title: words(v.title, 'Title', 4, 100),
@@ -3672,6 +3977,7 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
             sender: sender(a),
             device,
             created: today(),
+            sent: at(),
             budget: 0,
             status: 'received',
             published: false,
@@ -3992,7 +4298,19 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
               })),
               signatures: {},
               archive: [],
-              clause: resolutionText(p.amends ? project.title : b.title, b.budget, !!p.direct) + (replaces.length ? ' This replaces the earlier resolution ' + replaces.join(', ') + ', which authorized a different allocation.' : ''),
+              no: nextResolutionNumber(db, Number(today().slice(0, 4))),
+              sy: Number(today().slice(0, 4)),
+              clause: resolutionText(p.amends ? project.title : b.title, b.budget, !!p.direct, {
+                date: b.date,
+                meeting: b.meeting,
+                tally: b.counts ? {
+                  ...b.counts
+                } : null,
+                officers: b.present?.length,
+                approved: String(p.approved || at()).slice(0, 10),
+                fundraising: !!p.fundraising,
+                text: p.amends ? project.text : b.body
+              }).replace(/\n\nPinagtibay ngayong araw/, replaces.length ? '\n\nPinapalitan ng resolusyong ito ang naunang resolusyon ' + replaces.join(', ') + ', na may ibang inilaang halaga.\n\nPinagtibay ngayong araw' : '\n\nPinagtibay ngayong araw'),
               supersedes: replaces,
               published: false
             };
@@ -4283,7 +4601,13 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
           check(required.length > 0 && required.every(id => invited.includes(id)), 'Choose required signers from the invited board members.');
           r.signerPolicy = required.length === invited.length ? 'All officers' : words(v.signerPolicy, 'School signer policy reference', 5, 200);
           r.requiredSigners = required;
-          r.clause = words(v.clause, 'Resolution text', 12, 1200);
+          r.clause = words(v.clause, 'Resolution text', 12, 4000);
+          if (v.no !== undefined && v.no !== '') {
+            const no = Number(v.no);
+            check(Number.isInteger(no) && no >= 1 && no <= 999, 'Enter the resolution number, from 1 to 999.');
+            check(!db.resolutions.some(x => x.id !== r.id && x.sy === r.sy && x.no === no), 'Another resolution already has number ' + no + ' this year.');
+            r.no = no;
+          }
           check(sameAmount(r.clause, r.budget), 'The resolution must state the amount the officers voted (' + peso(r.budget) + '), and no other amount. A different amount needs a new officer vote through “Change project”.');
           // The secretary may adjust the wording. The allocation stays as voted.
           if (v.title !== undefined) r.title = words(v.title, 'Project title', 4, 100);
@@ -4365,6 +4689,19 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
       case 'caseSubmit':
         {
           const kind = choice(v.kind, ['suggestion', 'concern', 'inspection'], 'submission type');
+          // Up to two photos as evidence, only on a suggestion or concern. The original file name is never kept, because it could name the sender.
+          const given = Array.isArray(v.photos) ? v.photos.filter(Boolean) : [];
+          check(given.length <= photosPerCase, 'You can attach up to ' + photosPerCase + ' photos.');
+          check(kind !== 'inspection' || !given.length, 'A records request does not take photos.');
+          const photos = given.map((f, i) => {
+            const x = photo(f);
+            check(x.type !== 'application/pdf', 'Photos must be JPG, PNG or WEBP.');
+            return {
+              ...x,
+              name: 'Photo ' + (i + 1)
+            };
+          });
+          check(new Set(photos.map(x => x.key)).size === photos.length, 'Choose two different photos.');
           id = newId(db, kind === 'concern' ? 'C' : kind === 'inspection' ? 'I' : 'S');
           const assigned = kind === 'inspection' ? 'secretary' : 'chair';
           // A signed-in parent may hide their name from the reviewer. The record keeps the account for the IT administrator only.
@@ -4375,6 +4712,7 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
             // Counted for the account and for the device, so a second account on the same phone does not add more.
             check(db.cases.filter(c => (c.owner === a.id || device && c.device === device) && c.hidden && c.created.slice(0, 7) === today().slice(0, 7)).length < hiddenPerMonth, 'You can hide your name on ' + hiddenPerMonth + ' submissions a month. Send this one with your name.');
           }
+          throttle(db, a, device, context);
           db.cases.unshift({
             id,
             kind,
@@ -4386,7 +4724,9 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
             sender: sender(a),
             device,
             hidden,
+            photos,
             created: today(),
+            sent: at(),
             due: plusDays(today(), 5),
             status: 'received',
             reply: '',
@@ -4514,6 +4854,67 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
           changed('Announcement published');
           break;
         }
+      case 'activitySave':
+        {
+          allows(a, planners);
+          const edit = id ? get(db.activities, id) : null;
+          if (edit) check(edit.status === 'scheduled' && (edit.by === a.id || isChair(db, a) || a.role === 'head' || a.role === 'vice'), 'Only the person who added it, the chairperson, Vice-Chairperson or School Head can change an activity.');
+          const day = dateValue(v.date);
+          check(edit || day >= today(), 'Choose today or a later date.');
+          const f = {
+            title: words(v.title, 'Activity name', 3, 100),
+            date: day,
+            time: v.time ? words(v.time, 'Time', 1, 30) : '',
+            place: v.place ? words(v.place, 'Place', 2, 100) : '',
+            details: v.details ? words(v.details, 'Details', 6, 600) : '',
+            audience: choice(v.audience, ['everyone', 'officers'], 'audience')
+          };
+          if (edit) {
+            Object.assign(edit, f);
+            edit.edited = at();
+            changed('Activity updated');
+          } else {
+            id = newId(db, 'AC');
+            db.activities.unshift({
+              id,
+              ...f,
+              status: 'scheduled',
+              budget: 0,
+              by: a.id,
+              role: a.role,
+              created: at()
+            });
+            changed('Activity added');
+          }
+          break;
+        }
+      case 'activityBudget':
+        {
+          check(holds(db, a, 'treasurer'), 'The treasurer sets an activity’s budget. The chairperson may stand in while the treasurer is away.');
+          const act = get(db.activities, id);
+          check(act.status === 'scheduled', 'This activity is no longer on the calendar.');
+          const cents = amount(v.budget, true),
+            spent = projectSpend(db, act.id),
+            before = Math.max(0, (act.budget || 0) - spent);
+          check(cents >= spent, 'The budget cannot go below ' + peso(spent) + ', which is already spent.');
+          check(cents - spent <= funding(db).available + before, 'SPTA funds that are not already set aside come to ' + peso(funding(db).available + before) + '. Choose a smaller budget.');
+          act.budget = cents;
+          act.budgetBy = a.id;
+          act.budgetAt = at();
+          changed('Activity budget set');
+          break;
+        }
+      case 'activityCancel':
+        {
+          allows(a, planners);
+          const act = get(db.activities, id);
+          check(act.status === 'scheduled', 'This activity is already cancelled.');
+          check(act.by === a.id || isChair(db, a) || a.role === 'head' || a.role === 'vice', 'Only the person who added it, the chairperson, Vice-Chairperson or School Head can cancel an activity.');
+          act.reason = words(v.reason, 'Reason', 4, 200);
+          act.status = 'cancelled';
+          changed('Activity cancelled');
+          break;
+        }
       case 'minutesUpload':
         {
           check(holds(db, a, 'secretary'), 'The secretary does this. The chairperson may stand in while the secretary is away.');
@@ -4583,7 +4984,12 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
           check(items.length > 0 && items.length <= 60, 'Add 1 to 60 checked items.');
           const cents = items.reduce((n, x) => n + x.cents, 0);
           const project = v.project || '';
-          if (project) {
+          if (project && project.startsWith('AC-')) {
+            const act = get(db.activities, project);
+            check(direction === 'out' && act.status === 'scheduled', 'Choose an activity that is still on the calendar.');
+            check(act.budget > 0, 'The treasurer has not set aside a budget for this activity yet.');
+            check(cents <= act.budget - projectSpend(db, act.id), 'This exceeds the remaining budget for this activity.');
+          } else if (project) {
             const p = get(db.projects, project);
             check(direction === 'out' && p.status !== 'cancelled', 'Choose an active expense project.');
             check(cents <= p.budget - projectSpend(db, p.id), 'This exceeds the remaining project allocation.');
@@ -4671,7 +5077,10 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
             choice(v.decision, ['post'], 'decision');
             check(v.reviewed === true, d.noPaper ? 'Confirm that you read why there is no paper original.' : 'Open the supporting file and confirm your review.');
             check(v.publicSafe === true, 'Confirm the purpose is safe to publish.');
-            if (d.direction === 'out' && d.project) {
+            if (d.direction === 'out' && d.project && d.project.startsWith('AC-')) {
+              const act = get(db.activities, d.project);
+              check(act.status === 'scheduled' && d.cents <= act.budget - projectSpend(db, act.id), 'The activity budget no longer permits this expense.');
+            } else if (d.direction === 'out' && d.project) {
               const p = get(db.projects, d.project);
               check(p.status !== 'cancelled' && d.cents <= p.budget - projectSpend(db, p.id), 'The project allocation no longer permits this expense.');
             }
@@ -4724,15 +5133,22 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
     requiredSigners,
     signaturesPending,
     resolutionText,
+    resolutionHeading,
+    longDate,
+    nextResolutionNumber,
     roles,
     leaders,
     printers,
+    minuteReaders,
     boardRoles,
     categories,
     labels,
     recipients,
     account,
     hiddenPerMonth,
+    submissionsPerDay,
+    submissionsPerWeek,
+    photosPerCase,
     accountsPerDevice,
     voteDays,
     voteCloses,
@@ -4749,6 +5165,8 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
     addSeats,
     setOpening,
     addPastProject,
+    importVoted,
+    planners,
     officerJoin,
     liveRoles,
     loginKey,
@@ -4894,8 +5312,44 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
     return h;
   }
   const endpoint = p => (apiBase || '') + '/api/' + p;
-  async function api(path, body) {
-    const response = await fetch(endpoint(path), {
+  // Network trouble is explained in plain words, never as "Failed to fetch" or a stray JSON error.
+  const WAIT = 30000, WAIT_FILE = 120000;
+  let down = false;
+  function trouble(kind, status) {
+    const e = Error(kind === 'offline' ? 'You are offline. Check your phone’s internet connection, then try again.' : kind === 'slow' ? 'The connection is too slow and the request timed out. Try again when your signal is better.' : kind === 'server' ? 'The SPTA server had a problem. Please try again in a few minutes.' : kind === 'reply' ? 'The server sent a reply the app could not read. Please try again in a few minutes.' : 'The app could not reach the SPTA server. Check your internet connection, then try again.');
+    e.network = kind;
+    e.status = status || 0;
+    return e;
+  }
+  async function reach(url, options, wait = WAIT) {
+    const control = typeof AbortController === 'function' ? new AbortController() : null;
+    const timer = control ? setTimeout(() => control.abort(), wait) : 0;
+    try {
+      const r = await fetch(url, control ? { ...options, signal: control.signal } : options);
+      down = false;
+      return r;
+    } catch (e) {
+      down = true;
+      throw trouble(e && e.name === 'AbortError' ? 'slow' : typeof navigator !== 'undefined' && navigator.onLine === false ? 'offline' : 'unreachable');
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+  async function reply(response, fallback) {
+    let data = null;
+    try {
+      data = await response.json();
+    } catch (_) {}
+    if (response.ok && data) return data;
+    if (data && data.error) throw Error(data.error);
+    if (response.status >= 500) throw trouble('server', response.status);
+    if (response.status === 404 || response.status === 405) throw Error('The app could not find its server. Please tell an SPTA officer.');
+    if (response.status === 429) throw Error('Too many tries. Please wait a minute, then try again.');
+    throw response.ok ? trouble('reply', response.status) : Error(fallback || 'The request could not be completed. Please try again.');
+  }
+  // Reading and saving an action are safe to repeat once: the server remembers the request number, so nothing is saved twice.
+  async function api(path, body, again = false) {
+    const go = () => reach(endpoint(path), {
       method: body ? 'POST' : 'GET',
       cache: 'no-store',
       credentials: apiBase ? 'omit' : 'same-origin',
@@ -4904,9 +5358,19 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
       } : {}),
       body: body ? JSON.stringify(body) : undefined
     });
-    const data = await response.json();
-    if (!response.ok) throw Error(data.error || 'Request failed.');
-    return data;
+    let response;
+    try {
+      response = await go();
+    } catch (e) {
+      if (!again || e.network === 'offline') throw e;
+      await new Promise(r => setTimeout(r, 1500));
+      response = await go();
+    }
+    if (again && response.status >= 502 && response.status <= 504) {
+      await new Promise(r => setTimeout(r, 1500));
+      response = await go();
+    }
+    return reply(response);
   }
   function session(v) {
     if (apiBase && v.token) keep.set('eces-live-token', v.token);
@@ -4971,7 +5435,7 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
     current = base;
   }
   async function refresh() {
-    if (shared) return session(await api('state'));
+    if (shared) return session(await api('state', undefined, true));
     if (handle) current = await request(handle.transaction('state').objectStore('state').get('school'));
     await sweep().catch(() => {});
     if (!E.account(current, actorId)?.active) actorId = '';
@@ -4983,13 +5447,14 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
         action,
         payload,
         requestId
-      });
+      }, true);
       session(res);
       return res.id;
     }
     if (!handle) {
       const result = E.transition(current, actorId, action, payload, requestId, {
-        device: device()
+        device: device(),
+        practice: true
       });
       current = result.db;
       return result.id;
@@ -5000,7 +5465,8 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
     try {
       const base = await request(store.get('school'));
       const res = E.transition(base, actorId, action, payload, requestId, {
-        device: device()
+        device: device(),
+        practice: true
       });
       store.put(res.db, 'school');
       await finished;
@@ -5213,7 +5679,7 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
     const valid = meta.type === 'image/jpeg' ? starts([255, 216, 255]) : meta.type === 'image/png' ? starts([137, 80, 78, 71, 13, 10, 26, 10]) : meta.type === 'application/pdf' ? starts([37, 80, 68, 70, 45]) : starts([82, 73, 70, 70]) && String.fromCharCode(...s.slice(8, 12)) === 'WEBP';
     if (!valid) throw Error('The file contents do not match its type.');
     if (shared) {
-      const res = await fetch(endpoint('files'), {
+      const res = await reach(endpoint('files'), {
         method: 'POST',
         credentials: apiBase ? 'omit' : 'same-origin',
         headers: liveHeaders({
@@ -5221,10 +5687,8 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
           'X-Filename': encodeURIComponent(meta.name)
         }),
         body: f
-      });
-      const data = await res.json();
-      if (!res.ok) throw Error(data.error);
-      return data;
+      }, WAIT_FILE);
+      return reply(res, 'The file could not be uploaded. Please try again.');
     }
     if (!handle) {
       memoryFiles.set(meta.key, f);
@@ -5239,40 +5703,38 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
   // A profile picture, already cropped and shrunk to a small JPEG. Only the owner can read it back.
   async function setAvatar(blob) {
     if (!shared) throw Error('Profile pictures are available in the live app.');
-    const res = await fetch(endpoint('avatar'), {
+    const res = await reach(endpoint('avatar'), {
       method: 'POST',
       credentials: apiBase ? 'omit' : 'same-origin',
       headers: liveHeaders({
         'Content-Type': blob.type
       }),
       body: blob
-    });
-    const data = await res.json();
-    if (!res.ok) throw Error(data.error || 'The picture could not be saved.');
+    }, WAIT_FILE);
+    const data = await reply(res, 'The picture could not be saved. Please try again.');
     await refresh();
     return data;
   }
   async function removeAvatar() {
-    const res = await fetch(endpoint('avatar-remove'), {
+    const res = await reach(endpoint('avatar-remove'), {
       method: 'POST',
       credentials: apiBase ? 'omit' : 'same-origin',
       headers: liveHeaders({}),
       body: ''
     });
-    const data = await res.json();
-    if (!res.ok) throw Error(data.error || 'The picture could not be removed.');
+    const data = await reply(res, 'The picture could not be removed. Please try again.');
     await refresh();
     return data;
   }
   // keep: a public project photo may be remembered by the phone, because each photo has its own one-time key.
   async function fileURL(meta, keep = false) {
     if (shared) {
-      const r = await fetch(endpoint('files/' + encodeURIComponent(meta.key)), {
+      const r = await reach(endpoint('files/' + encodeURIComponent(meta.key)), {
         cache: keep ? 'default' : 'no-store',
         credentials: apiBase ? 'omit' : 'same-origin',
         headers: liveHeaders()
-      });
-      if (!r.ok) throw Error('Access to this attachment is unavailable.');
+      }, WAIT_FILE);
+      if (!r.ok) throw r.status >= 500 ? trouble('server', r.status) : Error('Access to this attachment is unavailable.');
       return URL.createObjectURL(await r.blob());
     }
     // Practice version: the fictional pictures on the sample projects are carried inside the page.
@@ -5349,6 +5811,9 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
     },
     get device() {
       return device();
+    },
+    get unreachable() {
+      return down;
     },
     get shared() {
       return shared;
@@ -5786,7 +6251,7 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
   // Public project photos. The picture itself loads after the page is drawn, then stays ready for later redraws.
   const photoState = ph => ph.status || 'approved';
   const shownPhotos = p => (p.photos || []).filter(x => photoState(x) === 'approved' || onRole(E.leaders));
-  const findPhoto = key => db().projects.flatMap(p => p.photos || []).find(x => x.file.key === key);
+  const findPhoto = key => db().projects.flatMap(p => p.photos || []).find(x => x.file.key === key) || (db().cases || []).flatMap(c => (c.photos || []).map(file => ({file}))).find(x => x.file.key === key);
   const photoImg = (ph, alt, cls = '') => '<img class="' + cls + '" alt="' + esc(alt) + '" data-photo="' + esc(ph.file.key) + '"' + (ui.photoUrls.get(ph.file.key) ? ' src="' + esc(ui.photoUrls.get(ph.file.key)) + '"' : '') + '>';
   function goBack() {
     ui.tab = ui.back || 'more';
@@ -5958,11 +6423,11 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
   const proposalName = p => p.publicTitle || p.title;
   const lead = () => onRole(E.leaders);
   function tabs() {
-    const arr = [['home', 'Home', 'home'], ['proposals', 'Proposals', 'lightbulb'], ['projects', 'Projects', 'sprout'], ['funds', 'Funds', 'chart']];
+    const arr = [['home', 'Home', 'home'], ['proposals', 'Proposals', 'lightbulb'], ['projects', 'Projects', 'sprout'], ['funds', 'Funds', 'chart'], ['activities', 'Activities', 'calendar']];
     if (lead()) arr.push(['cases', me().role === 'head' ? 'Passed-on feedback' : 'Assigned feedback', 'shield'], ['insights', 'School pulse', 'chart']);
     else if (holds('secretary')) arr.push(['cases', 'Passed-on feedback', 'shield']);
     if (onRole(E.boardRoles) || lead()) arr.push(['board', 'Officer voting', 'users'], ['resolutions', 'Resolutions', 'file']);
-    if (onRole(['secretary', 'head', 'chair', 'vice'])) arr.push(['records', 'Minutes & notices', 'clipboard']);
+    if (onRole(E.minuteReaders)) arr.push(['records', 'Minutes & notices', 'clipboard']);
     if (onRole(['head', 'chair'])) arr.push(['roster', 'BOD requests', 'users']);
     if (onRole(['head', 'chair', 'vice'])) arr.push(['history', 'Change history', 'clipboard']);
     if (onRole(['collector', 'treasurer']) || canChair() || db().batches.some(canPost)) arr.push(['finance', 'Finance desk', 'clipboard']);
@@ -6060,10 +6525,11 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
     const approvalList=officer&&(leader||waiting.length)?section('Needs your action',waiting.map(([shape,kicker,name,act,id,kind])=>'<button class="notice-row" data-do="'+esc(act)+'" data-id="'+esc(id)+'" data-queue="1"><span class="notice-symbol">'+icon(shape)+'</span><span>'+kindChip(kind)+'<strong>'+esc(titleCase(name))+'</strong><small>'+esc(kicker)+'</small></span>'+icon('chevron','sm')+'</button>').join('')||empty('Nothing is waiting for you.')):'';
     const latest=notices()[0];
     const announcement=latest?'<button class="notice-row" data-do="tab:updates"><span class="notice-symbol">'+icon('megaphone')+'</span><span><small>'+esc(date(latest.date))+'</small><strong>'+esc(titleCase(latest.title))+'</strong></span>'+icon('chevron','sm')+'</button>':empty('No announcements yet.');
+    const soon=allActivities().filter(isUpcoming).sort((x,y)=>x.date.localeCompare(y.date)).slice(0,2).map(x=>'<button class="project-row" data-do="tab:activities"><span class="project-symbol">'+icon('calendar')+'</span><span><strong>'+esc(titleCase(x.title))+'</strong><small>'+esc(whenLine(x)+(x.audience==='officers'?' · Officers only':''))+'</small></span>'+icon('chevron','sm')+'</button>').join('');
     const projectsList=db().projects.slice(0,2).map(p=>'<button class="project-row" data-do="tab:projects"><span class="project-symbol">'+icon(p.icon||'sprout')+'</span><span><strong>'+esc(titleCase(p.title))+'</strong>'+badge(p.status)+'</span>'+icon('chevron','sm')+'</button>').join('');
     const join=isGuest()?'<div class="join-bod"><strong>Parent or SPTA Officer?</strong>'+btn('Sign in','tab:account')+'</div>':'';
     const cover=standIn()?notice('You are standing in for the '+E.roles[standIn()]+' until '+date(db().cover.until)+'. Their tasks appear in your list.'):'';
-    return hero+cover+feedback+approvalList+section('Latest announcement',announcement)+section('SPTA projects',projectsList||empty('Approved SPTA projects will appear here.'))+join;
+    return hero+cover+feedback+approvalList+section('Latest announcement',announcement)+section('Upcoming activities',soon||empty('No activities are planned yet.'))+section('SPTA projects',projectsList||empty('Approved SPTA projects will appear here.'))+join;
   }
   // A sender may take back a proposal until the School Head approves it, and a suggestion or concern until it is resolved.
   const canWithdraw = x => x.owner === S.me && (x.kind ? ['received', 'assigned'] : ['received', 'returned', 'screened', 'voting', 'awaiting_head']).includes(x.status);
@@ -6100,9 +6566,10 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
     const to = desk ? mine && !noter ? 'SPTA' : E.deskName : E.recipients[c.assigned] || E.roles[c.assigned];
     const notes = (c.notes || []).map(x => '<div class="portal-note' + (x.followUp ? ' personal' : '') + '"><b>' + esc((x.followUp ? 'Follow-up · ' : x.toHead ? 'Note for the School Head · ' : 'Note · ') + (E.roles[x.role] || x.role)) + '</b>' + para(x.text) + '<small>' + esc(date(x.at.slice(0, 10))) + '</small></div>').join('');
     const body = para(c.body) + (c.hidden ? '<div class="entry-meta hidden-name">' + icon('lock', 'sm') + esc(mine ? 'You hid your name from the reviewer.' : 'Name hidden by the sender. Reply here in the app.') + '</div>' : (assigned || noter) && !mine ? fromLine(c) : '') + (mine ? tracker(c) : c.reply ? '<div class="portal-note personal"><b>Personal Reply Sent</b>' + para(c.reply) + '</div>' : '') + (!mine || noter ? notes : '') + '<div class="entry-meta">Sent to the ' + esc(to) + (c.forwarded ? ' · Passed on to the School Head' + (c.forwarded.role && noter ? ' by the ' + esc(E.roles[c.forwarded.role] || '') : '') + ' ' + esc(date(c.forwarded.at.slice(0, 10))) : '') + (assigned && !gone ? ' · Next update by ' + esc(date(c.due)) : '') + (late ? ' · <b class="overdue">Overdue</b>' : '') + '</div>';
+    const evidence = (c.photos || []).length ? '<div class="proj-photos case-photos" aria-label="Photo evidence">' + c.photos.map((ph, i) => '<button type="button" class="proj-photo" data-do="dlg:casePhoto" data-id="' + esc(c.id + '|' + i) + '" aria-label="' + esc('Open photo ' + (i + 1)) + '">' + photoImg({file: ph}, 'Photo evidence ' + (i + 1)) + '</button>').join('') + '</div>' : '';
     const canForward = desk && !c.forwarded && ['chair', 'vice'].includes(me().role) && ['received', 'assigned'].includes(c.status);
     const actions = (assigned && !gone ? btn(c.status === 'received' ? 'Mark reviewed or reply' : 'Update or reply', 'dlg:reply', c.id) : '') + (canForward ? btn('Pass on to the School Head', 'dlg:forward', c.id, 'primary') : '') + (noter && !gone && desk ? btn(holds('secretary') && !assigned ? 'Record follow-up' : c.forwarded ? 'Add a note' : 'Add a private note', 'dlg:caseNote', c.id) : '') + (canWithdraw(c) ? btn('Withdraw', 'dlg:withdraw', c.id) : '');
-    return card(c.subject, body, c.id + ' · ' + (c.kind === 'inspection' ? 'Records inspection request' : c.kind === 'concern' ? 'Private concern' : 'Private suggestion'), c.status, actions);
+    return card(c.subject, body + evidence, c.id + ' · ' + (c.kind === 'inspection' ? 'Records inspection request' : c.kind === 'concern' ? 'Private concern' : 'Private suggestion'), c.status, actions);
   }
   function pulse() {
     const tally = db().trends || {};
@@ -6115,13 +6582,13 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
   }
   function board() {
     const ballots = db().ballots.filter(b => b.roster.includes(S.me) || lead() || holds('secretary')).slice().reverse();
-    return para('Every SPTA officer can vote on a screened proposal. It proceeds to the School Head once yes votes reach 50% of all officers.') + section('Proposals for officer vote', ballots.map(b => {
+    return para('Every SPTA officer can vote on a screened proposal. It proceeds to the School Head once yes votes reach 51% of all officers.') + section('Proposals for officer vote', ballots.map(b => {
       const open = b.status === 'open',
         member = b.present.includes(S.me),
         voted = b.participated.includes(S.me),
         turnout = b.turnout ?? b.participated.length,
         need = E.yesNeeded(b);
-      const text = para(b.body) + '<div class="entry-meta">Secret ballot · ' + b.present.length + ' officers · ' + need + ' yes votes needed (50%) · SPTA allocation ' + cash(b.budget) + '</div>' + (open ? ballotFund(b) : '') + (open ? para(turnout + ' of ' + b.present.length + ' officers have voted.' + (voted ? ' Your vote was received.' : '')) + '<div class="entry-meta vote-closes">' + icon('info', 'sm') + 'Voting closes on ' + esc(date(E.voteCloses(b))) + '</div>' : '<div class="vote-summary"><b>' + b.counts.yes + ' Yes</b><b>' + b.counts.no + ' No</b><b>' + b.counts.abstain + ' Abstain</b></div>' + para(b.withdrawn ? 'The proposer withdrew this proposal, so the vote was closed.' : b.passed ? 'Reached 50% of all officers. Sent to the School Head for approval.' : 'Yes votes did not reach 50% of all officers' + (b.expired ? ' by the closing date.' : '.')));
+      const text = para(b.body) + '<div class="entry-meta">Secret ballot · ' + b.present.length + ' officers · ' + need + ' yes votes needed (51%) · SPTA allocation ' + cash(b.budget) + '</div>' + (open ? ballotFund(b) : '') + (open ? para(turnout + ' of ' + b.present.length + ' officers have voted.' + (voted ? ' Your vote was received.' : '')) + '<div class="entry-meta vote-closes">' + icon('info', 'sm') + 'Voting closes on ' + esc(date(E.voteCloses(b))) + '</div>' : '<div class="vote-summary"><b>' + b.counts.yes + ' Yes</b><b>' + b.counts.no + ' No</b><b>' + b.counts.abstain + ' Abstain</b></div>' + para(b.withdrawn ? 'The proposer withdrew this proposal, so the vote was closed.' : b.passed ? 'Reached 51% of all officers. Sent to the School Head for approval.' : 'Yes votes did not reach 51% of all officers' + (b.expired ? ' by the closing date.' : '.')));
       let buttons = '';
       if (open && member && !voted) buttons += btn('Cast vote', 'dlg:vote', b.id, 'primary');
       if (open && canChair() && !S.shared && b.present.some(m => !b.participated.includes(m) && !S.practiceProfiles.includes(m))) buttons += btn('Add practice ballots', 'practiceBallots', b.id);
@@ -6149,35 +6616,61 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
     const signed = r.signers ? Object.values(r.signatures || {}).filter(x => x.status === 'acknowledged').length : 0;
     return card(r.title, para(r.clause || 'The secretary is reviewing the draft.') + (r.state !== 'draft' && r.signers ? '<div class="entry-meta">' + signed + ' of ' + r.signers.length + ' officers have signed</div>' : ''), r.id + ' · Version ' + r.version, r.state, acts);
   }
+  // The resolution paper follows the school's own format (see SPTA Resolution No. 2, s. 2026): heading, title, the text,
+  // the officers' signatures, the members present with their signatures, and the witnesses.
+  const paperTitle = {
+    chair: 'SPTA President',
+    vice: 'SPTA Vice-President',
+    secretary: 'SPTA Secretary',
+    treasurer: 'SPTA Treasurer',
+    collector: 'SPTA Collecting and Disbursing Officer'
+  };
   function resolutionPaper(r, signatures = true) {
-    const demo = '<div class="paper-mark">' + (isLive() ? '' : 'FICTIONAL REHEARSAL COPY · ') + esc(labels[r.state] || r.state).toUpperCase() + '</div>';
-    const fact = (k, v) => v ? '<div class="paper-fact"><span>' + esc(k) + '</span><b>' + esc(v) + '</b></div>' : '';
-    let body = demo + '<div class="paper-head">' + seal + '<div><b>East Central Elementary School</b><div>School Parent-Teacher Association</div></div></div><h2>Resolution ' + esc(r.id) + '</h2>' + '<div class="entry-meta">Version ' + r.version + ' · ' + esc(labels[r.state] || r.state) + '</div><h3>' + esc(titleCase(r.title)) + '</h3>' + para(r.text);
-    if (r.meeting) body += '<h3>Project Details</h3><div class="paper-facts">' + fact('Proposal', r.proposal) + fact('Project', r.project) + fact('Category', r.category) + fact('Approved allocation', cash(r.budget)) + fact('Voluntary contributions', r.fundraising ? 'Yes · ' + r.ga : '') + (r.tally ? fact('Officer vote', r.tally.yes + ' yes, ' + r.tally.no + ' no, ' + r.tally.abstain + ' abstain' + (r.officers ? ' of ' + r.officers + ' officers' : '')) + fact('Vote closed', date(r.date)) : fact('Officer vote', 'Not held · Added by the chairperson')) + fact('School-Head approval', date(r.approved)) + '</div>';
-    body += '<h3>Resolution</h3>' + para(r.clause || 'Draft text awaiting secretary review.') + (r.supersededBy ? notice('Replaced by resolution ' + r.supersededBy + ' after the project’s allocation changed. This one records what was approved at the time.') : '');
+    const mark = '<div class="paper-mark">' + (isLive() ? '' : 'FICTIONAL REHEARSAL COPY · ') + esc(labels[r.state] || r.state).toUpperCase() + ' · VERSION ' + r.version + '</div>';
+    const no = r.no ? 'SPTA RESOLUTION NO. ' + r.no + ', S. ' + (r.sy || String(r.created || E.today()).slice(0, 4)) : 'SPTA RESOLUTION ' + r.id;
+    let body = mark + '<div class="rs-head">' + '<img class="rs-seal" src="assets/deped-seal.png" alt="" width="72" height="72">' + '<p class="rs-gothic">Republic of the Philippines</p><p class="rs-gothic">Department of Education</p><p>REGION 1</p><p>Schools Division Office of Pangasinan II</p><p><b>EAST CENTRAL ELEMENTARY SCHOOL</b></p><p>Caballero Street, Poblacion, San Fabian, Pangasinan</p></div><p class="rs-no">' + esc(no) + '</p><p class="rs-title">' + esc(E.resolutionHeading(r)) + '</p>';
+    if (r.supersededBy) body += notice('Replaced by resolution ' + r.supersededBy + ' after the project’s allocation changed. This one records what was approved at the time.');
+    const text = String(r.clause || 'Draft text awaiting secretary review.').split(/\n{2,}/).map(x => x.trim()).filter(Boolean);
+    body += '<div class="rs-text">' + text.map(x => '<p' + (/^SEKSYON \d/.test(x) ? ' class="rs-sec"' : '') + '>' + esc(x) + '</p>').join('') + '</div>';
     if (signatures && r.signers && r.state !== 'draft' && officers()) {
-      const done = r.signers.filter(s => r.signatures[s.id]?.status === 'acknowledged').length;
-      body += '<h3>Signatures</h3>' + para(done + ' of ' + r.signers.length + ' officers have signed this version. ' + (r.signerPolicy || 'All officers') + ' · ' + E.signaturesPending(r).length + ' required signatures pending.') + '<div class="sig-grid">' + r.signers.map(s => {
-        const sig = r.signatures[s.id],
-          ok = sig?.status === 'acknowledged';
-        return '<div class="sig-block' + (ok ? ' signed' : '') + '">' + (ok ? markSvg(sig.mark) : '<span class="sig-empty">' + esc(sig ? 'Declined to sign' : 'Not yet signed') + '</span>') + '<b>' + esc(sig?.name || s.name) + '</b><span>' + esc(signerLine(sig || s)) + '</span><span>' + esc(sig ? date(sig.at) : '') + '</span></div>';
-      }).join('') + '</div>' + para(r.filing);
+      const sigOf = s => r.signatures[s.id];
+      const sign = s => {
+        const sig = sigOf(s);
+        return sig?.status === 'acknowledged' ? markSvg(sig.mark) : sig ? '<span class="sig-empty">Declined to sign</span>' : '';
+      };
+      const order = Object.keys(paperTitle);
+      const officersList = r.signers.filter(s => order.includes(s.role)).sort((a, b) => order.indexOf(a.role) - order.indexOf(b.role));
+      const members = r.signers.filter(s => s.role === 'bod');
+      const head = db().accounts.find(x => x.role === 'head' && x.active);
+      const done = r.signers.filter(s => sigOf(s)?.status === 'acknowledged').length;
+      body += '<p class="rs-label">Pinagtibay ng SPTA Officers:</p><div class="rs-officers">' + officersList.map(s => '<div class="rs-sign">' + '<div class="rs-mark">' + sign(s) + '</div><b>' + esc((sigOf(s)?.name || s.name).toUpperCase()) + '</b><span>' + esc(paperTitle[s.role]) + '</span></div>').join('') + '</div>';
+      if (members.length) body += '<p class="rs-label">Mga Dumalong Miyembro ng SPTA (Lagda ng Pagpayag):</p><table class="rs-table"><thead><tr><th>No.</th><th>Name</th><th>Grade / Class</th><th>Signature</th></tr></thead><tbody>' + members.map((s, i) => '<tr><td>' + (i + 1) + '</td><td>' + esc((sigOf(s)?.name || s.name).toUpperCase()) + '</td><td>' + esc(s.homeroom || '') + '</td><td>' + sign(s) + '</td></tr>').join('') + '</tbody></table>';
+      body += '<p class="rs-label">Mga saksi:</p><div class="rs-witness"><div class="rs-sign"><div class="rs-mark"></div><b>' + esc(head?.name ? head.name.toUpperCase() : '') + '</b><span>School Head</span></div></div>';
+      body += '<div class="entry-meta rs-count">' + done + ' of ' + r.signers.length + ' officers have signed this version. ' + esc(r.signerPolicy || 'All officers') + ' · ' + E.signaturesPending(r).length + ' required signatures pending.</div>' + (r.filing ? para(r.filing) : '');
     }
     return '<article class="resolution-sheet">' + body + '</article>';
   }
+  document.addEventListener('error', ev => {
+    if (ev.target && ev.target.classList && ev.target.classList.contains('rs-seal')) ev.target.remove();
+  }, true);
   const has = key => tabs().some(x => x[0] === key);
   // SPTA Funds page. Sarah prefers this layout; its section headings carry a tinted band.
   function funds() {
     const rows = db().ledger.slice().sort((a, b) => b.date.localeCompare(a.date));
     const total = d => rows.filter(x => x.direction === d).reduce((s, x) => s + x.cents, 0);
     const fund = E.funding(db()),
-      name = id => db().projects.find(p => p.id === id)?.title;
+      name = id => db().projects.find(p => p.id === id)?.title || (db().activities || []).find(x => x.id === id)?.title;
     const active = db().projects.filter(p => fund.projects[p.id]),
       waiting = db().proposals.filter(p => E.publicProposal(p) && p.budget > 0 && ['screened', 'voting', 'awaiting_head'].includes(p.status));
     const projectLines = active.map(p => {
       const spent = E.projectSpend(db(), p.id),
         f = fund.projects[p.id];
       return '<article class="fund-project"><h3>' + esc(titleCase(p.title)) + '</h3><div class="fund-bar"><div style="width:' + Math.max(0, Math.min(100, p.budget ? spent / p.budget * 100 : 0)) + '%"></div></div><div class="money-inline"><span>Allocation <b>' + cash(p.budget) + '</b></span><span>Spent <b>' + cash(spent) + '</b></span><span>Still to pay <b>' + cash(f.need) + '</b></span></div>' + fundCheck(f.need, f.short, 'Covered by SPTA funds') + '</article>';
+    }).join('');
+    const activityLines = allActivities().filter(x => x.status === 'scheduled' && x.budget > 0).map(x => {
+      const spent = E.projectSpend(db(), x.id),
+        f = fund.activities?.[x.id] || {need: 0, short: 0};
+      return '<article class="fund-project"><h3>' + esc(titleCase(x.title)) + '</h3><div class="entry-meta">Activity · ' + esc(whenLine(x)) + (x.audience === 'officers' ? ' · Officers only' : '') + '</div><div class="fund-bar"><div style="width:' + Math.max(0, Math.min(100, spent / x.budget * 100)) + '%"></div></div><div class="money-inline"><span>Budget <b>' + cash(x.budget) + '</b></span><span>Spent <b>' + cash(spent) + '</b></span><span>Still to pay <b>' + cash(f.need) + '</b></span></div>' + fundCheck(f.need, f.short, 'Covered by SPTA funds') + '</article>';
     }).join('');
     const proposalLines = waiting.map(p => '<article class="fund-project"><h3>' + esc(titleCase(proposalName(p))) + '</h3><div class="entry-meta">' + esc(labels[p.status]) + ' · Proposed allocation ' + cash(p.budget) + '</div>' + proposalFund(p) + '</article>').join('');
     const movements = rows.map(entry => {
@@ -6193,11 +6686,11 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
     const summary = '<section class="balance-card" aria-label="SPTA Cash Balance"><h2>SPTA Cash Balance</h2><strong>' + cash(fund.balance) +
       '</strong>' + (db().opening > 0 ? '<small class="balance-carry">Includes ' + cash(db().opening) + ' carried over from earlier this school year, as of ' + esc(date(db().openingAsOf)) + '.</small>' : '') + '<div class="balance-flows"><div>Money In<b>' + cash(total('in')) + '</b></div><div>Money Out<b>' +
       cash(total('out')) + '</b></div></div></section>';
-    const allocations = '<div class="fund-split"><div><span>Set Aside for Approved Projects</span><b>' + cash(fund.committed) +
+    const allocations = '<div class="fund-split"><div><span>Set Aside for Projects and Activities</span><b>' + cash(fund.committed) +
       '</b></div><div class="' + (fund.available > 0 ? 'ok' : 'short') + '"><span>Available for New Proposals</span><b>' + cash(fund.available) + '</b></div></div>';
     return '<div class="funds-page">' + summary + '<p class="balance-note">SPTA officers manage these voluntary contributions and fundraising proceeds. They are not the school’s funds.</p>' +
       section('Approved Transactions', movements ? '<ul class="movement-list">' + movements + '</ul>' : empty('No approved transactions yet.')) +
-      section('Project Funding', allocations + (projectLines || empty('No approved SPTA projects are waiting for funds.'))) +
+      section('Project Funding', allocations + (projectLines || empty('No approved SPTA projects are waiting for funds.'))) + (activityLines ? section('Activity Budgets', activityLines) : '') +
       (proposalLines ? section('Proposals Waiting for a Decision', proposalLines) : '') + section('SPTA records', btn('Request records inspection', 'dlg:inspection') + (has('resolutions') ? '' : db().resolutions.filter(r => r.published).map(r => card(r.title, para(r.parentSummary), r.id + ' · Version ' + r.version, r.state)).join('')) + (has('records') ? '' : db().minutes.filter(m => m.state === 'filed').map(m => card(m.title, para(m.summary), 'Meeting · ' + date(m.date), 'filed')).join(''))) + '</div>';
   }
   function finance() {
@@ -6223,6 +6716,30 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
       waiting = treas ? all.filter(d => d.status === 'for_treasurer') : [],
       rest = all.filter(d => !waiting.includes(d) && (!review || treas || d.status !== 'for_treasurer'));
     return (treas || collects ? btn(isLive() ? (collects ? 'Record a collection handover' : 'Submit finance evidence') : collects ? 'Scan a collection handover' : 'Scan a sheet or receipt', 'dlg:finance', '', 'primary', 'camera') : '') + (collects ? para('Scan the collection sheet for the money you are handing over. The treasurer approves it first, then the chairperson gives final approval before it shows in SPTA funds.') : '') + (treas ? section('Handovers for your approval', waiting.map(cardOf).join('') || empty('No handovers are waiting for you.')) : '') + section(officer ? 'My handovers' : 'Finance submissions', rest.map(cardOf).join('') || empty(officer ? 'You have not recorded a handover yet.' : 'There are no finance submissions.'));
+  }
+  // Activities: dated events for everyone, or for the officers only. The treasurer sets a budget aside for an activity.
+  const officerLike = () => onRole([...E.boardRoles, 'head']) && !isGuest();
+  const planner = () => onRole(E.planners) && !isGuest();
+  const allActivities = () => (db().activities || []).filter(x => x.audience === 'everyone' || officerLike());
+  const isUpcoming = x => x.status === 'scheduled' && x.date >= t();
+  const whenLine = x => date(x.date) + (x.time ? ' · ' + x.time : '');
+  function activityCard(x) {
+    const spent = E.projectSpend(db(), x.id),
+      mine = x.by === S.me || canChair() || onRole(['head', 'vice']);
+    let body = (x.place ? '<div class="entry-meta">' + icon('info', 'sm') + esc(x.place) + '</div>' : '') + para(x.details);
+    if (x.budget > 0) body += '<div class="money-inline"><span>Budget <b>' + cash(x.budget) + '</b></span><span>Spent <b>' + cash(spent) + '</b></span><span>Left <b>' + cash(Math.max(0, x.budget - spent)) + '</b></span></div>';
+    else if (officerLike() && x.status === 'scheduled') body += '<div class="entry-meta">No budget set aside yet</div>';
+    if (x.status === 'cancelled' && x.reason) body += para('Cancelled. ' + x.reason);
+    let acts = '';
+    if (holds('treasurer') && x.status === 'scheduled') acts += btn(x.budget > 0 ? 'Change budget' : 'Set budget', 'dlg:activityBudget', x.id, 'primary');
+    if (planner() && x.status === 'scheduled' && mine) acts += btn('Edit', 'dlg:activity', x.id) + btn('Cancel activity', 'dlg:activityCancel', x.id, 'danger');
+    return card(x.title, body, whenLine(x) + (x.audience === 'officers' ? ' · Officers only' : ''), x.status === 'cancelled' ? 'cancelled' : '', acts);
+  }
+  function activitiesView() {
+    const list = allActivities(),
+      soon = list.filter(isUpcoming).sort((a, b) => a.date.localeCompare(b.date)),
+      past = list.filter(x => !isUpcoming(x)).sort((a, b) => b.date.localeCompare(a.date));
+    return (planner() ? '<div class="entry-actions">' + btn('Add an activity', 'dlg:activity', '', 'primary', 'plus') + '</div>' : '') + para(officerLike() ? 'Activities for everyone are shown to all parents. Officers-only activities, such as an officers’ party, are visible only to the officers and the School Head.' : 'Dates for SPTA activities that parents and guardians are invited to.') + section('Coming up', soon.map(activityCard).join('') || empty('No activities are planned yet.')) + (past.length ? section('Past and cancelled', past.map(activityCard).join('')) : '');
   }
   function records() {
     const sec = holds('secretary');
@@ -6267,7 +6784,7 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
   // Change history: who acted, in which role, on what, what was decided and why. Only the School Head, chairperson and Vice-Chairperson see it.
   const HISTORY_AREAS = {
     money: ['financeSubmit', 'financeCheck', 'financeReview'],
-    projects: ['projectUpdate', 'projectPhoto', 'projectPhotoRemove', 'projectReopen', 'amendProject'],
+    projects: ['activitySave', 'activityBudget', 'activityCancel', 'projectUpdate', 'projectPhoto', 'projectPhotoRemove', 'projectReopen', 'amendProject'],
     proposals: ['screen', 'chairProposal', 'resubmit', 'withdraw', 'headDecision', 'closeBallot', 'voteDeadline', 'proposalReply'],
     records: ['minutesUpload', 'minutesReview', 'freeze', 'reviseResolution', 'sign', 'unsign', 'finalizeResolution', 'announce', 'announceEdit', 'announceRemove'],
     people: ['rosterReview', 'setSeat', 'endBod', 'acting', 'cover']
@@ -6311,6 +6828,7 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
     board,
     resolutions: () => section('Resolution register', db().resolutions.map(resCard).join('') || empty('A resolution is drafted automatically when a proposal passes the officer vote and the School Head approves it.')),
     records,
+    activities: activitiesView,
     history,
     roster,
     finance,
@@ -6368,7 +6886,7 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
       source = '<div class="scan-attached">' + scanPreview(scan, false) + '<div><b>Scanned Original</b>' + para(scan.file.name + ' is attached for the chairperson.') + btn('Scan a different photo', 'scanAgain', '', 'light', 'camera') + '</div></div>';
       intro = '<div class="scan-result">' + icon('check', 'sm') + '<span><b>' + read.items.length + ' Lines Filled In for You</b>' + esc(flagged ? flagged + ' line' + (flagged === 1 ? ' is' : 's are') + ' marked in gold because the writing was hard to read.' : 'Every line was read clearly.') + ' Compare each one with the paper and fix anything that is wrong.</span></div>' + (read.matchesImage ? '' : notice('Practice mode: this demo cannot read a real photo yet, so it filled in the fictional sample collection amounts. The live app will read the photo you took.'));
     } else if (kind === 'finance' && !id && !isLive()) intro = btn('Scan a photo instead', 'scanAgain', '', 'light', 'camera');
-    return intro + form('financeSubmit', (officer || orig ? hidden('direction', dir) + notice(officer ? 'Collection handover · Money in' : 'Linked correction for ' + orig.id + ' · Money ' + dir) : select('direction', 'Movement', [['in', 'Money in'], ['out', 'Money out']], dir)) + hidden('adjustment', orig?.id || prior?.adjustment || '') + input('date', officer ? 'Collection date' : 'Transaction date', read?.date || prior?.date || t(), 'date') + input('receipt', 'Receipt / batch reference', read?.receipt || prior?.receipt || '') + input('purpose', 'Purpose shown to parents', read?.purpose || prior?.purpose || (orig ? 'Correction · ' + orig.purpose : ''), 'text', 'required maxlength="140"') + (orig || officer ? hidden('project', '') : select('project', 'Expense allocation', [['', 'General fund (not for a project)'], ...db().projects.filter(x => x.status !== 'cancelled').map(x => [x.id, x.title])], prior?.project || '')) + '<fieldset><legend>' + (scan ? 'Scanned Line Items' : 'Private Line Items') + '</legend><div id="item-rows">' + initItems.map(row).join('') + '</div>' + btn(scan ? 'Add a missed line' : 'Add item', 'addItem', '', 'light', 'plus') + totalLine(lineSum(initItems), read ? read.writtenTotal : null) + '</fieldset>' + source + ck('verifiedItems', scan ? 'I compared every scanned line with the paper original and corrected anything that was wrong.' : 'I checked the amounts and item descriptions against the supporting document.', true), officer ? 'Submit to treasurer' : 'Submit to chairperson', prior?.id || '');
+    return intro + form('financeSubmit', (officer || orig ? hidden('direction', dir) + notice(officer ? 'Collection handover · Money in' : 'Linked correction for ' + orig.id + ' · Money ' + dir) : select('direction', 'Movement', [['in', 'Money in'], ['out', 'Money out']], dir)) + hidden('adjustment', orig?.id || prior?.adjustment || '') + input('date', officer ? 'Collection date' : 'Transaction date', read?.date || prior?.date || t(), 'date') + input('receipt', 'Receipt / batch reference', read?.receipt || prior?.receipt || '') + input('purpose', 'Purpose shown to parents', read?.purpose || prior?.purpose || (orig ? 'Correction · ' + orig.purpose : ''), 'text', 'required maxlength="140"') + (orig || officer ? hidden('project', '') : select('project', 'Expense allocation', [['', 'General fund (not for a project)'], ...db().projects.filter(x => x.status !== 'cancelled').map(x => [x.id, x.title]), ...allActivities().filter(x => x.status === 'scheduled').map(x => [x.id, 'Activity: ' + x.title])], prior?.project || '')) + '<fieldset><legend>' + (scan ? 'Scanned Line Items' : 'Private Line Items') + '</legend><div id="item-rows">' + initItems.map(row).join('') + '</div>' + btn(scan ? 'Add a missed line' : 'Add item', 'addItem', '', 'light', 'plus') + totalLine(lineSum(initItems), read ? read.writtenTotal : null) + '</fieldset>' + source + ck('verifiedItems', scan ? 'I compared every scanned line with the paper original and corrected anything that was wrong.' : 'I checked the amounts and item descriptions against the supporting document.', true), officer ? 'Submit to treasurer' : 'Submit to chairperson', prior?.id || '');
   }
   function cleanScan() {
     if (ui.scan?.url) URL.revokeObjectURL(ui.scan.url);
@@ -6455,7 +6973,7 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
       return ['Voting seat', para(user.name) + form('setSeat', ck('voting', 'Include this officer in future votes.', false, user.boardSeat) + ck('verified', 'I checked the current school roster.', true), 'Save seat', id) + (user.role === 'bod' ? form('endBod', ck('confirm', 'This HPTA presidency has ended. Remove officer access and retain the parent profile.', true), 'End BOD term', id) : '')];
     }
     if (kind === 'proposal' || kind === 'resubmit') return [kind === 'proposal' ? 'Propose a project' : 'Revise proposal', form(kind === 'proposal' ? 'submitProposal' : 'resubmit', input('title', 'Project title', p?.title || '', 'text', 'required minlength="4" maxlength="100"') + (p ? '' : select('category', 'Category', E.categories)) + area('details', 'What does the school need?', p?.details || '', 'required minlength="8" maxlength="700"') + para('Leave out children’s names and private concerns. The review team checks proposals before sharing them.'), p ? 'Resubmit' : 'Send proposal', p?.id || '')];
-    if (['concern', 'suggestion'].includes(kind)) return [kind === 'concern' ? 'Report a private concern' : 'Make a suggestion', form('caseSubmit', hidden('kind', kind) + input('subject', 'Subject', '', 'text', 'required minlength="3" maxlength="100"') + select('category', 'Category', E.categories) + area('body', kind === 'concern' ? 'What happened?' : 'What would you like to improve?', '', 'required minlength="6" maxlength="700"') + hidden('assigned', 'chair') + notice('This goes privately to the SPTA. Only the officers who handle feedback can read it.') + ck('hideName', 'Hide my name from the reviewer') + '<div class="entry-meta">The officer will not see your name or section and will reply here in the app. You can do this ' + E.hiddenPerMonth + ' times a month.</div>' + notice('For an urgent child-safety matter, contact the school’s designated safeguarding staff directly.'), 'Send privately')];
+    if (['concern', 'suggestion'].includes(kind)) return [kind === 'concern' ? 'Report a private concern' : 'Make a suggestion', form('caseSubmit', hidden('kind', kind) + input('subject', 'Subject', '', 'text', 'required minlength="3" maxlength="100"') + select('category', 'Category', E.categories) + area('body', kind === 'concern' ? 'What happened?' : 'What would you like to improve?', '', 'required minlength="6" maxlength="700"') + '<fieldset class="evidence"><legend>Photo evidence (optional, up to ' + E.photosPerCase + ')</legend><label>Photo 1<input type="file" name="evidence1" accept="image/jpeg,image/png,image/webp"></label><label>Photo 2<input type="file" name="evidence2" accept="image/jpeg,image/png,image/webp"></label><div class="entry-meta">Please do not photograph children’s faces. A photo can show who you are, so if you hide your name, choose photos that do not.</div></fieldset>' + hidden('assigned', 'chair') + notice('This goes privately to the SPTA. Only the officers who handle feedback can read it.') + ck('hideName', 'Hide my name from the reviewer') + '<div class="entry-meta">The officer will not see your name or section and will reply here in the app. You can do this ' + E.hiddenPerMonth + ' times a month.</div>' + notice('For an urgent child-safety matter, contact the school’s designated safeguarding staff directly.'), 'Send privately')];
     if (kind === 'screen') return [p.title, '<div class="entry-meta step-line">For screening</div>' + para(p.details) + form('screen', select('decision', 'Next step', [['screen', 'Publish and open the officers’ vote'], ['return', 'Return for revision'], ['decline', 'Decline']]) + '<div data-when="decision" data-values="screen">' + input('title', 'Reviewed title', p.publicTitle || p.title) + area('text', 'Description safe to share', p.publicText || p.details) + input('budget', 'Proposed SPTA allocation (₱)', p.budget / 100, 'number', 'required min="0" step="0.01"') + '<div class="fund-check ok" id="screen-fund" data-available="' + E.funding(db()).available + '">' + icon('info', 'sm') + '<span><b>SPTA funds available now: ' + cash(E.funding(db()).available) + '</b><span id="screen-fund-note">An allocation above this amount will be marked as needing fundraising.</span></span></div>' + ck('fundraising', 'This proposal seeks voluntary contributions.', false, !!p.fundraising) + input('closes', 'Voting closes on', E.voteCloses({date: t()}), 'date', 'required min="' + t() + '"') + '<div class="entry-meta">Officers have one month to vote unless you change this date.</div></div><div data-when="decision" data-values="return decline">' + area('reason', 'Feedback for the parent') + '</div>', 'Save screening', id)];
     if (kind === 'vote') return [b.title, '<div class="entry-meta step-line">For your vote</div>' + para(b.body) + '<div class="entry-meta">Proposed SPTA allocation ' + cash(b.budget) + '</div>' + ballotFund(b) + notice('Voting closes on ' + date(E.voteCloses(b)) + '.') + form('vote', select('vote', 'Your vote', [['', 'Choose a response'], ['yes', 'Proceed'], ['no', 'Do not proceed'], ['abstain', 'Abstain']], '', 'required'), 'Submit once', id)];
     if (kind === 'close') return ['Close voting', para(b.title) + notice('Voting closes by itself once the result is decided. Closing early records the result with the votes received so far.') + form('closeBallot', ck('confirm', 'The voting period has ended. Record the result.', true), 'Close and record', id)];
@@ -6488,7 +7006,7 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
     }
     if (kind === 'proposalReply') return ['Personal reply', para(p.title) + notice('Optional. The person who proposed already receives an automated response at each status. Only they see this reply.') + form('proposalReply', area('reply', 'Your reply as ' + roleName(a), p.reply || '', 'required minlength="3" maxlength="600"'), 'Send personal reply', id)];
     if (kind === 'resolution') return ['Read resolution', resolutionPaper(r, true)];
-    if (kind === 'freeze') return ['Edit and publish version ' + r.version, notice('This draft was created automatically from the approved proposal. Adjust the wording if needed. The allocation of ' + cash(r.budget) + ' stays as voted.') + form('freeze', hidden('version', r.version) + input('title', 'Project title', r.title, 'text', 'required minlength="4" maxlength="100"') + area('text', 'Project details', r.text, 'required minlength="8" maxlength="700"') + area('clause', 'Resolution wording', r.clause || E.resolutionText(r.title, r.budget, r.direct)) + select('signerRule', 'Required signatures', [['all', 'All officers'], ['policy', 'Named signers under a documented school rule']]) + '<div data-when="signerRule" data-values="policy">' + input('signerPolicy', 'School signer policy or resolution reference') + '<fieldset><legend>Designated Required Signers</legend><div class="roster-picker">' + r.signers.map(s => '<label class="tick"><input type="checkbox" name="requiredSigners" value="' + esc(s.id) + '"><span>' + esc(s.name) + '</span></label>').join('') + '</div></fieldset></div>' + ck('confirm', 'I verified the wording and required signers against the school record.', true), 'Publish for signatures', id)];
+    if (kind === 'freeze') return ['Edit and publish version ' + r.version, notice('This draft was created automatically from the approved proposal. Adjust the wording if needed. The allocation of ' + cash(r.budget) + ' stays as voted.') + form('freeze', hidden('version', r.version) + input('title', 'Project title', r.title, 'text', 'required minlength="4" maxlength="100"') + area('text', 'Project details', r.text, 'required minlength="8" maxlength="700"') + input('no', 'Resolution number', r.no || E.nextResolutionNumber(db(), r.sy || Number(E.today().slice(0, 4))), 'number', 'required min="1" max="999" step="1"') + area('clause', 'Resolution wording (as it will be printed)', r.clause || E.resolutionText(r.title, r.budget, r.direct), 'required minlength="12" maxlength="4000" rows="14"') + select('signerRule', 'Required signatures', [['all', 'All officers'], ['policy', 'Named signers under a documented school rule']]) + '<div data-when="signerRule" data-values="policy">' + input('signerPolicy', 'School signer policy or resolution reference') + '<fieldset><legend>Designated Required Signers</legend><div class="roster-picker">' + r.signers.map(s => '<label class="tick"><input type="checkbox" name="requiredSigners" value="' + esc(s.id) + '"><span>' + esc(s.name) + '</span></label>').join('') + '</div></fieldset></div>' + ck('confirm', 'I verified the wording and required signers against the school record.', true), 'Publish for signatures', id)];
     if (kind === 'sign') return ['Sign resolution', resolutionPaper(r, false) + form('sign', hidden('version', r.version) + select('response', 'My response', [['acknowledged', 'Sign this resolution'], ['not_signed', 'Decline to sign']]) + '<div data-when="response" data-values="acknowledged"><div class="sign-field"><span>Draw your signature</span><canvas class="sign-pad" width="600" height="200" aria-label="Signature box. Draw with your finger or mouse."></canvas><input type="hidden" name="signature" value="">' + btn('Clear', 'signClear', '', 'light') + '</div>' + para('It will appear on the resolution as: ' + a.name + ' · ' + signerLine(a) + ' · ' + date(E.today())) + '</div>' + ck('consent', 'I reviewed this exact version and this is my own response.', true), 'Record my response', id)];
     if (kind === 'fileResolution') return ['File resolution', notice(E.signaturesPending(r).length + ' required signature(s) outstanding. Unanswered and declined responses keep their actual status on the printout.') + form('finalizeResolution', hidden('version', r.version) + area('parentSummary', 'Privacy-reviewed summary for families', r.text) + area('reason', 'Record the applicable signer policy, exceptions and filing reference') + ck('confirm', 'I checked that the required signers have signed under the applicable school procedure.', true), 'File and publish parent summary', id)];
     if (kind === 'reviseResolution') return ['Correct resolution wording', notice('Starting a new version reopens secretary review and requires fresh signatures. Scope or budget changes need a new proposal and vote.') + form('reviseResolution', hidden('version', r.version) + area('reason', 'Reason for a document correction'), 'Start new version', id)];
@@ -6499,6 +7017,29 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
       return [m.state === 'for_chair' ? 'Approve minutes' : m.state === 'for_head' ? 'Note and file minutes' : 'Minutes of the meeting', '<div class="entry-meta">' + esc(m.id + ' · Meeting of ' + date(m.date)) + '</div><h3>' + esc(titleCase(m.title)) + '</h3>' + para(m.summary) + para('Due ' + date(m.due) + (m.state !== 'filed' && m.due < t() ? ' · Overdue' : '')) + '<div class="entry-actions">' + btn('Read original', 'minuteFile', m.id) + (mine ? btn(m.state === 'for_chair' ? 'Approve minutes' : 'Note and file', 'minutesReview', m.id, 'primary') : '') + '</div>'];
     }
     if (kind === 'minutes') return ['Upload meeting minutes', form('minutesUpload', input('title', 'Meeting title') + input('date', 'Meeting date', t(), 'date', 'required max="' + t() + '"') + upload('Signed minutes (photo or PDF)') + area('summary', 'Privacy-reviewed summary for families') + ck('confirm', 'I sign these minutes as secretary and submit them for chair approval.', true), 'Submit minutes')];
+    if (kind === 'activity') {
+      const act = (db().activities || []).find(i => i.id === id);
+      return [act ? 'Edit activity' : 'Add an activity', form('activitySave', input('title', 'Activity name', act?.title || '', 'text', 'required minlength="3" maxlength="100"') + input('date', 'Date', act?.date || '', 'date', 'required' + (act ? '' : ' min="' + t() + '"')) + input('time', 'Time (optional)', act?.time || '', 'text', 'maxlength="30" placeholder="4:00 PM"') + input('place', 'Place (optional)', act?.place || '', 'text', 'maxlength="100"') + area('details', 'Details (optional)', act?.details || '', 'maxlength="600"') + select('audience', 'Who is it for?', [['everyone', 'All parents and officers'], ['officers', 'Officers only']], act?.audience || 'everyone') + para('The treasurer sets the budget after the activity is added. Please do not include children’s names or photos.'), act ? 'Save changes' : 'Add activity', id)];
+    }
+    if (kind === 'activityBudget') {
+      const act = (db().activities || []).find(i => i.id === id);
+      if (!act) return ['Set a budget', empty('This activity is no longer available.')];
+      const spent = E.projectSpend(db(), act.id),
+        before = Math.max(0, (act.budget || 0) - spent);
+      return ['Set a budget', '<h3>' + esc(titleCase(act.title)) + '</h3>' + para('Already spent: ' + cash(spent)) + notice('The budget is set aside from SPTA funds that are not already committed to projects. Available for this activity: ' + cash(E.funding(db()).available + before) + '.') + form('activityBudget', input('budget', 'Budget (pesos)', act.budget ? String(act.budget / 100) : '', 'text', 'required inputmode="decimal" placeholder="3000"'), 'Save budget', id)];
+    }
+    if (kind === 'activityCancel') {
+      const act = (db().activities || []).find(i => i.id === id);
+      if (!act) return ['Cancel activity', empty('This activity is no longer available.')];
+      return ['Cancel activity', '<h3>' + esc(titleCase(act.title)) + '</h3>' + notice('Cancelling removes it from the calendar and releases any budget that is not spent.') + form('activityCancel', area('reason', 'Why is it cancelled?', '', 'required minlength="4" maxlength="200"'), 'Cancel activity', id)];
+    }
+    if (kind === 'casePhoto') {
+      const [cid, at] = String(id).split('|'),
+        c = (db().cases || []).find(x => x.id === cid),
+        ph = c?.photos?.[Number(at)];
+      if (!ph) return ['Photo evidence', empty('This photo is no longer available.')];
+      return ['Photo evidence', photoImg({file: ph}, 'Photo evidence', 'attachment-image') + '<div class="entry-meta">' + esc(c.subject) + ' · Photo ' + (Number(at) + 1) + ' of ' + c.photos.length + '</div>'];
+    }
     if (kind === 'announce') return ['Publish announcement', form('announce', input('title', 'Announcement title') + area('body', 'Complete message', '', 'required minlength="6" maxlength="1600"') + select('audience', 'Audience', [['everyone', 'All parents and officers'], ['officers', 'Officers only']]) + input('until', 'Show until (optional)', '', 'date', 'min="' + t() + '"'), 'Publish announcement')];
     if (kind === 'finance' || kind === 'adjust') return financeDialog(kind, id);
     if (kind === 'check') return ['Review handover', para(d.purpose + ' · ' + cash(d.cents)) + (d.items || []).map(x => '<div class="list-line"><span>' + esc(x.description) + '</span><b>' + cash(x.cents) + '</b></div>').join('') + btn('Open scanned original', 'evidence', d.id) + form('financeCheck', select('decision', 'Decision', [['approve', 'Approve and send to the chairperson'], ['return', 'Return to the collecting officer']]) + '<div data-when="decision" data-values="approve">' + ck('received', 'I received ' + cash(d.cents) + ' and checked the lines against the scanned original.', true) + '</div><div data-when="decision" data-values="return">' + area('reason', 'What needs correcting?') + '</div>' + para('After your approval, the chairperson gives final approval before it shows in SPTA funds.'), 'Record review', id)];
@@ -6658,7 +7199,10 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
     cover: 'Saved.',
     profileUpdate: 'List saved.',
     announceEdit: 'Announcement updated.',
-    announceRemove: 'Announcement removed.'
+    announceRemove: 'Announcement removed.',
+    activitySave: 'Activity saved.',
+    activityBudget: 'Budget saved.',
+    activityCancel: 'Activity cancelled.'
   };
   async function change(action, payload, requestId) {
     const id = await S.run(action, payload, requestId);
@@ -6672,7 +7216,7 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
   }
   async function attachment(type, id) {
     const item = type === 'evidence' ? db().batches.find(x => x.id === id) : db().minutes.find(x => x.id === id);
-    if (!item || !(type === 'evidence' ? canChair() || holds('treasurer') || canPost(item) || item.owner === S.me : canPrint())) throw Error('You do not have access to this document.');
+    if (!item || !(type === 'evidence' ? canChair() || holds('treasurer') || canPost(item) || item.owner === S.me : onRole(E.minuteReaders))) throw Error('You do not have access to this document.');
     if (!item.file) throw Error('This record needs a new original.');
     const url = await S.fileURL(item.file);
     cleanAttachment();
@@ -7089,6 +7633,14 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
         payload.stamp = E.openStamp(batch);
         if (payload.decision === 'post' && !batch.noPaper && !ui.reviewed.has(S.me + '|' + payload.stamp)) throw Error('Open the supporting original before approving this post.');
       }
+      if (action === 'caseSubmit') {
+        const shots = ['evidence1', 'evidence2'].map(k => data.get(k)).filter(x => x && x.size);
+        delete payload.evidence1;
+        delete payload.evidence2;
+        if (shots.some(x => !/^image\/(jpeg|png|webp)$/.test(x.type))) throw Error('Photos must be JPG, PNG or WEBP.');
+        payload.photos = [];
+        for (const shot of shots) payload.photos.push(await within(S.fileMeta(await shrinkImage(shot)), 45000, 'Saving the photo took too long. Check your connection and try again.'));
+      }
       let file = data.get('attachment');
       if (file?.size && action === 'projectPhoto') file = await shrinkImage(file);
       if (file?.size) payload.file = await within(S.fileMeta(file), 30000, 'Saving the file took too long. Check your connection and try again.');else if (action === 'financeSubmit' && ui.scan?.stage === 'done') payload.file = ui.scan.meta ||= await S.fileMeta(ui.scan.file);
@@ -7120,14 +7672,40 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
     ui.printRecord = null;
     render();
   });
-  async function refresh() {
-    if (ui.busy || ui.dialog || !S.db) return;
+  // A thin bar above the app tells people when the phone cannot reach the server. It lives outside #app so redrawing never removes it.
+  function setLink(down, why) {
+    let bar = document.getElementById('link-banner');
+    if (!down) {
+      if (bar) bar.hidden = true;
+      return;
+    }
+    if (!bar) {
+      bar = document.createElement('div');
+      bar.id = 'link-banner';
+      bar.className = 'link-banner';
+      bar.setAttribute('role', 'status');
+      bar.innerHTML = '<span></span><button type="button">Try again</button>';
+      bar.querySelector('button').addEventListener('click', () => {
+        bar.querySelector('button').disabled = true;
+        refresh(true).finally(() => {
+          bar.querySelector('button').disabled = false;
+        });
+      });
+      document.body.insertBefore(bar, document.body.firstChild);
+    }
+    bar.querySelector('span').textContent = why || 'You are offline. What you see may be out of date, and changes cannot be saved until you are back online.';
+    bar.hidden = false;
+  }
+  async function refresh(force) {
+    if (!S.db || !force && (ui.busy || ui.dialog)) return;
     try {
       const rev = db().revision;
       await S.refresh();
+      setLink(false);
       if (rev !== db()?.revision || !me()) render();
     } catch (e) {
-      showMessage(e.message);
+      if (e.network) setLink(true, e.network === 'server' ? 'The SPTA server is having a problem. What you see may be out of date. The app will keep trying.' : e.network === 'slow' ? 'The connection is slow. What you see may be out of date. The app will keep trying.' : '');
+      else if (force) showMessage(e.message);
     }
   }
   // A quick sideways swipe on a screen opened from More goes back. It ignores forms, sliders, photo strips and open dialogs.
@@ -7159,7 +7737,10 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
   S.notice.addEventListener('message', refresh);
   window.addEventListener('focus', refresh);
   window.addEventListener('online', refresh);
-  window.addEventListener('offline', () => showMessage(S.shared ? 'Connection lost. Keep this page open and retry when connected.' : 'Your fictional rehearsal is stored on this device.'));
+  window.addEventListener('offline', () => {
+    if (S.shared) setLink(true);
+  });
+  ECESLang.start(render);
   S.init().then(() => {
     if (!S.shared && oldView) {
       const route = {
@@ -7182,8 +7763,25 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
     if (S.shared) setInterval(() => {
       if (!document.hidden) refresh();
     }, 15000);
-  }).catch(e => {
-    document.getElementById('app').innerHTML = '<main class="login-shell"><h1>Open ECES Bayanihan</h1>' + para('The rehearsal could not open its local storage. Use localhost and allow this site to save data, or start the shared rehearsal server.') + para(e.message) + '</main>';
+  }).catch(function failed(e) {
+    const root = document.getElementById('app');
+    if (!S.shared) {
+      root.innerHTML = '<main class="login-shell"><h1>Open ECES Bayanihan</h1>' + para('The practice version could not open its saved data. Allow this site to save data in your browser settings, then reload the page.') + '<div class="entry-actions"><button type="button" class="btn primary" id="boot-retry">Reload</button></div></main>';
+      document.getElementById('boot-retry').addEventListener('click', () => location.reload());
+      return;
+    }
+    const off = e.network === 'offline',
+      server = e.network === 'server' || e.network === 'reply';
+    root.innerHTML = '<main class="login-shell boot-error" role="alert"><img class="boot-seal" src="data:image/png;base64,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" alt="" width="48" height="48"><h1>' + (off ? 'You are offline' : 'ECES Bayanihan could not open') + '</h1>' + para(off ? 'The app needs the internet to show the latest SPTA information. Connect to Wi-Fi or mobile data, then try again.' : server ? 'The SPTA server is having a problem right now. Your information is safe. Please try again in a few minutes.' : e.network === 'slow' ? 'The connection is too slow. Move to a place with better signal, then try again.' : 'The app could not reach the SPTA server. Check your internet connection, then try again.') + '<div class="entry-actions"><button type="button" class="btn primary" id="boot-retry">Try again</button></div>' + para('If this keeps happening, please tell an SPTA officer.') + '</main>';
+    const again = document.getElementById('boot-retry');
+    again.addEventListener('click', () => {
+      again.disabled = true;
+      again.textContent = 'Trying…';
+      S.init().then(() => location.reload(), err => {
+        failed(err);
+      });
+    });
+    window.addEventListener('online', () => again.isConnected && again.click(), { once: true });
   });
 })();
 

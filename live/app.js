@@ -247,7 +247,7 @@
   // Public project photos. The picture itself loads after the page is drawn, then stays ready for later redraws.
   const photoState = ph => ph.status || 'approved';
   const shownPhotos = p => (p.photos || []).filter(x => photoState(x) === 'approved' || onRole(E.leaders));
-  const findPhoto = key => db().projects.flatMap(p => p.photos || []).find(x => x.file.key === key);
+  const findPhoto = key => db().projects.flatMap(p => p.photos || []).find(x => x.file.key === key) || (db().cases || []).flatMap(c => (c.photos || []).map(file => ({file}))).find(x => x.file.key === key);
   const photoImg = (ph, alt, cls = '') => '<img class="' + cls + '" alt="' + esc(alt) + '" data-photo="' + esc(ph.file.key) + '"' + (ui.photoUrls.get(ph.file.key) ? ' src="' + esc(ui.photoUrls.get(ph.file.key)) + '"' : '') + '>';
   function goBack() {
     ui.tab = ui.back || 'more';
@@ -419,11 +419,11 @@
   const proposalName = p => p.publicTitle || p.title;
   const lead = () => onRole(E.leaders);
   function tabs() {
-    const arr = [['home', 'Home', 'home'], ['proposals', 'Proposals', 'lightbulb'], ['projects', 'Projects', 'sprout'], ['funds', 'Funds', 'chart']];
+    const arr = [['home', 'Home', 'home'], ['proposals', 'Proposals', 'lightbulb'], ['projects', 'Projects', 'sprout'], ['funds', 'Funds', 'chart'], ['activities', 'Activities', 'calendar']];
     if (lead()) arr.push(['cases', me().role === 'head' ? 'Passed-on feedback' : 'Assigned feedback', 'shield'], ['insights', 'School pulse', 'chart']);
     else if (holds('secretary')) arr.push(['cases', 'Passed-on feedback', 'shield']);
     if (onRole(E.boardRoles) || lead()) arr.push(['board', 'Officer voting', 'users'], ['resolutions', 'Resolutions', 'file']);
-    if (onRole(['secretary', 'head', 'chair', 'vice'])) arr.push(['records', 'Minutes & notices', 'clipboard']);
+    if (onRole(E.minuteReaders)) arr.push(['records', 'Minutes & notices', 'clipboard']);
     if (onRole(['head', 'chair'])) arr.push(['roster', 'BOD requests', 'users']);
     if (onRole(['head', 'chair', 'vice'])) arr.push(['history', 'Change history', 'clipboard']);
     if (onRole(['collector', 'treasurer']) || canChair() || db().batches.some(canPost)) arr.push(['finance', 'Finance desk', 'clipboard']);
@@ -521,10 +521,11 @@
     const approvalList=officer&&(leader||waiting.length)?section('Needs your action',waiting.map(([shape,kicker,name,act,id,kind])=>'<button class="notice-row" data-do="'+esc(act)+'" data-id="'+esc(id)+'" data-queue="1"><span class="notice-symbol">'+icon(shape)+'</span><span>'+kindChip(kind)+'<strong>'+esc(titleCase(name))+'</strong><small>'+esc(kicker)+'</small></span>'+icon('chevron','sm')+'</button>').join('')||empty('Nothing is waiting for you.')):'';
     const latest=notices()[0];
     const announcement=latest?'<button class="notice-row" data-do="tab:updates"><span class="notice-symbol">'+icon('megaphone')+'</span><span><small>'+esc(date(latest.date))+'</small><strong>'+esc(titleCase(latest.title))+'</strong></span>'+icon('chevron','sm')+'</button>':empty('No announcements yet.');
+    const soon=allActivities().filter(isUpcoming).sort((x,y)=>x.date.localeCompare(y.date)).slice(0,2).map(x=>'<button class="project-row" data-do="tab:activities"><span class="project-symbol">'+icon('calendar')+'</span><span><strong>'+esc(titleCase(x.title))+'</strong><small>'+esc(whenLine(x)+(x.audience==='officers'?' · Officers only':''))+'</small></span>'+icon('chevron','sm')+'</button>').join('');
     const projectsList=db().projects.slice(0,2).map(p=>'<button class="project-row" data-do="tab:projects"><span class="project-symbol">'+icon(p.icon||'sprout')+'</span><span><strong>'+esc(titleCase(p.title))+'</strong>'+badge(p.status)+'</span>'+icon('chevron','sm')+'</button>').join('');
     const join=isGuest()?'<div class="join-bod"><strong>Parent or SPTA Officer?</strong>'+btn('Sign in','tab:account')+'</div>':'';
     const cover=standIn()?notice('You are standing in for the '+E.roles[standIn()]+' until '+date(db().cover.until)+'. Their tasks appear in your list.'):'';
-    return hero+cover+feedback+approvalList+section('Latest announcement',announcement)+section('SPTA projects',projectsList||empty('Approved SPTA projects will appear here.'))+join;
+    return hero+cover+feedback+approvalList+section('Latest announcement',announcement)+section('Upcoming activities',soon||empty('No activities are planned yet.'))+section('SPTA projects',projectsList||empty('Approved SPTA projects will appear here.'))+join;
   }
   // A sender may take back a proposal until the School Head approves it, and a suggestion or concern until it is resolved.
   const canWithdraw = x => x.owner === S.me && (x.kind ? ['received', 'assigned'] : ['received', 'returned', 'screened', 'voting', 'awaiting_head']).includes(x.status);
@@ -561,9 +562,10 @@
     const to = desk ? mine && !noter ? 'SPTA' : E.deskName : E.recipients[c.assigned] || E.roles[c.assigned];
     const notes = (c.notes || []).map(x => '<div class="portal-note' + (x.followUp ? ' personal' : '') + '"><b>' + esc((x.followUp ? 'Follow-up · ' : x.toHead ? 'Note for the School Head · ' : 'Note · ') + (E.roles[x.role] || x.role)) + '</b>' + para(x.text) + '<small>' + esc(date(x.at.slice(0, 10))) + '</small></div>').join('');
     const body = para(c.body) + (c.hidden ? '<div class="entry-meta hidden-name">' + icon('lock', 'sm') + esc(mine ? 'You hid your name from the reviewer.' : 'Name hidden by the sender. Reply here in the app.') + '</div>' : (assigned || noter) && !mine ? fromLine(c) : '') + (mine ? tracker(c) : c.reply ? '<div class="portal-note personal"><b>Personal Reply Sent</b>' + para(c.reply) + '</div>' : '') + (!mine || noter ? notes : '') + '<div class="entry-meta">Sent to the ' + esc(to) + (c.forwarded ? ' · Passed on to the School Head' + (c.forwarded.role && noter ? ' by the ' + esc(E.roles[c.forwarded.role] || '') : '') + ' ' + esc(date(c.forwarded.at.slice(0, 10))) : '') + (assigned && !gone ? ' · Next update by ' + esc(date(c.due)) : '') + (late ? ' · <b class="overdue">Overdue</b>' : '') + '</div>';
+    const evidence = (c.photos || []).length ? '<div class="proj-photos case-photos" aria-label="Photo evidence">' + c.photos.map((ph, i) => '<button type="button" class="proj-photo" data-do="dlg:casePhoto" data-id="' + esc(c.id + '|' + i) + '" aria-label="' + esc('Open photo ' + (i + 1)) + '">' + photoImg({file: ph}, 'Photo evidence ' + (i + 1)) + '</button>').join('') + '</div>' : '';
     const canForward = desk && !c.forwarded && ['chair', 'vice'].includes(me().role) && ['received', 'assigned'].includes(c.status);
     const actions = (assigned && !gone ? btn(c.status === 'received' ? 'Mark reviewed or reply' : 'Update or reply', 'dlg:reply', c.id) : '') + (canForward ? btn('Pass on to the School Head', 'dlg:forward', c.id, 'primary') : '') + (noter && !gone && desk ? btn(holds('secretary') && !assigned ? 'Record follow-up' : c.forwarded ? 'Add a note' : 'Add a private note', 'dlg:caseNote', c.id) : '') + (canWithdraw(c) ? btn('Withdraw', 'dlg:withdraw', c.id) : '');
-    return card(c.subject, body, c.id + ' · ' + (c.kind === 'inspection' ? 'Records inspection request' : c.kind === 'concern' ? 'Private concern' : 'Private suggestion'), c.status, actions);
+    return card(c.subject, body + evidence, c.id + ' · ' + (c.kind === 'inspection' ? 'Records inspection request' : c.kind === 'concern' ? 'Private concern' : 'Private suggestion'), c.status, actions);
   }
   function pulse() {
     const tally = db().trends || {};
@@ -576,13 +578,13 @@
   }
   function board() {
     const ballots = db().ballots.filter(b => b.roster.includes(S.me) || lead() || holds('secretary')).slice().reverse();
-    return para('Every SPTA officer can vote on a screened proposal. It proceeds to the School Head once yes votes reach 50% of all officers.') + section('Proposals for officer vote', ballots.map(b => {
+    return para('Every SPTA officer can vote on a screened proposal. It proceeds to the School Head once yes votes reach 51% of all officers.') + section('Proposals for officer vote', ballots.map(b => {
       const open = b.status === 'open',
         member = b.present.includes(S.me),
         voted = b.participated.includes(S.me),
         turnout = b.turnout ?? b.participated.length,
         need = E.yesNeeded(b);
-      const text = para(b.body) + '<div class="entry-meta">Secret ballot · ' + b.present.length + ' officers · ' + need + ' yes votes needed (50%) · SPTA allocation ' + cash(b.budget) + '</div>' + (open ? ballotFund(b) : '') + (open ? para(turnout + ' of ' + b.present.length + ' officers have voted.' + (voted ? ' Your vote was received.' : '')) + '<div class="entry-meta vote-closes">' + icon('info', 'sm') + 'Voting closes on ' + esc(date(E.voteCloses(b))) + '</div>' : '<div class="vote-summary"><b>' + b.counts.yes + ' Yes</b><b>' + b.counts.no + ' No</b><b>' + b.counts.abstain + ' Abstain</b></div>' + para(b.withdrawn ? 'The proposer withdrew this proposal, so the vote was closed.' : b.passed ? 'Reached 50% of all officers. Sent to the School Head for approval.' : 'Yes votes did not reach 50% of all officers' + (b.expired ? ' by the closing date.' : '.')));
+      const text = para(b.body) + '<div class="entry-meta">Secret ballot · ' + b.present.length + ' officers · ' + need + ' yes votes needed (51%) · SPTA allocation ' + cash(b.budget) + '</div>' + (open ? ballotFund(b) : '') + (open ? para(turnout + ' of ' + b.present.length + ' officers have voted.' + (voted ? ' Your vote was received.' : '')) + '<div class="entry-meta vote-closes">' + icon('info', 'sm') + 'Voting closes on ' + esc(date(E.voteCloses(b))) + '</div>' : '<div class="vote-summary"><b>' + b.counts.yes + ' Yes</b><b>' + b.counts.no + ' No</b><b>' + b.counts.abstain + ' Abstain</b></div>' + para(b.withdrawn ? 'The proposer withdrew this proposal, so the vote was closed.' : b.passed ? 'Reached 51% of all officers. Sent to the School Head for approval.' : 'Yes votes did not reach 51% of all officers' + (b.expired ? ' by the closing date.' : '.')));
       let buttons = '';
       if (open && member && !voted) buttons += btn('Cast vote', 'dlg:vote', b.id, 'primary');
       if (open && canChair() && !S.shared && b.present.some(m => !b.participated.includes(m) && !S.practiceProfiles.includes(m))) buttons += btn('Add practice ballots', 'practiceBallots', b.id);
@@ -610,35 +612,61 @@
     const signed = r.signers ? Object.values(r.signatures || {}).filter(x => x.status === 'acknowledged').length : 0;
     return card(r.title, para(r.clause || 'The secretary is reviewing the draft.') + (r.state !== 'draft' && r.signers ? '<div class="entry-meta">' + signed + ' of ' + r.signers.length + ' officers have signed</div>' : ''), r.id + ' · Version ' + r.version, r.state, acts);
   }
+  // The resolution paper follows the school's own format (see SPTA Resolution No. 2, s. 2026): heading, title, the text,
+  // the officers' signatures, the members present with their signatures, and the witnesses.
+  const paperTitle = {
+    chair: 'SPTA President',
+    vice: 'SPTA Vice-President',
+    secretary: 'SPTA Secretary',
+    treasurer: 'SPTA Treasurer',
+    collector: 'SPTA Collecting and Disbursing Officer'
+  };
   function resolutionPaper(r, signatures = true) {
-    const demo = '<div class="paper-mark">' + (isLive() ? '' : 'FICTIONAL REHEARSAL COPY · ') + esc(labels[r.state] || r.state).toUpperCase() + '</div>';
-    const fact = (k, v) => v ? '<div class="paper-fact"><span>' + esc(k) + '</span><b>' + esc(v) + '</b></div>' : '';
-    let body = demo + '<div class="paper-head">' + seal + '<div><b>East Central Elementary School</b><div>School Parent-Teacher Association</div></div></div><h2>Resolution ' + esc(r.id) + '</h2>' + '<div class="entry-meta">Version ' + r.version + ' · ' + esc(labels[r.state] || r.state) + '</div><h3>' + esc(titleCase(r.title)) + '</h3>' + para(r.text);
-    if (r.meeting) body += '<h3>Project Details</h3><div class="paper-facts">' + fact('Proposal', r.proposal) + fact('Project', r.project) + fact('Category', r.category) + fact('Approved allocation', cash(r.budget)) + fact('Voluntary contributions', r.fundraising ? 'Yes · ' + r.ga : '') + (r.tally ? fact('Officer vote', r.tally.yes + ' yes, ' + r.tally.no + ' no, ' + r.tally.abstain + ' abstain' + (r.officers ? ' of ' + r.officers + ' officers' : '')) + fact('Vote closed', date(r.date)) : fact('Officer vote', 'Not held · Added by the chairperson')) + fact('School-Head approval', date(r.approved)) + '</div>';
-    body += '<h3>Resolution</h3>' + para(r.clause || 'Draft text awaiting secretary review.') + (r.supersededBy ? notice('Replaced by resolution ' + r.supersededBy + ' after the project’s allocation changed. This one records what was approved at the time.') : '');
+    const mark = '<div class="paper-mark">' + (isLive() ? '' : 'FICTIONAL REHEARSAL COPY · ') + esc(labels[r.state] || r.state).toUpperCase() + ' · VERSION ' + r.version + '</div>';
+    const no = r.no ? 'SPTA RESOLUTION NO. ' + r.no + ', S. ' + (r.sy || String(r.created || E.today()).slice(0, 4)) : 'SPTA RESOLUTION ' + r.id;
+    let body = mark + '<div class="rs-head">' + '<img class="rs-seal" src="assets/deped-seal.png" alt="" width="72" height="72">' + '<p class="rs-gothic">Republic of the Philippines</p><p class="rs-gothic">Department of Education</p><p>REGION 1</p><p>Schools Division Office of Pangasinan II</p><p><b>EAST CENTRAL ELEMENTARY SCHOOL</b></p><p>Caballero Street, Poblacion, San Fabian, Pangasinan</p></div><p class="rs-no">' + esc(no) + '</p><p class="rs-title">' + esc(E.resolutionHeading(r)) + '</p>';
+    if (r.supersededBy) body += notice('Replaced by resolution ' + r.supersededBy + ' after the project’s allocation changed. This one records what was approved at the time.');
+    const text = String(r.clause || 'Draft text awaiting secretary review.').split(/\n{2,}/).map(x => x.trim()).filter(Boolean);
+    body += '<div class="rs-text">' + text.map(x => '<p' + (/^SEKSYON \d/.test(x) ? ' class="rs-sec"' : '') + '>' + esc(x) + '</p>').join('') + '</div>';
     if (signatures && r.signers && r.state !== 'draft' && officers()) {
-      const done = r.signers.filter(s => r.signatures[s.id]?.status === 'acknowledged').length;
-      body += '<h3>Signatures</h3>' + para(done + ' of ' + r.signers.length + ' officers have signed this version. ' + (r.signerPolicy || 'All officers') + ' · ' + E.signaturesPending(r).length + ' required signatures pending.') + '<div class="sig-grid">' + r.signers.map(s => {
-        const sig = r.signatures[s.id],
-          ok = sig?.status === 'acknowledged';
-        return '<div class="sig-block' + (ok ? ' signed' : '') + '">' + (ok ? markSvg(sig.mark) : '<span class="sig-empty">' + esc(sig ? 'Declined to sign' : 'Not yet signed') + '</span>') + '<b>' + esc(sig?.name || s.name) + '</b><span>' + esc(signerLine(sig || s)) + '</span><span>' + esc(sig ? date(sig.at) : '') + '</span></div>';
-      }).join('') + '</div>' + para(r.filing);
+      const sigOf = s => r.signatures[s.id];
+      const sign = s => {
+        const sig = sigOf(s);
+        return sig?.status === 'acknowledged' ? markSvg(sig.mark) : sig ? '<span class="sig-empty">Declined to sign</span>' : '';
+      };
+      const order = Object.keys(paperTitle);
+      const officersList = r.signers.filter(s => order.includes(s.role)).sort((a, b) => order.indexOf(a.role) - order.indexOf(b.role));
+      const members = r.signers.filter(s => s.role === 'bod');
+      const head = db().accounts.find(x => x.role === 'head' && x.active);
+      const done = r.signers.filter(s => sigOf(s)?.status === 'acknowledged').length;
+      body += '<p class="rs-label">Pinagtibay ng SPTA Officers:</p><div class="rs-officers">' + officersList.map(s => '<div class="rs-sign">' + '<div class="rs-mark">' + sign(s) + '</div><b>' + esc((sigOf(s)?.name || s.name).toUpperCase()) + '</b><span>' + esc(paperTitle[s.role]) + '</span></div>').join('') + '</div>';
+      if (members.length) body += '<p class="rs-label">Mga Dumalong Miyembro ng SPTA (Lagda ng Pagpayag):</p><table class="rs-table"><thead><tr><th>No.</th><th>Name</th><th>Grade / Class</th><th>Signature</th></tr></thead><tbody>' + members.map((s, i) => '<tr><td>' + (i + 1) + '</td><td>' + esc((sigOf(s)?.name || s.name).toUpperCase()) + '</td><td>' + esc(s.homeroom || '') + '</td><td>' + sign(s) + '</td></tr>').join('') + '</tbody></table>';
+      body += '<p class="rs-label">Mga saksi:</p><div class="rs-witness"><div class="rs-sign"><div class="rs-mark"></div><b>' + esc(head?.name ? head.name.toUpperCase() : '') + '</b><span>School Head</span></div></div>';
+      body += '<div class="entry-meta rs-count">' + done + ' of ' + r.signers.length + ' officers have signed this version. ' + esc(r.signerPolicy || 'All officers') + ' · ' + E.signaturesPending(r).length + ' required signatures pending.</div>' + (r.filing ? para(r.filing) : '');
     }
     return '<article class="resolution-sheet">' + body + '</article>';
   }
+  document.addEventListener('error', ev => {
+    if (ev.target && ev.target.classList && ev.target.classList.contains('rs-seal')) ev.target.remove();
+  }, true);
   const has = key => tabs().some(x => x[0] === key);
   // SPTA Funds page. Sarah prefers this layout; its section headings carry a tinted band.
   function funds() {
     const rows = db().ledger.slice().sort((a, b) => b.date.localeCompare(a.date));
     const total = d => rows.filter(x => x.direction === d).reduce((s, x) => s + x.cents, 0);
     const fund = E.funding(db()),
-      name = id => db().projects.find(p => p.id === id)?.title;
+      name = id => db().projects.find(p => p.id === id)?.title || (db().activities || []).find(x => x.id === id)?.title;
     const active = db().projects.filter(p => fund.projects[p.id]),
       waiting = db().proposals.filter(p => E.publicProposal(p) && p.budget > 0 && ['screened', 'voting', 'awaiting_head'].includes(p.status));
     const projectLines = active.map(p => {
       const spent = E.projectSpend(db(), p.id),
         f = fund.projects[p.id];
       return '<article class="fund-project"><h3>' + esc(titleCase(p.title)) + '</h3><div class="fund-bar"><div style="width:' + Math.max(0, Math.min(100, p.budget ? spent / p.budget * 100 : 0)) + '%"></div></div><div class="money-inline"><span>Allocation <b>' + cash(p.budget) + '</b></span><span>Spent <b>' + cash(spent) + '</b></span><span>Still to pay <b>' + cash(f.need) + '</b></span></div>' + fundCheck(f.need, f.short, 'Covered by SPTA funds') + '</article>';
+    }).join('');
+    const activityLines = allActivities().filter(x => x.status === 'scheduled' && x.budget > 0).map(x => {
+      const spent = E.projectSpend(db(), x.id),
+        f = fund.activities?.[x.id] || {need: 0, short: 0};
+      return '<article class="fund-project"><h3>' + esc(titleCase(x.title)) + '</h3><div class="entry-meta">Activity · ' + esc(whenLine(x)) + (x.audience === 'officers' ? ' · Officers only' : '') + '</div><div class="fund-bar"><div style="width:' + Math.max(0, Math.min(100, spent / x.budget * 100)) + '%"></div></div><div class="money-inline"><span>Budget <b>' + cash(x.budget) + '</b></span><span>Spent <b>' + cash(spent) + '</b></span><span>Still to pay <b>' + cash(f.need) + '</b></span></div>' + fundCheck(f.need, f.short, 'Covered by SPTA funds') + '</article>';
     }).join('');
     const proposalLines = waiting.map(p => '<article class="fund-project"><h3>' + esc(titleCase(proposalName(p))) + '</h3><div class="entry-meta">' + esc(labels[p.status]) + ' · Proposed allocation ' + cash(p.budget) + '</div>' + proposalFund(p) + '</article>').join('');
     const movements = rows.map(entry => {
@@ -654,11 +682,11 @@
     const summary = '<section class="balance-card" aria-label="SPTA Cash Balance"><h2>SPTA Cash Balance</h2><strong>' + cash(fund.balance) +
       '</strong>' + (db().opening > 0 ? '<small class="balance-carry">Includes ' + cash(db().opening) + ' carried over from earlier this school year, as of ' + esc(date(db().openingAsOf)) + '.</small>' : '') + '<div class="balance-flows"><div>Money In<b>' + cash(total('in')) + '</b></div><div>Money Out<b>' +
       cash(total('out')) + '</b></div></div></section>';
-    const allocations = '<div class="fund-split"><div><span>Set Aside for Approved Projects</span><b>' + cash(fund.committed) +
+    const allocations = '<div class="fund-split"><div><span>Set Aside for Projects and Activities</span><b>' + cash(fund.committed) +
       '</b></div><div class="' + (fund.available > 0 ? 'ok' : 'short') + '"><span>Available for New Proposals</span><b>' + cash(fund.available) + '</b></div></div>';
     return '<div class="funds-page">' + summary + '<p class="balance-note">SPTA officers manage these voluntary contributions and fundraising proceeds. They are not the school’s funds.</p>' +
       section('Approved Transactions', movements ? '<ul class="movement-list">' + movements + '</ul>' : empty('No approved transactions yet.')) +
-      section('Project Funding', allocations + (projectLines || empty('No approved SPTA projects are waiting for funds.'))) +
+      section('Project Funding', allocations + (projectLines || empty('No approved SPTA projects are waiting for funds.'))) + (activityLines ? section('Activity Budgets', activityLines) : '') +
       (proposalLines ? section('Proposals Waiting for a Decision', proposalLines) : '') + section('SPTA records', btn('Request records inspection', 'dlg:inspection') + (has('resolutions') ? '' : db().resolutions.filter(r => r.published).map(r => card(r.title, para(r.parentSummary), r.id + ' · Version ' + r.version, r.state)).join('')) + (has('records') ? '' : db().minutes.filter(m => m.state === 'filed').map(m => card(m.title, para(m.summary), 'Meeting · ' + date(m.date), 'filed')).join(''))) + '</div>';
   }
   function finance() {
@@ -684,6 +712,30 @@
       waiting = treas ? all.filter(d => d.status === 'for_treasurer') : [],
       rest = all.filter(d => !waiting.includes(d) && (!review || treas || d.status !== 'for_treasurer'));
     return (treas || collects ? btn(isLive() ? (collects ? 'Record a collection handover' : 'Submit finance evidence') : collects ? 'Scan a collection handover' : 'Scan a sheet or receipt', 'dlg:finance', '', 'primary', 'camera') : '') + (collects ? para('Scan the collection sheet for the money you are handing over. The treasurer approves it first, then the chairperson gives final approval before it shows in SPTA funds.') : '') + (treas ? section('Handovers for your approval', waiting.map(cardOf).join('') || empty('No handovers are waiting for you.')) : '') + section(officer ? 'My handovers' : 'Finance submissions', rest.map(cardOf).join('') || empty(officer ? 'You have not recorded a handover yet.' : 'There are no finance submissions.'));
+  }
+  // Activities: dated events for everyone, or for the officers only. The treasurer sets a budget aside for an activity.
+  const officerLike = () => onRole([...E.boardRoles, 'head']) && !isGuest();
+  const planner = () => onRole(E.planners) && !isGuest();
+  const allActivities = () => (db().activities || []).filter(x => x.audience === 'everyone' || officerLike());
+  const isUpcoming = x => x.status === 'scheduled' && x.date >= t();
+  const whenLine = x => date(x.date) + (x.time ? ' · ' + x.time : '');
+  function activityCard(x) {
+    const spent = E.projectSpend(db(), x.id),
+      mine = x.by === S.me || canChair() || onRole(['head', 'vice']);
+    let body = (x.place ? '<div class="entry-meta">' + icon('info', 'sm') + esc(x.place) + '</div>' : '') + para(x.details);
+    if (x.budget > 0) body += '<div class="money-inline"><span>Budget <b>' + cash(x.budget) + '</b></span><span>Spent <b>' + cash(spent) + '</b></span><span>Left <b>' + cash(Math.max(0, x.budget - spent)) + '</b></span></div>';
+    else if (officerLike() && x.status === 'scheduled') body += '<div class="entry-meta">No budget set aside yet</div>';
+    if (x.status === 'cancelled' && x.reason) body += para('Cancelled. ' + x.reason);
+    let acts = '';
+    if (holds('treasurer') && x.status === 'scheduled') acts += btn(x.budget > 0 ? 'Change budget' : 'Set budget', 'dlg:activityBudget', x.id, 'primary');
+    if (planner() && x.status === 'scheduled' && mine) acts += btn('Edit', 'dlg:activity', x.id) + btn('Cancel activity', 'dlg:activityCancel', x.id, 'danger');
+    return card(x.title, body, whenLine(x) + (x.audience === 'officers' ? ' · Officers only' : ''), x.status === 'cancelled' ? 'cancelled' : '', acts);
+  }
+  function activitiesView() {
+    const list = allActivities(),
+      soon = list.filter(isUpcoming).sort((a, b) => a.date.localeCompare(b.date)),
+      past = list.filter(x => !isUpcoming(x)).sort((a, b) => b.date.localeCompare(a.date));
+    return (planner() ? '<div class="entry-actions">' + btn('Add an activity', 'dlg:activity', '', 'primary', 'plus') + '</div>' : '') + para(officerLike() ? 'Activities for everyone are shown to all parents. Officers-only activities, such as an officers’ party, are visible only to the officers and the School Head.' : 'Dates for SPTA activities that parents and guardians are invited to.') + section('Coming up', soon.map(activityCard).join('') || empty('No activities are planned yet.')) + (past.length ? section('Past and cancelled', past.map(activityCard).join('')) : '');
   }
   function records() {
     const sec = holds('secretary');
@@ -728,7 +780,7 @@
   // Change history: who acted, in which role, on what, what was decided and why. Only the School Head, chairperson and Vice-Chairperson see it.
   const HISTORY_AREAS = {
     money: ['financeSubmit', 'financeCheck', 'financeReview'],
-    projects: ['projectUpdate', 'projectPhoto', 'projectPhotoRemove', 'projectReopen', 'amendProject'],
+    projects: ['activitySave', 'activityBudget', 'activityCancel', 'projectUpdate', 'projectPhoto', 'projectPhotoRemove', 'projectReopen', 'amendProject'],
     proposals: ['screen', 'chairProposal', 'resubmit', 'withdraw', 'headDecision', 'closeBallot', 'voteDeadline', 'proposalReply'],
     records: ['minutesUpload', 'minutesReview', 'freeze', 'reviseResolution', 'sign', 'unsign', 'finalizeResolution', 'announce', 'announceEdit', 'announceRemove'],
     people: ['rosterReview', 'setSeat', 'endBod', 'acting', 'cover']
@@ -772,6 +824,7 @@
     board,
     resolutions: () => section('Resolution register', db().resolutions.map(resCard).join('') || empty('A resolution is drafted automatically when a proposal passes the officer vote and the School Head approves it.')),
     records,
+    activities: activitiesView,
     history,
     roster,
     finance,
@@ -829,7 +882,7 @@
       source = '<div class="scan-attached">' + scanPreview(scan, false) + '<div><b>Scanned Original</b>' + para(scan.file.name + ' is attached for the chairperson.') + btn('Scan a different photo', 'scanAgain', '', 'light', 'camera') + '</div></div>';
       intro = '<div class="scan-result">' + icon('check', 'sm') + '<span><b>' + read.items.length + ' Lines Filled In for You</b>' + esc(flagged ? flagged + ' line' + (flagged === 1 ? ' is' : 's are') + ' marked in gold because the writing was hard to read.' : 'Every line was read clearly.') + ' Compare each one with the paper and fix anything that is wrong.</span></div>' + (read.matchesImage ? '' : notice('Practice mode: this demo cannot read a real photo yet, so it filled in the fictional sample collection amounts. The live app will read the photo you took.'));
     } else if (kind === 'finance' && !id && !isLive()) intro = btn('Scan a photo instead', 'scanAgain', '', 'light', 'camera');
-    return intro + form('financeSubmit', (officer || orig ? hidden('direction', dir) + notice(officer ? 'Collection handover · Money in' : 'Linked correction for ' + orig.id + ' · Money ' + dir) : select('direction', 'Movement', [['in', 'Money in'], ['out', 'Money out']], dir)) + hidden('adjustment', orig?.id || prior?.adjustment || '') + input('date', officer ? 'Collection date' : 'Transaction date', read?.date || prior?.date || t(), 'date') + input('receipt', 'Receipt / batch reference', read?.receipt || prior?.receipt || '') + input('purpose', 'Purpose shown to parents', read?.purpose || prior?.purpose || (orig ? 'Correction · ' + orig.purpose : ''), 'text', 'required maxlength="140"') + (orig || officer ? hidden('project', '') : select('project', 'Expense allocation', [['', 'General fund (not for a project)'], ...db().projects.filter(x => x.status !== 'cancelled').map(x => [x.id, x.title])], prior?.project || '')) + '<fieldset><legend>' + (scan ? 'Scanned Line Items' : 'Private Line Items') + '</legend><div id="item-rows">' + initItems.map(row).join('') + '</div>' + btn(scan ? 'Add a missed line' : 'Add item', 'addItem', '', 'light', 'plus') + totalLine(lineSum(initItems), read ? read.writtenTotal : null) + '</fieldset>' + source + ck('verifiedItems', scan ? 'I compared every scanned line with the paper original and corrected anything that was wrong.' : 'I checked the amounts and item descriptions against the supporting document.', true), officer ? 'Submit to treasurer' : 'Submit to chairperson', prior?.id || '');
+    return intro + form('financeSubmit', (officer || orig ? hidden('direction', dir) + notice(officer ? 'Collection handover · Money in' : 'Linked correction for ' + orig.id + ' · Money ' + dir) : select('direction', 'Movement', [['in', 'Money in'], ['out', 'Money out']], dir)) + hidden('adjustment', orig?.id || prior?.adjustment || '') + input('date', officer ? 'Collection date' : 'Transaction date', read?.date || prior?.date || t(), 'date') + input('receipt', 'Receipt / batch reference', read?.receipt || prior?.receipt || '') + input('purpose', 'Purpose shown to parents', read?.purpose || prior?.purpose || (orig ? 'Correction · ' + orig.purpose : ''), 'text', 'required maxlength="140"') + (orig || officer ? hidden('project', '') : select('project', 'Expense allocation', [['', 'General fund (not for a project)'], ...db().projects.filter(x => x.status !== 'cancelled').map(x => [x.id, x.title]), ...allActivities().filter(x => x.status === 'scheduled').map(x => [x.id, 'Activity: ' + x.title])], prior?.project || '')) + '<fieldset><legend>' + (scan ? 'Scanned Line Items' : 'Private Line Items') + '</legend><div id="item-rows">' + initItems.map(row).join('') + '</div>' + btn(scan ? 'Add a missed line' : 'Add item', 'addItem', '', 'light', 'plus') + totalLine(lineSum(initItems), read ? read.writtenTotal : null) + '</fieldset>' + source + ck('verifiedItems', scan ? 'I compared every scanned line with the paper original and corrected anything that was wrong.' : 'I checked the amounts and item descriptions against the supporting document.', true), officer ? 'Submit to treasurer' : 'Submit to chairperson', prior?.id || '');
   }
   function cleanScan() {
     if (ui.scan?.url) URL.revokeObjectURL(ui.scan.url);
@@ -916,7 +969,7 @@
       return ['Voting seat', para(user.name) + form('setSeat', ck('voting', 'Include this officer in future votes.', false, user.boardSeat) + ck('verified', 'I checked the current school roster.', true), 'Save seat', id) + (user.role === 'bod' ? form('endBod', ck('confirm', 'This HPTA presidency has ended. Remove officer access and retain the parent profile.', true), 'End BOD term', id) : '')];
     }
     if (kind === 'proposal' || kind === 'resubmit') return [kind === 'proposal' ? 'Propose a project' : 'Revise proposal', form(kind === 'proposal' ? 'submitProposal' : 'resubmit', input('title', 'Project title', p?.title || '', 'text', 'required minlength="4" maxlength="100"') + (p ? '' : select('category', 'Category', E.categories)) + area('details', 'What does the school need?', p?.details || '', 'required minlength="8" maxlength="700"') + para('Leave out children’s names and private concerns. The review team checks proposals before sharing them.'), p ? 'Resubmit' : 'Send proposal', p?.id || '')];
-    if (['concern', 'suggestion'].includes(kind)) return [kind === 'concern' ? 'Report a private concern' : 'Make a suggestion', form('caseSubmit', hidden('kind', kind) + input('subject', 'Subject', '', 'text', 'required minlength="3" maxlength="100"') + select('category', 'Category', E.categories) + area('body', kind === 'concern' ? 'What happened?' : 'What would you like to improve?', '', 'required minlength="6" maxlength="700"') + hidden('assigned', 'chair') + notice('This goes privately to the SPTA. Only the officers who handle feedback can read it.') + ck('hideName', 'Hide my name from the reviewer') + '<div class="entry-meta">The officer will not see your name or section and will reply here in the app. You can do this ' + E.hiddenPerMonth + ' times a month.</div>' + notice('For an urgent child-safety matter, contact the school’s designated safeguarding staff directly.'), 'Send privately')];
+    if (['concern', 'suggestion'].includes(kind)) return [kind === 'concern' ? 'Report a private concern' : 'Make a suggestion', form('caseSubmit', hidden('kind', kind) + input('subject', 'Subject', '', 'text', 'required minlength="3" maxlength="100"') + select('category', 'Category', E.categories) + area('body', kind === 'concern' ? 'What happened?' : 'What would you like to improve?', '', 'required minlength="6" maxlength="700"') + '<fieldset class="evidence"><legend>Photo evidence (optional, up to ' + E.photosPerCase + ')</legend><label>Photo 1<input type="file" name="evidence1" accept="image/jpeg,image/png,image/webp"></label><label>Photo 2<input type="file" name="evidence2" accept="image/jpeg,image/png,image/webp"></label><div class="entry-meta">Please do not photograph children’s faces. A photo can show who you are, so if you hide your name, choose photos that do not.</div></fieldset>' + hidden('assigned', 'chair') + notice('This goes privately to the SPTA. Only the officers who handle feedback can read it.') + ck('hideName', 'Hide my name from the reviewer') + '<div class="entry-meta">The officer will not see your name or section and will reply here in the app. You can do this ' + E.hiddenPerMonth + ' times a month.</div>' + notice('For an urgent child-safety matter, contact the school’s designated safeguarding staff directly.'), 'Send privately')];
     if (kind === 'screen') return [p.title, '<div class="entry-meta step-line">For screening</div>' + para(p.details) + form('screen', select('decision', 'Next step', [['screen', 'Publish and open the officers’ vote'], ['return', 'Return for revision'], ['decline', 'Decline']]) + '<div data-when="decision" data-values="screen">' + input('title', 'Reviewed title', p.publicTitle || p.title) + area('text', 'Description safe to share', p.publicText || p.details) + input('budget', 'Proposed SPTA allocation (₱)', p.budget / 100, 'number', 'required min="0" step="0.01"') + '<div class="fund-check ok" id="screen-fund" data-available="' + E.funding(db()).available + '">' + icon('info', 'sm') + '<span><b>SPTA funds available now: ' + cash(E.funding(db()).available) + '</b><span id="screen-fund-note">An allocation above this amount will be marked as needing fundraising.</span></span></div>' + ck('fundraising', 'This proposal seeks voluntary contributions.', false, !!p.fundraising) + input('closes', 'Voting closes on', E.voteCloses({date: t()}), 'date', 'required min="' + t() + '"') + '<div class="entry-meta">Officers have one month to vote unless you change this date.</div></div><div data-when="decision" data-values="return decline">' + area('reason', 'Feedback for the parent') + '</div>', 'Save screening', id)];
     if (kind === 'vote') return [b.title, '<div class="entry-meta step-line">For your vote</div>' + para(b.body) + '<div class="entry-meta">Proposed SPTA allocation ' + cash(b.budget) + '</div>' + ballotFund(b) + notice('Voting closes on ' + date(E.voteCloses(b)) + '.') + form('vote', select('vote', 'Your vote', [['', 'Choose a response'], ['yes', 'Proceed'], ['no', 'Do not proceed'], ['abstain', 'Abstain']], '', 'required'), 'Submit once', id)];
     if (kind === 'close') return ['Close voting', para(b.title) + notice('Voting closes by itself once the result is decided. Closing early records the result with the votes received so far.') + form('closeBallot', ck('confirm', 'The voting period has ended. Record the result.', true), 'Close and record', id)];
@@ -949,7 +1002,7 @@
     }
     if (kind === 'proposalReply') return ['Personal reply', para(p.title) + notice('Optional. The person who proposed already receives an automated response at each status. Only they see this reply.') + form('proposalReply', area('reply', 'Your reply as ' + roleName(a), p.reply || '', 'required minlength="3" maxlength="600"'), 'Send personal reply', id)];
     if (kind === 'resolution') return ['Read resolution', resolutionPaper(r, true)];
-    if (kind === 'freeze') return ['Edit and publish version ' + r.version, notice('This draft was created automatically from the approved proposal. Adjust the wording if needed. The allocation of ' + cash(r.budget) + ' stays as voted.') + form('freeze', hidden('version', r.version) + input('title', 'Project title', r.title, 'text', 'required minlength="4" maxlength="100"') + area('text', 'Project details', r.text, 'required minlength="8" maxlength="700"') + area('clause', 'Resolution wording', r.clause || E.resolutionText(r.title, r.budget, r.direct)) + select('signerRule', 'Required signatures', [['all', 'All officers'], ['policy', 'Named signers under a documented school rule']]) + '<div data-when="signerRule" data-values="policy">' + input('signerPolicy', 'School signer policy or resolution reference') + '<fieldset><legend>Designated Required Signers</legend><div class="roster-picker">' + r.signers.map(s => '<label class="tick"><input type="checkbox" name="requiredSigners" value="' + esc(s.id) + '"><span>' + esc(s.name) + '</span></label>').join('') + '</div></fieldset></div>' + ck('confirm', 'I verified the wording and required signers against the school record.', true), 'Publish for signatures', id)];
+    if (kind === 'freeze') return ['Edit and publish version ' + r.version, notice('This draft was created automatically from the approved proposal. Adjust the wording if needed. The allocation of ' + cash(r.budget) + ' stays as voted.') + form('freeze', hidden('version', r.version) + input('title', 'Project title', r.title, 'text', 'required minlength="4" maxlength="100"') + area('text', 'Project details', r.text, 'required minlength="8" maxlength="700"') + input('no', 'Resolution number', r.no || E.nextResolutionNumber(db(), r.sy || Number(E.today().slice(0, 4))), 'number', 'required min="1" max="999" step="1"') + area('clause', 'Resolution wording (as it will be printed)', r.clause || E.resolutionText(r.title, r.budget, r.direct), 'required minlength="12" maxlength="4000" rows="14"') + select('signerRule', 'Required signatures', [['all', 'All officers'], ['policy', 'Named signers under a documented school rule']]) + '<div data-when="signerRule" data-values="policy">' + input('signerPolicy', 'School signer policy or resolution reference') + '<fieldset><legend>Designated Required Signers</legend><div class="roster-picker">' + r.signers.map(s => '<label class="tick"><input type="checkbox" name="requiredSigners" value="' + esc(s.id) + '"><span>' + esc(s.name) + '</span></label>').join('') + '</div></fieldset></div>' + ck('confirm', 'I verified the wording and required signers against the school record.', true), 'Publish for signatures', id)];
     if (kind === 'sign') return ['Sign resolution', resolutionPaper(r, false) + form('sign', hidden('version', r.version) + select('response', 'My response', [['acknowledged', 'Sign this resolution'], ['not_signed', 'Decline to sign']]) + '<div data-when="response" data-values="acknowledged"><div class="sign-field"><span>Draw your signature</span><canvas class="sign-pad" width="600" height="200" aria-label="Signature box. Draw with your finger or mouse."></canvas><input type="hidden" name="signature" value="">' + btn('Clear', 'signClear', '', 'light') + '</div>' + para('It will appear on the resolution as: ' + a.name + ' · ' + signerLine(a) + ' · ' + date(E.today())) + '</div>' + ck('consent', 'I reviewed this exact version and this is my own response.', true), 'Record my response', id)];
     if (kind === 'fileResolution') return ['File resolution', notice(E.signaturesPending(r).length + ' required signature(s) outstanding. Unanswered and declined responses keep their actual status on the printout.') + form('finalizeResolution', hidden('version', r.version) + area('parentSummary', 'Privacy-reviewed summary for families', r.text) + area('reason', 'Record the applicable signer policy, exceptions and filing reference') + ck('confirm', 'I checked that the required signers have signed under the applicable school procedure.', true), 'File and publish parent summary', id)];
     if (kind === 'reviseResolution') return ['Correct resolution wording', notice('Starting a new version reopens secretary review and requires fresh signatures. Scope or budget changes need a new proposal and vote.') + form('reviseResolution', hidden('version', r.version) + area('reason', 'Reason for a document correction'), 'Start new version', id)];
@@ -960,6 +1013,29 @@
       return [m.state === 'for_chair' ? 'Approve minutes' : m.state === 'for_head' ? 'Note and file minutes' : 'Minutes of the meeting', '<div class="entry-meta">' + esc(m.id + ' · Meeting of ' + date(m.date)) + '</div><h3>' + esc(titleCase(m.title)) + '</h3>' + para(m.summary) + para('Due ' + date(m.due) + (m.state !== 'filed' && m.due < t() ? ' · Overdue' : '')) + '<div class="entry-actions">' + btn('Read original', 'minuteFile', m.id) + (mine ? btn(m.state === 'for_chair' ? 'Approve minutes' : 'Note and file', 'minutesReview', m.id, 'primary') : '') + '</div>'];
     }
     if (kind === 'minutes') return ['Upload meeting minutes', form('minutesUpload', input('title', 'Meeting title') + input('date', 'Meeting date', t(), 'date', 'required max="' + t() + '"') + upload('Signed minutes (photo or PDF)') + area('summary', 'Privacy-reviewed summary for families') + ck('confirm', 'I sign these minutes as secretary and submit them for chair approval.', true), 'Submit minutes')];
+    if (kind === 'activity') {
+      const act = (db().activities || []).find(i => i.id === id);
+      return [act ? 'Edit activity' : 'Add an activity', form('activitySave', input('title', 'Activity name', act?.title || '', 'text', 'required minlength="3" maxlength="100"') + input('date', 'Date', act?.date || '', 'date', 'required' + (act ? '' : ' min="' + t() + '"')) + input('time', 'Time (optional)', act?.time || '', 'text', 'maxlength="30" placeholder="4:00 PM"') + input('place', 'Place (optional)', act?.place || '', 'text', 'maxlength="100"') + area('details', 'Details (optional)', act?.details || '', 'maxlength="600"') + select('audience', 'Who is it for?', [['everyone', 'All parents and officers'], ['officers', 'Officers only']], act?.audience || 'everyone') + para('The treasurer sets the budget after the activity is added. Please do not include children’s names or photos.'), act ? 'Save changes' : 'Add activity', id)];
+    }
+    if (kind === 'activityBudget') {
+      const act = (db().activities || []).find(i => i.id === id);
+      if (!act) return ['Set a budget', empty('This activity is no longer available.')];
+      const spent = E.projectSpend(db(), act.id),
+        before = Math.max(0, (act.budget || 0) - spent);
+      return ['Set a budget', '<h3>' + esc(titleCase(act.title)) + '</h3>' + para('Already spent: ' + cash(spent)) + notice('The budget is set aside from SPTA funds that are not already committed to projects. Available for this activity: ' + cash(E.funding(db()).available + before) + '.') + form('activityBudget', input('budget', 'Budget (pesos)', act.budget ? String(act.budget / 100) : '', 'text', 'required inputmode="decimal" placeholder="3000"'), 'Save budget', id)];
+    }
+    if (kind === 'activityCancel') {
+      const act = (db().activities || []).find(i => i.id === id);
+      if (!act) return ['Cancel activity', empty('This activity is no longer available.')];
+      return ['Cancel activity', '<h3>' + esc(titleCase(act.title)) + '</h3>' + notice('Cancelling removes it from the calendar and releases any budget that is not spent.') + form('activityCancel', area('reason', 'Why is it cancelled?', '', 'required minlength="4" maxlength="200"'), 'Cancel activity', id)];
+    }
+    if (kind === 'casePhoto') {
+      const [cid, at] = String(id).split('|'),
+        c = (db().cases || []).find(x => x.id === cid),
+        ph = c?.photos?.[Number(at)];
+      if (!ph) return ['Photo evidence', empty('This photo is no longer available.')];
+      return ['Photo evidence', photoImg({file: ph}, 'Photo evidence', 'attachment-image') + '<div class="entry-meta">' + esc(c.subject) + ' · Photo ' + (Number(at) + 1) + ' of ' + c.photos.length + '</div>'];
+    }
     if (kind === 'announce') return ['Publish announcement', form('announce', input('title', 'Announcement title') + area('body', 'Complete message', '', 'required minlength="6" maxlength="1600"') + select('audience', 'Audience', [['everyone', 'All parents and officers'], ['officers', 'Officers only']]) + input('until', 'Show until (optional)', '', 'date', 'min="' + t() + '"'), 'Publish announcement')];
     if (kind === 'finance' || kind === 'adjust') return financeDialog(kind, id);
     if (kind === 'check') return ['Review handover', para(d.purpose + ' · ' + cash(d.cents)) + (d.items || []).map(x => '<div class="list-line"><span>' + esc(x.description) + '</span><b>' + cash(x.cents) + '</b></div>').join('') + btn('Open scanned original', 'evidence', d.id) + form('financeCheck', select('decision', 'Decision', [['approve', 'Approve and send to the chairperson'], ['return', 'Return to the collecting officer']]) + '<div data-when="decision" data-values="approve">' + ck('received', 'I received ' + cash(d.cents) + ' and checked the lines against the scanned original.', true) + '</div><div data-when="decision" data-values="return">' + area('reason', 'What needs correcting?') + '</div>' + para('After your approval, the chairperson gives final approval before it shows in SPTA funds.'), 'Record review', id)];
@@ -1119,7 +1195,10 @@
     cover: 'Saved.',
     profileUpdate: 'List saved.',
     announceEdit: 'Announcement updated.',
-    announceRemove: 'Announcement removed.'
+    announceRemove: 'Announcement removed.',
+    activitySave: 'Activity saved.',
+    activityBudget: 'Budget saved.',
+    activityCancel: 'Activity cancelled.'
   };
   async function change(action, payload, requestId) {
     const id = await S.run(action, payload, requestId);
@@ -1133,7 +1212,7 @@
   }
   async function attachment(type, id) {
     const item = type === 'evidence' ? db().batches.find(x => x.id === id) : db().minutes.find(x => x.id === id);
-    if (!item || !(type === 'evidence' ? canChair() || holds('treasurer') || canPost(item) || item.owner === S.me : canPrint())) throw Error('You do not have access to this document.');
+    if (!item || !(type === 'evidence' ? canChair() || holds('treasurer') || canPost(item) || item.owner === S.me : onRole(E.minuteReaders))) throw Error('You do not have access to this document.');
     if (!item.file) throw Error('This record needs a new original.');
     const url = await S.fileURL(item.file);
     cleanAttachment();
@@ -1550,6 +1629,14 @@
         payload.stamp = E.openStamp(batch);
         if (payload.decision === 'post' && !batch.noPaper && !ui.reviewed.has(S.me + '|' + payload.stamp)) throw Error('Open the supporting original before approving this post.');
       }
+      if (action === 'caseSubmit') {
+        const shots = ['evidence1', 'evidence2'].map(k => data.get(k)).filter(x => x && x.size);
+        delete payload.evidence1;
+        delete payload.evidence2;
+        if (shots.some(x => !/^image\/(jpeg|png|webp)$/.test(x.type))) throw Error('Photos must be JPG, PNG or WEBP.');
+        payload.photos = [];
+        for (const shot of shots) payload.photos.push(await within(S.fileMeta(await shrinkImage(shot)), 45000, 'Saving the photo took too long. Check your connection and try again.'));
+      }
       let file = data.get('attachment');
       if (file?.size && action === 'projectPhoto') file = await shrinkImage(file);
       if (file?.size) payload.file = await within(S.fileMeta(file), 30000, 'Saving the file took too long. Check your connection and try again.');else if (action === 'financeSubmit' && ui.scan?.stage === 'done') payload.file = ui.scan.meta ||= await S.fileMeta(ui.scan.file);
@@ -1581,14 +1668,40 @@
     ui.printRecord = null;
     render();
   });
-  async function refresh() {
-    if (ui.busy || ui.dialog || !S.db) return;
+  // A thin bar above the app tells people when the phone cannot reach the server. It lives outside #app so redrawing never removes it.
+  function setLink(down, why) {
+    let bar = document.getElementById('link-banner');
+    if (!down) {
+      if (bar) bar.hidden = true;
+      return;
+    }
+    if (!bar) {
+      bar = document.createElement('div');
+      bar.id = 'link-banner';
+      bar.className = 'link-banner';
+      bar.setAttribute('role', 'status');
+      bar.innerHTML = '<span></span><button type="button">Try again</button>';
+      bar.querySelector('button').addEventListener('click', () => {
+        bar.querySelector('button').disabled = true;
+        refresh(true).finally(() => {
+          bar.querySelector('button').disabled = false;
+        });
+      });
+      document.body.insertBefore(bar, document.body.firstChild);
+    }
+    bar.querySelector('span').textContent = why || 'You are offline. What you see may be out of date, and changes cannot be saved until you are back online.';
+    bar.hidden = false;
+  }
+  async function refresh(force) {
+    if (!S.db || !force && (ui.busy || ui.dialog)) return;
     try {
       const rev = db().revision;
       await S.refresh();
+      setLink(false);
       if (rev !== db()?.revision || !me()) render();
     } catch (e) {
-      showMessage(e.message);
+      if (e.network) setLink(true, e.network === 'server' ? 'The SPTA server is having a problem. What you see may be out of date. The app will keep trying.' : e.network === 'slow' ? 'The connection is slow. What you see may be out of date. The app will keep trying.' : '');
+      else if (force) showMessage(e.message);
     }
   }
   // A quick sideways swipe on a screen opened from More goes back. It ignores forms, sliders, photo strips and open dialogs.
@@ -1620,7 +1733,10 @@
   S.notice.addEventListener('message', refresh);
   window.addEventListener('focus', refresh);
   window.addEventListener('online', refresh);
-  window.addEventListener('offline', () => showMessage(S.shared ? 'Connection lost. Keep this page open and retry when connected.' : 'Your fictional rehearsal is stored on this device.'));
+  window.addEventListener('offline', () => {
+    if (S.shared) setLink(true);
+  });
+  ECESLang.start(render);
   S.init().then(() => {
     if (!S.shared && oldView) {
       const route = {
@@ -1643,7 +1759,24 @@
     if (S.shared) setInterval(() => {
       if (!document.hidden) refresh();
     }, 15000);
-  }).catch(e => {
-    document.getElementById('app').innerHTML = '<main class="login-shell"><h1>Open ECES Bayanihan</h1>' + para('The rehearsal could not open its local storage. Use localhost and allow this site to save data, or start the shared rehearsal server.') + para(e.message) + '</main>';
+  }).catch(function failed(e) {
+    const root = document.getElementById('app');
+    if (!S.shared) {
+      root.innerHTML = '<main class="login-shell"><h1>Open ECES Bayanihan</h1>' + para('The practice version could not open its saved data. Allow this site to save data in your browser settings, then reload the page.') + '<div class="entry-actions"><button type="button" class="btn primary" id="boot-retry">Reload</button></div></main>';
+      document.getElementById('boot-retry').addEventListener('click', () => location.reload());
+      return;
+    }
+    const off = e.network === 'offline',
+      server = e.network === 'server' || e.network === 'reply';
+    root.innerHTML = '<main class="login-shell boot-error" role="alert"><img class="boot-seal" src="assets/favicon-48.png" alt="" width="48" height="48"><h1>' + (off ? 'You are offline' : 'ECES Bayanihan could not open') + '</h1>' + para(off ? 'The app needs the internet to show the latest SPTA information. Connect to Wi-Fi or mobile data, then try again.' : server ? 'The SPTA server is having a problem right now. Your information is safe. Please try again in a few minutes.' : e.network === 'slow' ? 'The connection is too slow. Move to a place with better signal, then try again.' : 'The app could not reach the SPTA server. Check your internet connection, then try again.') + '<div class="entry-actions"><button type="button" class="btn primary" id="boot-retry">Try again</button></div>' + para('If this keeps happening, please tell an SPTA officer.') + '</main>';
+    const again = document.getElementById('boot-retry');
+    again.addEventListener('click', () => {
+      again.disabled = true;
+      again.textContent = 'Trying…';
+      S.init().then(() => location.reload(), err => {
+        failed(err);
+      });
+    });
+    window.addEventListener('online', () => again.isConnected && again.click(), { once: true });
   });
 })();

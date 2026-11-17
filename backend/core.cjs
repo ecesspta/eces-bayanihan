@@ -38,6 +38,7 @@ function visible(db, me) {
   const lead = E.leaders.includes(me.role),
     board = E.boardRoles.includes(me.role),
     printer = E.printers.includes(me.role),
+    minuteReader = E.minuteReaders.includes(me.role),
     secretary = E.holds(db, me, 'secretary'),
     finance = E.isChair(db, me) || me.role === 'treasurer' || me.role === 'vice' && db.batches.some(d => d.status === 'pending' && E.mayPost(db, me, d)),
     covers = E.covering(db, me),
@@ -157,7 +158,20 @@ function visible(db, me) {
   out.trends = {};
   if (lead) for (const c of db.cases) out.trends[c.category] = (out.trends[c.category] || 0) + 1;
   out.announcements = db.announcements.filter(n => (n.audience === 'everyone' || me.role !== 'parent') && (publisher || !n.until || n.until >= E.today()));
-  out.minutes = db.minutes.filter(m => m.state === 'filed' || printer).map(m => printer ? m : {
+  // Activities open to everyone are public. Officers-only activities (and their budgets) stay with the officers and the School Head.
+  out.activities = (db.activities || []).filter(x => x.audience === 'everyone' || board || me.role === 'head').map(x => board || me.role === 'head' ? x : {
+    id: x.id,
+    title: x.title,
+    date: x.date,
+    time: x.time,
+    place: x.place,
+    details: x.details,
+    audience: x.audience,
+    status: x.status,
+    budget: x.budget,
+    reason: x.reason
+  });
+  out.minutes = db.minutes.filter(m => m.state === 'filed' || minuteReader).map(m => minuteReader ? m : {
     id: m.id,
     title: m.title,
     date: m.date,
@@ -276,10 +290,11 @@ function createApi(store, config = {}) {
     if (!me) return false;
     // A profile picture is seen only by the person it belongs to.
     if (key === 'avatar-' + me.id) return true;
+    if (db.cases.some(c => (c.photos || []).some(x => x.key === key) && (E.canSeeCase(me, c) || E.covering(db, me) && c.assigned === E.covering(db, me)))) return true;
     if (E.leaders.includes(me.role) && db.projects.some(p => (p.photos || []).some(x => x.file.key === key))) return true;
     const finance = E.isChair(db, me) || me.role === 'treasurer';
     const holds = d => d.file?.key === key || d.history.some(h => h.file?.key === key);
-    return finance && db.batches.some(holds) || me.role === 'collector' && db.batches.some(d => d.owner === me.id && holds(d)) || E.printers.includes(me.role) && db.minutes.some(m => m.file.key === key);
+    return finance && db.batches.some(holds) || me.role === 'collector' && db.batches.some(d => d.owner === me.id && holds(d)) || E.minuteReaders.includes(me.role) && db.minutes.some(m => m.file?.key === key);
   }
   const header = (req, n) => {
     const v = req.headers[n];
@@ -447,6 +462,51 @@ function createApi(store, config = {}) {
           if (out.project) await logAdmin('Project recorded from paper', out.project);
           return send(201, out);
         }
+        if (route === '/api/admin/users' && req.method === 'GET') {
+          // Everyone who has an account, with whether they can actually sign in. No passwords, codes or private messages.
+          const snap = await store.load();
+          if (!snap) throw new HttpError(503, 'The school record has not been set up yet.');
+          const pending = new Set(snap.requests.filter(q => q.status === 'pending').map(q => q.user));
+          const mask = s => /^\d{10,13}$/.test(String(s || '')) ? String(s).slice(0, 2) + '•'.repeat(String(s).length - 6) + String(s).slice(-4) : '';
+          const people = [];
+          for (const a of snap.accounts) {
+            const record = a.active && !a.vacant && !a.invite ? await store.getAuth(a.id) : null;
+            const status = !a.active ? 'deactivated' : a.vacant ? 'vacant' : a.invite ? 'invited' : record ? 'active' : a.demo ? 'sample' : 'no_access';
+            people.push({
+              id: a.id,
+              name: a.name,
+              role: a.role,
+              seat: a.homeroom || '',
+              mobile: mask(a.login),
+              status,
+              waiting: pending.has(a.id),
+              joined: a.joinedAt || a.consent?.at || '',
+              last: a.lastSignIn || '',
+              phones: (a.devices || []).length
+            });
+          }
+          const count = {};
+          for (const x of people) count[x.status] = (count[x.status] || 0) + 1;
+          await logAdmin('User list opened');
+          return send(200, {
+            total: people.length,
+            count,
+            people
+          });
+        }
+        if (route === '/api/admin/voted-project' && req.method === 'POST') {
+          // A project voted and approved on paper before the app: it goes straight to a draft resolution for signatures.
+          const v = JSON.parse((req.body || Buffer.alloc(0)).toString() || '{}');
+          const out = await store.atomic(async tx => {
+            const fresh = await tx.load();
+            if (!fresh || !fresh.accounts.some(a => !a.demo && E.liveRoles.includes(a.role))) throw new HttpError(409, 'Start the real record first.');
+            const r = E.importVoted(fresh, { ...v, no_: v.number });
+            await tx.save(r.db);
+            return { id: r.id, project: r.project };
+          });
+          await logAdmin('Voted project recorded from paper', out.id);
+          return send(201, out);
+        }
         if (route === '/api/admin/export' && req.method === 'GET') {
           const everything = await store.load();
           await logAdmin('Backup downloaded');
@@ -540,12 +600,19 @@ function createApi(store, config = {}) {
         return send(200, { avatar: stamp });
       }
       if (route === '/api/files') {
-        if (!me || !['secretary', 'treasurer', 'collector', ...E.leaders].includes(me.role)) throw new HttpError(403, 'This role cannot upload records.');
-        if (body.length > 8 * 1024 * 1024) throw new HttpError(413, 'File or request too large.');
+        const staff = me && ['secretary', 'treasurer', 'collector', ...E.leaders].includes(me.role);
+        // Parents and HPTA presidents may upload photos only, as evidence on a suggestion or concern.
+        if (!me || !staff && !['parent', 'bod'].includes(me.role)) throw new HttpError(403, 'This role cannot upload records.');
+        if (!staff) {
+          await brake('photo:' + me.id, 6, 86400000, 'You can add up to 6 photos a day. Please try again tomorrow.');
+          await brake('photo-ip:' + (req.ip || 'unknown'), 30, 86400000, 'Too many photos from this connection today. Please try again tomorrow.');
+        }
+        if (body.length > (staff ? 8 : 3) * 1024 * 1024) throw new HttpError(413, 'File or request too large.');
         const buf = body;
         const sig = h => buf.subarray(0, h.length / 2).equals(Buffer.from(h, 'hex'));
         const type = sig('255044462d') ? 'application/pdf' : sig('89504e470d0a1a0a') ? 'image/png' : sig('ffd8ff') ? 'image/jpeg' : sig('52494646') && buf.subarray(8, 12).toString() === 'WEBP' ? 'image/webp' : '';
         if (!type || header(req, 'content-type') !== type) throw new HttpError(400, 'Invalid document type or contents.');
+        if (!staff && type === 'application/pdf') throw new HttpError(400, 'Choose a JPG, PNG or WEBP photo.');
         const f = E.photo({
           key: hex(20),
           name: decodeURIComponent(header(req, 'x-filename')),
@@ -633,7 +700,10 @@ function createApi(store, config = {}) {
         const t = await store.atomic(async tx => {
           const tok = await setLogin(tx, u.id, stay(u));
           const fresh = await tx.load();
-          if (E.seenOn(fresh, u.id, device)) await tx.save(fresh);
+          E.seenOn(fresh, u.id, device);
+          const mine = E.account(fresh, u.id);
+          if (mine) mine.lastSignIn = new Date().toISOString();
+          await tx.save(fresh);
           return tok;
         });
         return send(200, {
@@ -651,6 +721,8 @@ function createApi(store, config = {}) {
       }
       if (route === '/api/action') {
         if (v.action === 'register') throw new HttpError(403, 'Use the registration form.');
+        // A second brake on the connection, in case someone hides their phone identity.
+        if (['submitProposal', 'caseSubmit'].includes(v.action) && ['parent', 'bod'].includes(me.role)) await brake('submit-ip:' + (req.ip || 'unknown'), 15, 86400000, 'Too many submissions from this connection today. Please try again tomorrow.');
         if (!v.payload || typeof v.payload !== 'object' || typeof v.requestId !== 'string' || v.requestId.length > 100 || !v.requestId.length) throw new HttpError(400, 'Invalid action.');
         const result = await store.atomic(async tx => {
           const fresh = await tx.load();

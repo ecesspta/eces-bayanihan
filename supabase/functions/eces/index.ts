@@ -79,6 +79,7 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
   const boardRoles = ['chair', 'vice', 'secretary', 'treasurer', 'collector', 'bod'];
   const leaders = ['head', 'chair', 'vice'];
   const printers = ['head', 'chair', 'vice', 'secretary'];
+  const minuteReaders = ['head', ...boardRoles];
   const labels = {
     received: 'Received',
     returned: 'Needs revision',
@@ -173,6 +174,8 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
   }
   // Sarah's rules: two accounts a phone, a month to vote unless the date is changed,
   // four direct chairperson proposals a school year, and the chairperson may stand in for three officers.
+  // Anti-spam: one phone may send only a few proposals, suggestions and concerns, however many accounts it uses.
+  const submissionsPerDay = 3, submissionsPerWeek = 8, photosPerCase = 2;
   const hiddenPerMonth = 2,
     accountsPerDevice = 2,
     voteDays = 30,
@@ -230,8 +233,8 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
   function requiredYes(n) {
     return majority(n);
   }
-  // Sarah's rule: a proposal proceeds when yes votes reach 50% of all officers on the roster.
-  const halfOf = n => Math.ceil(n / 2);
+  // Sarah's rule: a proposal proceeds when yes votes reach 51% of all officers on the roster, which is more than half.
+  const halfOf = n => majority(n);
   const yesNeeded = b => b.minimumYes || requiredYes(b.present.length);
   // Opens the in-app officer vote for a screened proposal.
   function openVote(db, p, closes) {
@@ -239,7 +242,7 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
     check(roster.length > 0, 'Add officers to the roster before opening a vote.');
     const b = {
       minimumYes: halfOf(roster.length),
-      rule: '50% of all officers',
+      rule: '51% of all officers',
       id: newId(db, 'B'),
       proposal: p.id,
       rev: p.rev,
@@ -317,12 +320,31 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
   function homeroomKey(value) {
     return String(value || '').normalize('NFKC').toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '');
   }
-  function resolutionText(title, budget, direct = false) {
-    return 'The SPTA records ' + (direct ? 'the chairperson’s proposal “' + title + '”, added without an officer vote,' : 'the board decision on “' + title + '”') + ' and School-Head approval for the project with an allocation of ₱' + (budget / 100).toLocaleString('en-PH', {
+  const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  const longDate = iso => /^\d{4}-\d{2}-\d{2}/.test(String(iso || '')) ? monthNames[Number(iso.slice(5, 7)) - 1] + ' ' + Number(iso.slice(8, 10)) + ', ' + iso.slice(0, 4) : '';
+  // The resolution follows the school's own format: a Filipino resolution with SAPAGKAT clauses and numbered SEKSYON.
+  // info (all optional): date of the vote, how it was held, the count, the School Head's approval date, and the project details.
+  function resolutionText(title, budget, direct = false, info = {}) {
+    const money = '₱' + (budget / 100).toLocaleString('en-PH', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
-    }) + '.';
+    });
+    const on = longDate(info.date);
+    const inApp = !info.meeting || info.meeting === 'In-app officer vote';
+    // Project details are quoted only when they carry no peso figure that differs from the voted amount.
+    const found = String(info.text || '').match(/₱\s?[\d,]+(?:\.\d+)?/g) || [];
+    const detail = info.text && found.every(x => Math.round(Number(x.replace(/[₱\s,]/g, '')) * 100) === budget) ? ': ' + String(info.text).trim().replace(/\s+/g, ' ').replace(/[.;:]+$/, '') : '';
+    const t = info.tally;
+    const parts = [direct ? 'KAMI, mga opisyales ng SPTA ng East Central Elementary School, ay nagpasiya na:' : 'KAMI, mga opisyales at miyembro ng SPTA ng East Central Elementary School, sa ' + (inApp ? 'isang botohan ng mga opisyal' : 'isang pagpupulong') + (on ? ' na ginanap noong ' + on : '') + ', ay nagpasiya na:', 'SAPAGKAT, ang proyektong “' + title + '” ay iminungkahi para sa ikabubuti ng mga mag-aaral ng East Central Elementary School' + detail + ';', direct ? 'SAPAGKAT, ang panukalang ito ay direktang inihain ng Chairperson nang walang botohan ng mga opisyal, ayon sa panuntunan ng SPTA, at ipinadala sa School Head para sa pag-apruba;' : 'SAPAGKAT, sa botohan ng mga opisyal ng SPTA, ang panukala ay nakakuha ng ' + (t ? t.yes + ' pagsang-ayon, ' + t.no + ' pagtutol at ' + t.abstain + ' hindi pumanig' + (info.officers ? ' mula sa ' + info.officers + ' na opisyal' : '') + ', at umabot sa hinihinging 51% ng lahat ng opisyal' : 'sapat na pagsang-ayon ng mga opisyal') + ';', 'SAPAGKAT, inaprubahan ng School Head ang panukala' + (info.approved ? ' noong ' + longDate(info.approved) : '') + ';', 'SAPAGKAT, ang inilaang halaga para sa proyekto ay ' + money + ', mula sa mga boluntaryong kontribusyon at pondo ng SPTA na hiwalay sa badyet ng paaralan' + (info.fundraising ? ', at ang karagdagang kakailanganin ay malilikom sa pamamagitan ng boluntaryong fundraising' : '') + ';', 'KAYA’T, SA KAPASYAHAN NG NAKARARAMI, AY NAPAGKAYARIAN NA:', 'SEKSYON 1. Ang SPTA ay pumapayag at nagpapatibay sa proyektong “' + title + '” na may inilaang halagang ' + money + '.', 'SEKSYON 2. Ang pondo ay gagamitin lamang para sa nasabing proyekto. Ang bawat gastos ay itatala at ipapakita sa mga magulang, at magkakaroon ng maayos na liquidation.', 'SEKSYON 3. Ang pagbabago sa halaga o layunin ng proyekto ay mangangailangan ng bagong botohan ng mga opisyal at bagong pag-apruba ng School Head.', 'SEKSYON 4. Ang resolusyong ito ay kusang-loob naming pinagtibay.', 'Pinagtibay ngayong araw ng ' + longDate(info.signed || today()) + ' sa San Fabian, Pangasinan.'];
+    return parts.join('\n\n');
   }
+  // The title line of the resolution, in the school's format.
+  const resolutionHeading = r => 'ISANG RESOLUSYON NA NAGPAPATIBAY SA PROYEKTONG “' + String(r.title || '').toUpperCase() + '” AT SA PAGLALAAN NG ' + ('₱' + (r.budget / 100).toLocaleString('en-PH', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  }));
+  // Resolutions are numbered through the school year, as on the school's paper copies. The secretary can change the number before release.
+  const nextResolutionNumber = (db, year) => 1 + db.resolutions.filter(x => x.sy === year).reduce((n, x) => Math.max(n, x.no || 0), 0);
   const peso = cents => '₱' + (cents / 100).toLocaleString('en-PH', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
@@ -372,12 +394,25 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
         short: need - covered
       };
     });
+    // An activity's budget is set aside the same way, after the projects.
+    const activities = {};
+    (db.activities || []).filter(x => x.status === 'scheduled' && x.budget > 0).forEach(x => {
+      const need = Math.max(0, x.budget - projectSpend(db, x.id)),
+        covered = Math.min(need, cash);
+      cash -= covered;
+      committed += need;
+      activities[x.id] = {
+        need,
+        short: need - covered
+      };
+    });
     const available = Math.max(0, balance - committed);
     return {
       balance,
       committed,
       available,
       projects,
+      activities,
       shortFor: cents => Math.max(0, (Number(cents) || 0) - available)
     };
   }
@@ -393,7 +428,7 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
     cancelled: 'The SPTA project from your proposal was cancelled. The reason is posted under Projects.',
     returned: 'Your proposal was reviewed and needs a revision. Read the note, then revise and resubmit.',
     declined: 'Your proposal was reviewed and will not proceed. Read the note for the reason.',
-    not_adopted: 'The SPTA officers’ vote did not reach 50%, so the proposal will not proceed for now.',
+    not_adopted: 'The SPTA officers’ vote did not reach 51%, so the proposal will not proceed for now.',
     withdrawn: 'You withdrew this proposal. Nothing more will happen with it.'
   };
   function autoReply(item) {
@@ -432,6 +467,7 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
     if (isChair(db, a)) return untouched;
     return a?.role === 'vice' && a.active && untouched && [d.owner, d.checkedBy].some(x => account(db, x)?.role === 'chair');
   }
+  const planners = ['head', 'chair', 'vice', 'secretary', 'treasurer'];
   const canAnnounce = (db, a) => !!a?.active && (a.role === 'head' || a.role === 'secretary' || isChair(db, a));
   function financeReview(db, a) {
     check(isChair(db, a), 'Chairperson posting authority is required.');
@@ -469,6 +505,14 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
       type: meta.type,
       size: bytes
     };
+  }
+  function throttle(db, a, device, context) {
+    if (context.practice === true || !device || !['parent', 'bod'].includes(a.role)) return;
+    const now = Date.now();
+    const times = [...db.cases, ...db.proposals].filter(x => x.sent && (x.owner === a.id || x.device === device)).map(x => Date.parse(x.sent)).filter(Number.isFinite);
+    const inLast = ms => times.filter(t => now - t < ms).length;
+    check(inLast(86400000) < submissionsPerDay, 'This phone has reached today’s limit of ' + submissionsPerDay + ' submissions. Please try again tomorrow.');
+    check(inLast(7 * 86400000) < submissionsPerWeek, 'This phone has reached this week’s limit of ' + submissionsPerWeek + ' submissions. Please try again next week.');
   }
   const onDesk = c => c.kind !== 'inspection' && ['chair', 'vice'].includes(c.assigned);
   // Who may read a case. The sender always can. Records requests go to the secretary.
@@ -556,6 +600,91 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
     });
     return id;
   }
+  // A project the officers already voted on, and the School Head already approved, before the app was in use.
+  // It goes straight to a draft resolution, so the secretary can release it and the officers can sign. Returns the new record.
+  function importVoted(db, v) {
+    const title = words(v.title, 'Project title', 4, 100),
+      text = words(v.text, 'Project description', 8, 700),
+      budget = amount(v.budget, true),
+      voted = dateValue(v.date),
+      approved = dateValue(v.approved),
+      meeting = words(v.meeting || 'SPTA meeting', 'Meeting name', 3, 100),
+      n = Number(v.officers),
+      yes = Number(v.yes),
+      no = Number(v.no || 0),
+      abstain = Number(v.abstain || 0);
+    check(Number.isInteger(n) && n >= 1 && n <= 200, 'Enter how many officers were on the roster for the vote.');
+    check([yes, no, abstain].every(x => Number.isInteger(x) && x >= 0) && yes + no + abstain <= n, 'The votes cannot add up to more than the officers on the roster.');
+    check(yes >= majority(n), 'Yes votes did not reach 51% of the officers (' + majority(n) + ' of ' + n + '), so this project was not adopted.');
+    check(approved >= voted && approved <= today(), 'The School Head approval cannot be before the vote or in the future.');
+    check(db.accounts.some(x => x.role === 'head' && x.active) && db.accounts.some(x => x.role === 'chair' && x.active), 'The School Head and chairperson must be set up first.');
+    const draft = duplicate(db);
+    const proposal = {
+      id: newId(draft, 'P'),
+      title,
+      details: text,
+      category: 'Other',
+      owner: 'chair',
+      sender: sender(account(draft, 'chair')),
+      device: '',
+      created: voted,
+      budget,
+      fundraising: false,
+      status: 'awaiting_head',
+      published: true,
+      supports: 0,
+      supporters: [],
+      rev: 1,
+      history: [],
+      publicTitle: title,
+      publicText: text,
+      imported: true
+    };
+    const ballot = {
+      minimumYes: majority(n),
+      rule: '51% of all officers',
+      id: newId(draft, 'B'),
+      proposal: proposal.id,
+      rev: 1,
+      title,
+      body: text,
+      budget,
+      roster: [],
+      present: Array.from({ length: n }, (_, i) => 'recorded-' + i),
+      participated: [],
+      counts: { yes, no, abstain },
+      named: [],
+      method: 'meeting',
+      date: voted,
+      closes: voted,
+      meeting,
+      mode: 'Recorded from paper',
+      status: 'closed',
+      passed: true,
+      closed: voted + 'T00:00:00.000Z',
+      opened: voted + 'T00:00:00.000Z'
+    };
+    draft.proposals.unshift(proposal);
+    draft.ballots.push(ballot);
+    proposal.status = 'awaiting_head';
+    proposal.ballot = ballot.id;
+    const x = transition(draft, 'head', 'headDecision', { id: proposal.id, decision: 'approve' }, 'import-' + proposal.id);
+    const out = x.db,
+      res = out.resolutions.find(r => r.proposal === proposal.id),
+      p = out.proposals.find(r => r.id === proposal.id);
+    p.approved = approved + 'T00:00:00.000Z';
+    res.approved = p.approved;
+    res.imported = true;
+    if (v.no_ !== undefined && v.no_ !== '') {
+      const num = Number(v.no_);
+      check(Number.isInteger(num) && num >= 1 && num <= 999, 'Enter the resolution number, from 1 to 999.');
+      check(!out.resolutions.some(r => r !== res && r.sy === res.sy && r.no === num), 'Another resolution already has number ' + num + ' this year.');
+      res.no = num;
+    }
+    res.clause = resolutionText(title, budget, false, { date: voted, meeting, tally: { yes, no, abstain }, officers: n, approved, fundraising: false, text });
+    out.audit.push({ who: 'IT administrator', role: '', event: 'Voted project recorded from paper', ref: res.id, at: at() });
+    return { db: out, id: res.id, project: res.project };
+  }
   // The real school record: no sample content, only the officers, each waiting for a one-time invite.
   const liveRoles = ['head', 'chair', 'vice', 'secretary', 'treasurer', 'collector'];
   function createLive(officers) {
@@ -608,6 +737,7 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
         date: today()
       }],
       minutes: [],
+      activities: [],
       batches: [],
       remittances: [],
       notes: [],
@@ -631,6 +761,7 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
     const login = mobileNumber(v.mobile);
     check(!db.accounts.some(x => x.login === login && x !== a), 'An account already uses this mobile number.');
     a.login = login;
+    a.joinedAt = at();
     delete a.invite;
     delete a.inviteAt;
     a.consent = {
@@ -794,6 +925,7 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
         date: '2026-11-10'
       }],
       minutes: [],
+      activities: [],
       batches: [],
       remittances: [],
       notes: [],
@@ -857,7 +989,7 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
             abstain: 2
           },
           minimumYes: halfOf(roster.length),
-          rule: '50% of all officers',
+          rule: '51% of all officers',
           named: [],
           method: 'secret',
           status: 'open',
@@ -905,6 +1037,37 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
       }
     }
     // Officers' practice copy: the School Head, chairperson and Vice-Chairperson profiles are switched off, so nobody can sign in as them.
+    // Practice version only: a few sample activities, so the new Activities page is not empty.
+    if (!old && globalThis.ECESSamplePhotos) {
+      const ga = today() <= '2026-12-07' ? '2026-12-07' : plusDays(today(), 14);
+      db.activities = [{
+        id: 'AC-1',
+        title: 'Year-end party for SPTA officers',
+        date: plusDays(today(), 30),
+        time: '4:00 PM',
+        place: 'School covered court',
+        details: 'A thank-you get-together for the officers. Bring a dish to share.',
+        audience: 'officers',
+        status: 'scheduled',
+        budget: 0,
+        by: 'secretary',
+        role: 'secretary',
+        created: at()
+      }, {
+        id: 'AC-2',
+        title: 'SPTA General Assembly',
+        date: ga,
+        time: '2:00 PM',
+        place: 'School grounds',
+        details: 'All parents are invited. The officers will report on projects and SPTA funds.',
+        audience: 'everyone',
+        status: 'scheduled',
+        budget: 0,
+        by: 'chair',
+        role: 'chair',
+        created: at()
+      }];
+    }
     if (globalThis.ECES_OFFICERS_ONLY === true) db.accounts.filter(x => ['head', 'chair', 'vice'].includes(x.id)).forEach(x => {
       x.active = false;
     });
@@ -923,6 +1086,7 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
     } : null);
     check(a?.active, 'Sign in to continue.');
     expire(db);
+    db.activities = db.activities || [];
     const key = requestId ? actorId + '|' + action + '|' + requestId : '';
     if (key && db.receipts.some(r => r.key === key)) return {
       db: original,
@@ -993,7 +1157,8 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
             role: 'parent',
             active: true,
             boardSeat: false,
-            demo: false
+            demo: false,
+            joinedAt: at()
           };
           if (homeroom) user.homeroom = homeroom;
           if (childName) user.childName = childName;
@@ -1113,6 +1278,7 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
         }
       case 'submitProposal':
         {
+          throttle(db, a, device, context);
           const p = {
             id: newId(db, 'P'),
             title: words(v.title, 'Title', 4, 100),
@@ -1122,6 +1288,7 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
             sender: sender(a),
             device,
             created: today(),
+            sent: at(),
             budget: 0,
             status: 'received',
             published: false,
@@ -1442,7 +1609,19 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
               })),
               signatures: {},
               archive: [],
-              clause: resolutionText(p.amends ? project.title : b.title, b.budget, !!p.direct) + (replaces.length ? ' This replaces the earlier resolution ' + replaces.join(', ') + ', which authorized a different allocation.' : ''),
+              no: nextResolutionNumber(db, Number(today().slice(0, 4))),
+              sy: Number(today().slice(0, 4)),
+              clause: resolutionText(p.amends ? project.title : b.title, b.budget, !!p.direct, {
+                date: b.date,
+                meeting: b.meeting,
+                tally: b.counts ? {
+                  ...b.counts
+                } : null,
+                officers: b.present?.length,
+                approved: String(p.approved || at()).slice(0, 10),
+                fundraising: !!p.fundraising,
+                text: p.amends ? project.text : b.body
+              }).replace(/\n\nPinagtibay ngayong araw/, replaces.length ? '\n\nPinapalitan ng resolusyong ito ang naunang resolusyon ' + replaces.join(', ') + ', na may ibang inilaang halaga.\n\nPinagtibay ngayong araw' : '\n\nPinagtibay ngayong araw'),
               supersedes: replaces,
               published: false
             };
@@ -1733,7 +1912,13 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
           check(required.length > 0 && required.every(id => invited.includes(id)), 'Choose required signers from the invited board members.');
           r.signerPolicy = required.length === invited.length ? 'All officers' : words(v.signerPolicy, 'School signer policy reference', 5, 200);
           r.requiredSigners = required;
-          r.clause = words(v.clause, 'Resolution text', 12, 1200);
+          r.clause = words(v.clause, 'Resolution text', 12, 4000);
+          if (v.no !== undefined && v.no !== '') {
+            const no = Number(v.no);
+            check(Number.isInteger(no) && no >= 1 && no <= 999, 'Enter the resolution number, from 1 to 999.');
+            check(!db.resolutions.some(x => x.id !== r.id && x.sy === r.sy && x.no === no), 'Another resolution already has number ' + no + ' this year.');
+            r.no = no;
+          }
           check(sameAmount(r.clause, r.budget), 'The resolution must state the amount the officers voted (' + peso(r.budget) + '), and no other amount. A different amount needs a new officer vote through “Change project”.');
           // The secretary may adjust the wording. The allocation stays as voted.
           if (v.title !== undefined) r.title = words(v.title, 'Project title', 4, 100);
@@ -1815,6 +2000,19 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
       case 'caseSubmit':
         {
           const kind = choice(v.kind, ['suggestion', 'concern', 'inspection'], 'submission type');
+          // Up to two photos as evidence, only on a suggestion or concern. The original file name is never kept, because it could name the sender.
+          const given = Array.isArray(v.photos) ? v.photos.filter(Boolean) : [];
+          check(given.length <= photosPerCase, 'You can attach up to ' + photosPerCase + ' photos.');
+          check(kind !== 'inspection' || !given.length, 'A records request does not take photos.');
+          const photos = given.map((f, i) => {
+            const x = photo(f);
+            check(x.type !== 'application/pdf', 'Photos must be JPG, PNG or WEBP.');
+            return {
+              ...x,
+              name: 'Photo ' + (i + 1)
+            };
+          });
+          check(new Set(photos.map(x => x.key)).size === photos.length, 'Choose two different photos.');
           id = newId(db, kind === 'concern' ? 'C' : kind === 'inspection' ? 'I' : 'S');
           const assigned = kind === 'inspection' ? 'secretary' : 'chair';
           // A signed-in parent may hide their name from the reviewer. The record keeps the account for the IT administrator only.
@@ -1825,6 +2023,7 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
             // Counted for the account and for the device, so a second account on the same phone does not add more.
             check(db.cases.filter(c => (c.owner === a.id || device && c.device === device) && c.hidden && c.created.slice(0, 7) === today().slice(0, 7)).length < hiddenPerMonth, 'You can hide your name on ' + hiddenPerMonth + ' submissions a month. Send this one with your name.');
           }
+          throttle(db, a, device, context);
           db.cases.unshift({
             id,
             kind,
@@ -1836,7 +2035,9 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
             sender: sender(a),
             device,
             hidden,
+            photos,
             created: today(),
+            sent: at(),
             due: plusDays(today(), 5),
             status: 'received',
             reply: '',
@@ -1964,6 +2165,67 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
           changed('Announcement published');
           break;
         }
+      case 'activitySave':
+        {
+          allows(a, planners);
+          const edit = id ? get(db.activities, id) : null;
+          if (edit) check(edit.status === 'scheduled' && (edit.by === a.id || isChair(db, a) || a.role === 'head' || a.role === 'vice'), 'Only the person who added it, the chairperson, Vice-Chairperson or School Head can change an activity.');
+          const day = dateValue(v.date);
+          check(edit || day >= today(), 'Choose today or a later date.');
+          const f = {
+            title: words(v.title, 'Activity name', 3, 100),
+            date: day,
+            time: v.time ? words(v.time, 'Time', 1, 30) : '',
+            place: v.place ? words(v.place, 'Place', 2, 100) : '',
+            details: v.details ? words(v.details, 'Details', 6, 600) : '',
+            audience: choice(v.audience, ['everyone', 'officers'], 'audience')
+          };
+          if (edit) {
+            Object.assign(edit, f);
+            edit.edited = at();
+            changed('Activity updated');
+          } else {
+            id = newId(db, 'AC');
+            db.activities.unshift({
+              id,
+              ...f,
+              status: 'scheduled',
+              budget: 0,
+              by: a.id,
+              role: a.role,
+              created: at()
+            });
+            changed('Activity added');
+          }
+          break;
+        }
+      case 'activityBudget':
+        {
+          check(holds(db, a, 'treasurer'), 'The treasurer sets an activity’s budget. The chairperson may stand in while the treasurer is away.');
+          const act = get(db.activities, id);
+          check(act.status === 'scheduled', 'This activity is no longer on the calendar.');
+          const cents = amount(v.budget, true),
+            spent = projectSpend(db, act.id),
+            before = Math.max(0, (act.budget || 0) - spent);
+          check(cents >= spent, 'The budget cannot go below ' + peso(spent) + ', which is already spent.');
+          check(cents - spent <= funding(db).available + before, 'SPTA funds that are not already set aside come to ' + peso(funding(db).available + before) + '. Choose a smaller budget.');
+          act.budget = cents;
+          act.budgetBy = a.id;
+          act.budgetAt = at();
+          changed('Activity budget set');
+          break;
+        }
+      case 'activityCancel':
+        {
+          allows(a, planners);
+          const act = get(db.activities, id);
+          check(act.status === 'scheduled', 'This activity is already cancelled.');
+          check(act.by === a.id || isChair(db, a) || a.role === 'head' || a.role === 'vice', 'Only the person who added it, the chairperson, Vice-Chairperson or School Head can cancel an activity.');
+          act.reason = words(v.reason, 'Reason', 4, 200);
+          act.status = 'cancelled';
+          changed('Activity cancelled');
+          break;
+        }
       case 'minutesUpload':
         {
           check(holds(db, a, 'secretary'), 'The secretary does this. The chairperson may stand in while the secretary is away.');
@@ -2033,7 +2295,12 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
           check(items.length > 0 && items.length <= 60, 'Add 1 to 60 checked items.');
           const cents = items.reduce((n, x) => n + x.cents, 0);
           const project = v.project || '';
-          if (project) {
+          if (project && project.startsWith('AC-')) {
+            const act = get(db.activities, project);
+            check(direction === 'out' && act.status === 'scheduled', 'Choose an activity that is still on the calendar.');
+            check(act.budget > 0, 'The treasurer has not set aside a budget for this activity yet.');
+            check(cents <= act.budget - projectSpend(db, act.id), 'This exceeds the remaining budget for this activity.');
+          } else if (project) {
             const p = get(db.projects, project);
             check(direction === 'out' && p.status !== 'cancelled', 'Choose an active expense project.');
             check(cents <= p.budget - projectSpend(db, p.id), 'This exceeds the remaining project allocation.');
@@ -2121,7 +2388,10 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
             choice(v.decision, ['post'], 'decision');
             check(v.reviewed === true, d.noPaper ? 'Confirm that you read why there is no paper original.' : 'Open the supporting file and confirm your review.');
             check(v.publicSafe === true, 'Confirm the purpose is safe to publish.');
-            if (d.direction === 'out' && d.project) {
+            if (d.direction === 'out' && d.project && d.project.startsWith('AC-')) {
+              const act = get(db.activities, d.project);
+              check(act.status === 'scheduled' && d.cents <= act.budget - projectSpend(db, act.id), 'The activity budget no longer permits this expense.');
+            } else if (d.direction === 'out' && d.project) {
               const p = get(db.projects, d.project);
               check(p.status !== 'cancelled' && d.cents <= p.budget - projectSpend(db, p.id), 'The project allocation no longer permits this expense.');
             }
@@ -2174,15 +2444,22 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
     requiredSigners,
     signaturesPending,
     resolutionText,
+    resolutionHeading,
+    longDate,
+    nextResolutionNumber,
     roles,
     leaders,
     printers,
+    minuteReaders,
     boardRoles,
     categories,
     labels,
     recipients,
     account,
     hiddenPerMonth,
+    submissionsPerDay,
+    submissionsPerWeek,
+    photosPerCase,
     accountsPerDevice,
     voteDays,
     voteCloses,
@@ -2199,6 +2476,8 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
     addSeats,
     setOpening,
     addPastProject,
+    importVoted,
+    planners,
     officerJoin,
     liveRoles,
     loginKey,
@@ -2273,6 +2552,7 @@ function visible(db, me) {
   const lead = E.leaders.includes(me.role),
     board = E.boardRoles.includes(me.role),
     printer = E.printers.includes(me.role),
+    minuteReader = E.minuteReaders.includes(me.role),
     secretary = E.holds(db, me, 'secretary'),
     finance = E.isChair(db, me) || me.role === 'treasurer' || me.role === 'vice' && db.batches.some(d => d.status === 'pending' && E.mayPost(db, me, d)),
     covers = E.covering(db, me),
@@ -2392,7 +2672,20 @@ function visible(db, me) {
   out.trends = {};
   if (lead) for (const c of db.cases) out.trends[c.category] = (out.trends[c.category] || 0) + 1;
   out.announcements = db.announcements.filter(n => (n.audience === 'everyone' || me.role !== 'parent') && (publisher || !n.until || n.until >= E.today()));
-  out.minutes = db.minutes.filter(m => m.state === 'filed' || printer).map(m => printer ? m : {
+  // Activities open to everyone are public. Officers-only activities (and their budgets) stay with the officers and the School Head.
+  out.activities = (db.activities || []).filter(x => x.audience === 'everyone' || board || me.role === 'head').map(x => board || me.role === 'head' ? x : {
+    id: x.id,
+    title: x.title,
+    date: x.date,
+    time: x.time,
+    place: x.place,
+    details: x.details,
+    audience: x.audience,
+    status: x.status,
+    budget: x.budget,
+    reason: x.reason
+  });
+  out.minutes = db.minutes.filter(m => m.state === 'filed' || minuteReader).map(m => minuteReader ? m : {
     id: m.id,
     title: m.title,
     date: m.date,
@@ -2511,10 +2804,11 @@ function createApi(store, config = {}) {
     if (!me) return false;
     // A profile picture is seen only by the person it belongs to.
     if (key === 'avatar-' + me.id) return true;
+    if (db.cases.some(c => (c.photos || []).some(x => x.key === key) && (E.canSeeCase(me, c) || E.covering(db, me) && c.assigned === E.covering(db, me)))) return true;
     if (E.leaders.includes(me.role) && db.projects.some(p => (p.photos || []).some(x => x.file.key === key))) return true;
     const finance = E.isChair(db, me) || me.role === 'treasurer';
     const holds = d => d.file?.key === key || d.history.some(h => h.file?.key === key);
-    return finance && db.batches.some(holds) || me.role === 'collector' && db.batches.some(d => d.owner === me.id && holds(d)) || E.printers.includes(me.role) && db.minutes.some(m => m.file.key === key);
+    return finance && db.batches.some(holds) || me.role === 'collector' && db.batches.some(d => d.owner === me.id && holds(d)) || E.minuteReaders.includes(me.role) && db.minutes.some(m => m.file?.key === key);
   }
   const header = (req, n) => {
     const v = req.headers[n];
@@ -2682,6 +2976,51 @@ function createApi(store, config = {}) {
           if (out.project) await logAdmin('Project recorded from paper', out.project);
           return send(201, out);
         }
+        if (route === '/api/admin/users' && req.method === 'GET') {
+          // Everyone who has an account, with whether they can actually sign in. No passwords, codes or private messages.
+          const snap = await store.load();
+          if (!snap) throw new HttpError(503, 'The school record has not been set up yet.');
+          const pending = new Set(snap.requests.filter(q => q.status === 'pending').map(q => q.user));
+          const mask = s => /^\d{10,13}$/.test(String(s || '')) ? String(s).slice(0, 2) + '•'.repeat(String(s).length - 6) + String(s).slice(-4) : '';
+          const people = [];
+          for (const a of snap.accounts) {
+            const record = a.active && !a.vacant && !a.invite ? await store.getAuth(a.id) : null;
+            const status = !a.active ? 'deactivated' : a.vacant ? 'vacant' : a.invite ? 'invited' : record ? 'active' : a.demo ? 'sample' : 'no_access';
+            people.push({
+              id: a.id,
+              name: a.name,
+              role: a.role,
+              seat: a.homeroom || '',
+              mobile: mask(a.login),
+              status,
+              waiting: pending.has(a.id),
+              joined: a.joinedAt || a.consent?.at || '',
+              last: a.lastSignIn || '',
+              phones: (a.devices || []).length
+            });
+          }
+          const count = {};
+          for (const x of people) count[x.status] = (count[x.status] || 0) + 1;
+          await logAdmin('User list opened');
+          return send(200, {
+            total: people.length,
+            count,
+            people
+          });
+        }
+        if (route === '/api/admin/voted-project' && req.method === 'POST') {
+          // A project voted and approved on paper before the app: it goes straight to a draft resolution for signatures.
+          const v = JSON.parse((req.body || Buffer.alloc(0)).toString() || '{}');
+          const out = await store.atomic(async tx => {
+            const fresh = await tx.load();
+            if (!fresh || !fresh.accounts.some(a => !a.demo && E.liveRoles.includes(a.role))) throw new HttpError(409, 'Start the real record first.');
+            const r = E.importVoted(fresh, { ...v, no_: v.number });
+            await tx.save(r.db);
+            return { id: r.id, project: r.project };
+          });
+          await logAdmin('Voted project recorded from paper', out.id);
+          return send(201, out);
+        }
         if (route === '/api/admin/export' && req.method === 'GET') {
           const everything = await store.load();
           await logAdmin('Backup downloaded');
@@ -2775,12 +3114,19 @@ function createApi(store, config = {}) {
         return send(200, { avatar: stamp });
       }
       if (route === '/api/files') {
-        if (!me || !['secretary', 'treasurer', 'collector', ...E.leaders].includes(me.role)) throw new HttpError(403, 'This role cannot upload records.');
-        if (body.length > 8 * 1024 * 1024) throw new HttpError(413, 'File or request too large.');
+        const staff = me && ['secretary', 'treasurer', 'collector', ...E.leaders].includes(me.role);
+        // Parents and HPTA presidents may upload photos only, as evidence on a suggestion or concern.
+        if (!me || !staff && !['parent', 'bod'].includes(me.role)) throw new HttpError(403, 'This role cannot upload records.');
+        if (!staff) {
+          await brake('photo:' + me.id, 6, 86400000, 'You can add up to 6 photos a day. Please try again tomorrow.');
+          await brake('photo-ip:' + (req.ip || 'unknown'), 30, 86400000, 'Too many photos from this connection today. Please try again tomorrow.');
+        }
+        if (body.length > (staff ? 8 : 3) * 1024 * 1024) throw new HttpError(413, 'File or request too large.');
         const buf = body;
         const sig = h => buf.subarray(0, h.length / 2).equals(Buffer.from(h, 'hex'));
         const type = sig('255044462d') ? 'application/pdf' : sig('89504e470d0a1a0a') ? 'image/png' : sig('ffd8ff') ? 'image/jpeg' : sig('52494646') && buf.subarray(8, 12).toString() === 'WEBP' ? 'image/webp' : '';
         if (!type || header(req, 'content-type') !== type) throw new HttpError(400, 'Invalid document type or contents.');
+        if (!staff && type === 'application/pdf') throw new HttpError(400, 'Choose a JPG, PNG or WEBP photo.');
         const f = E.photo({
           key: hex(20),
           name: decodeURIComponent(header(req, 'x-filename')),
@@ -2868,7 +3214,10 @@ function createApi(store, config = {}) {
         const t = await store.atomic(async tx => {
           const tok = await setLogin(tx, u.id, stay(u));
           const fresh = await tx.load();
-          if (E.seenOn(fresh, u.id, device)) await tx.save(fresh);
+          E.seenOn(fresh, u.id, device);
+          const mine = E.account(fresh, u.id);
+          if (mine) mine.lastSignIn = new Date().toISOString();
+          await tx.save(fresh);
           return tok;
         });
         return send(200, {
@@ -2886,6 +3235,8 @@ function createApi(store, config = {}) {
       }
       if (route === '/api/action') {
         if (v.action === 'register') throw new HttpError(403, 'Use the registration form.');
+        // A second brake on the connection, in case someone hides their phone identity.
+        if (['submitProposal', 'caseSubmit'].includes(v.action) && ['parent', 'bod'].includes(me.role)) await brake('submit-ip:' + (req.ip || 'unknown'), 15, 86400000, 'Too many submissions from this connection today. Please try again tomorrow.');
         if (!v.payload || typeof v.payload !== 'object' || typeof v.requestId !== 'string' || v.requestId.length > 100 || !v.requestId.length) throw new HttpError(400, 'Invalid action.');
         const result = await store.atomic(async tx => {
           const fresh = await tx.load();

@@ -29,5 +29,20 @@ button.alt{background:#fff;color:#102b59;border:1px solid #102b59}pre{white-spac
 <p class="note">For a lost phone or forgotten sign-in, or to add the collecting officer later. Add the name only for a new officer.</p>
 <label for="orole">Role</label><input id="orole" placeholder="collector"><label for="oname">Name (new officer only)</label><input id="oname">
 <button id="reissue" class="alt">Make a new code</button>
+<h2 style="font-size:18px;margin-top:28px">Project already voted on</h2>
+<p class="note">For a project the officers already voted on and the School Head already approved on paper. It goes straight to a draft resolution, so the secretary can release it and the officers can sign in the app. The vote needs at least 51% yes. Add one project at a time.</p>
+<label for="vtitle">Project title</label><input id="vtitle"><label for="vtext">What the project is</label><textarea id="vtext" rows="3" style="width:100%;padding:10px;font-size:16px;border:1px solid #9aa9c4;border-radius:8px;box-sizing:border-box"></textarea>
+<label for="vbudget">Amount voted (pesos)</label><input id="vbudget" inputmode="decimal" placeholder="12000">
+<label for="vdate">Date of the vote</label><input id="vdate" type="date"><label for="vmeeting">Meeting (optional)</label><input id="vmeeting" placeholder="SPTA meeting">
+<label for="voff">Officers on the roster</label><input id="voff" inputmode="numeric"><label for="vyes">Yes</label><input id="vyes" inputmode="numeric"><label for="vno">No</label><input id="vno" inputmode="numeric"><label for="vabs">Abstain</label><input id="vabs" inputmode="numeric">
+<label for="vappr">Date the School Head approved</label><input id="vappr" type="date"><label for="vnum">Resolution number (optional, for example 3)</label><input id="vnum" inputmode="numeric">
+<button id="voted">Add voted project</button>
+<h2 style="font-size:18px;margin-top:28px">Who is on the app</h2>
+<p class="note">Everyone with an account, and whether they can sign in. It shows no passwords, invite codes or private messages. Mobile numbers are partly hidden.</p>
+<button id="people">Show all users</button><button id="peoplecsv" class="alt">Download list</button>
+<div id="peoplebox" hidden><div id="peoplesum" class="sum"></div>
+<label for="pfind">Find a name, grade or role</label><input id="pfind" placeholder="Type to filter">
+<label for="pstatus">Show</label><select id="pstatus" style="width:100%;padding:10px;font-size:16px;border:1px solid #9aa9c4;border-radius:8px"><option value="">Everyone</option><option value="active">Can sign in</option><option value="invited">Invited, not joined yet</option><option value="vacant">Vacant HPTA seats</option><option value="waiting">Waiting for approval as an officer</option><option value="deactivated">Deactivated</option></select>
+<div id="peoplelist"></div></div>
 <p id="msg"></p><pre id="out" hidden></pre>
 <script src="admin.js"></script></body></html>
