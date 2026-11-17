@@ -2413,6 +2413,11 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
  "My students": "Mga estudyante ko",
  "List your students’ names, grades and sections. Only you can see this list.": "Ilista ang pangalan, grade at section ng mga estudyante mo. Ikaw lang ang makakakita ng listahang ito.",
  "This phone already has two accounts. A third account cannot be used on it.": "Dalawa na ang account sa teleponong ito. Hindi na magagamit dito ang pangatlong account.",
+ "The secretary uploads the meeting minutes. If the secretary has not joined the app yet or is away, you can stand in for the secretary and upload them yourself.": "Ang Secretary ang nag-a-upload ng mga minutes ng meeting. Kung hindi pa nakasali sa app ang Secretary o wala siya, puwede kang pumalit bilang Secretary at ikaw na ang mag-upload.",
+ "Stand in for the Secretary": "Pumalit bilang Secretary",
+ "On leave or has not joined the app yet": "Naka-leave o hindi pa nakasali sa app",
+ "I sign these minutes while standing in for the secretary and send them to the School Head to be noted and filed.": "Pinipirmahan ko ang mga minutes na ito habang pumapalit sa Secretary at ipinapadala ko sa School Head para mapansin at maitala.",
+ "Minutes sent to the School Head.": "Naipadala ang minutes sa School Head.",
  "Show password": "Ipakita ang password",
  "Hide password": "Itago ang password",
  "Back": "Bumalik",
@@ -6758,7 +6763,9 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
   }
   function records() {
     const sec = holds('secretary');
-    return (sec || E.canAnnounce(db(), me()) ? '<div class="entry-actions">' + (sec ? btn('Upload meeting minutes', 'dlg:minutes', '', 'primary') : '') + (E.canAnnounce(db(), me()) ? btn('Publish announcement', 'dlg:announce', '', sec ? 'light' : 'primary', 'megaphone') : '') + '</div>' : '') + section('Meeting minutes', db().minutes.map(m => {
+    const needSec = !sec && canChair() && !standIn();
+    const standCard = needSec ? notice('The secretary uploads the meeting minutes. If the secretary has not joined the app yet or is away, you can stand in for the secretary and upload them yourself.') + '<div class="entry-actions">' + btn('Stand in for the Secretary', 'dlg:cover', 'secretary', 'primary') + '</div>' : '';
+    return standCard + (sec || E.canAnnounce(db(), me()) ? '<div class="entry-actions">' + (sec ? btn('Upload meeting minutes', 'dlg:minutes', '', 'primary') : '') + (E.canAnnounce(db(), me()) ? btn('Publish announcement', 'dlg:announce', '', sec ? 'light' : 'primary', 'megaphone') : '') + '</div>' : '') + section('Meeting minutes', db().minutes.map(m => {
       let acts = btn('Read original', 'minuteFile', m.id);
       if (m.state === 'for_chair' && canChair()) acts += btn('Approve minutes', 'minutesReview', m.id, 'primary');
       if (m.state === 'for_head' && me().role === 'head') acts += btn('Note and file', 'minutesReview', m.id, 'primary');
@@ -6956,7 +6963,7 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
     if (kind === 'login') return ['Sign in', (S.known().length ? '<div class="known-accounts"><small>Accounts on this phone</small>' + S.known().map(x => '<button type="button" class="known-account" data-do="switchTo" data-id="' + esc(x.login) + '"><b>' + esc(x.name) + '</b><span>' + esc(mask(x.login)) + '</span></button>').join('') + '</div>' : '') + form('login', input('login', 'Mobile number', ui.prefill || '', 'tel', 'required autocomplete="username" placeholder="09171234567"') + input('password', 'Password', '', 'password', 'required autocomplete="current-password"'), 'Sign in') + '<div class="entry-actions">' + btn('Forgot password?', 'dlg:forgot', '', 'text') + btn('Create account', 'dlg:register', '', 'text') + '</div>'];
     if (kind === 'forgot') return ['Reset your password', notice('This works on a phone you have signed in on before. On a new phone, ask an SPTA officer for help.') + form('reset', input('mobile', 'Mobile number', ui.prefill || '', 'tel', 'required autocomplete="username" placeholder="09171234567"') + input('lastName', 'Last name', '', 'text', 'required maxlength="40" autocomplete="family-name"') + gradePair('homeroom', '', 'Your child’s grade and section, as you registered it') + input('password', 'New password (10 or more characters)', '', 'password', 'required minlength="10" maxlength="128" autocomplete="new-password"'), 'Save new password') + btn('Back to sign in', 'dlg:login', '', 'text')];
     if (kind === 'children') return [me().childName ? 'Other students' : 'My students', form('profileUpdate', '<div id="student-rows">' + (a.children || []).concat((a.children || []).length ? [] : ['']).map(x => studentRow(...splitChild(x))).join('') + '</div>' + btn('Add another student', 'addStudent', '', 'light', 'plus'), 'Save list')];
-    if (kind === 'cover') return ['Stand in for an absent officer', notice('You do that officer’s tasks until the date you set. A fund record you send or check while standing in gets its final approval from the Vice-Chairperson, so two people still check every record.') + form('cover', select('enabled', 'What would you like to do?', [['yes', 'Stand in for an officer'], ['no', 'Stop standing in']], 'yes') + '<div data-when="enabled" data-values="yes">' + select('role', 'Officer who is away', E.coverRoles.map(r => [r, E.roles[r]]), standIn()) + input('until', 'Until', db().cover?.until || weekAhead(), 'date', 'required min="' + t() + '"') + input('reason', 'Reason', db().cover?.reason || '', 'text', 'required minlength="3" maxlength="150" placeholder="On leave"') + '</div>', 'Save')];
+    if (kind === 'cover') return ['Stand in for an absent officer', notice('You do that officer’s tasks until the date you set. A fund record you send or check while standing in gets its final approval from the Vice-Chairperson, so two people still check every record.') + form('cover', select('enabled', 'What would you like to do?', [['yes', 'Stand in for an officer'], ['no', 'Stop standing in']], 'yes') + '<div data-when="enabled" data-values="yes">' + select('role', 'Officer who is away', E.coverRoles.map(r => [r, E.roles[r]]), E.coverRoles.includes(id) ? id : standIn()) + input('until', 'Until', db().cover?.until || weekAhead(), 'date', 'required min="' + t() + '"') + input('reason', 'Reason', db().cover?.reason || '', 'text', 'required minlength="3" maxlength="150" placeholder="On leave or has not joined the app yet"') + '</div>', 'Save')];
     if (kind === 'withdraw') {
       const item = p || db().cases.find(x => x.id === id);
       if (!item) return ['Withdraw', empty('This is no longer available.')];
@@ -7031,7 +7038,7 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
       const mine = m.state === 'for_chair' && canChair() || m.state === 'for_head' && a.role === 'head';
       return [m.state === 'for_chair' ? 'Approve minutes' : m.state === 'for_head' ? 'Note and file minutes' : 'Minutes of the meeting', '<div class="entry-meta">' + esc(m.id + ' · Meeting of ' + date(m.date)) + '</div><h3>' + esc(titleCase(m.title)) + '</h3>' + para(m.summary) + para('Due ' + date(m.due) + (m.state !== 'filed' && m.due < t() ? ' · Overdue' : '')) + '<div class="entry-actions">' + btn('Read original', 'minuteFile', m.id) + (mine ? btn(m.state === 'for_chair' ? 'Approve minutes' : 'Note and file', 'minutesReview', m.id, 'primary') : '') + '</div>'];
     }
-    if (kind === 'minutes') return ['Upload meeting minutes', form('minutesUpload', input('title', 'Meeting title') + input('date', 'Meeting date', t(), 'date', 'required max="' + t() + '"') + upload('Signed minutes (photo or PDF)') + area('summary', 'Privacy-reviewed summary for families') + ck('confirm', 'I sign these minutes as secretary and submit them for chair approval.', true), 'Submit minutes')];
+    if (kind === 'minutes') return ['Upload meeting minutes', form('minutesUpload', input('title', 'Meeting title') + input('date', 'Meeting date', t(), 'date', 'required max="' + t() + '"') + upload('Signed minutes (photo or PDF)') + area('summary', 'Privacy-reviewed summary for families') + ck('confirm', me().role === 'secretary' ? 'I sign these minutes as secretary and submit them for chair approval.' : 'I sign these minutes while standing in for the secretary and send them to the School Head to be noted and filed.', true), 'Submit minutes')];
     if (kind === 'activity') {
       const act = (db().activities || []).find(i => i.id === id);
       return [act ? 'Edit activity' : 'Add an activity', form('activitySave', input('title', 'Activity name', act?.title || '', 'text', 'required minlength="3" maxlength="100"') + input('date', 'Date', act?.date || '', 'date', 'required' + (act ? '' : ' min="' + t() + '"')) + input('time', 'Time (optional)', act?.time || '', 'text', 'maxlength="30" placeholder="4:00 PM"') + input('place', 'Place (optional)', act?.place || '', 'text', 'maxlength="100"') + area('details', 'Details (optional)', act?.details || '', 'maxlength="600"') + select('audience', 'Who is it for?', [['everyone', 'All parents and officers'], ['officers', 'Officers only']], act?.audience || 'everyone') + para('The treasurer sets the budget after the activity is added. Please do not include children’s names or photos.'), act ? 'Save changes' : 'Add activity', id)];
@@ -7225,7 +7232,7 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
     ui.dialog = null;
     ui.back = null;
     ui.queue = false;
-    ui.message = (success[action] || 'Saved.') + (id ? ' ' + id : '');
+    ui.message = (action === 'minutesUpload' && me()?.role !== 'secretary' ? 'Minutes sent to the School Head.' : success[action] || 'Saved.') + (id ? ' ' + id : '');
     render();
     return id;
   }
