@@ -114,7 +114,7 @@
   // Sarah's rules: two accounts a phone, a month to vote unless the date is changed,
   // four direct chairperson proposals a school year, and the chairperson may stand in for three officers.
   // Anti-spam: one phone may send only a few proposals, suggestions and concerns, however many accounts it uses.
-  const submissionsPerDay = 3, submissionsPerWeek = 8, photosPerCase = 2;
+  const submissionsPerDay = 2, submissionsPerWeek = 3, photosPerCase = 2;
   const hiddenPerMonth = 2,
     accountsPerDevice = 2,
     voteDays = 30,
@@ -130,6 +130,14 @@
     if (!a || a.demo || !device || !/^[A-Za-z0-9-]{8,80}$/.test(device) || a.devices?.includes(device)) return false;
     a.devices = [...(a.devices || []), device].slice(-10);
     return true;
+  }
+  const PHONE_FULL = 'This phone already has two accounts. A third account cannot be used on it.';
+  // Only two accounts may be used on one phone, whether they were created or signed in there.
+  function deviceFull(db, id, device) {
+    if (!device || !/^[A-Za-z0-9-]{8,80}$/.test(device)) return false;
+    const a = account(db, id);
+    if (!a || a.demo || a.devices?.includes(device)) return false;
+    return db.accounts.filter(x => !x.demo && x.devices?.includes(device)).length >= accountsPerDevice;
   }
   const sender = a => ({
     name: a.name,
@@ -448,10 +456,13 @@
   function throttle(db, a, device, context) {
     if (context.practice === true || !device || !['parent', 'bod'].includes(a.role)) return;
     const now = Date.now();
-    const times = [...db.cases, ...db.proposals].filter(x => x.sent && (x.owner === a.id || x.device === device)).map(x => Date.parse(x.sent)).filter(Number.isFinite);
-    const inLast = ms => times.filter(t => now - t < ms).length;
-    check(inLast(86400000) < submissionsPerDay, 'This phone has reached today’s limit of ' + submissionsPerDay + ' submissions. Please try again tomorrow.');
-    check(inLast(7 * 86400000) < submissionsPerWeek, 'This phone has reached this week’s limit of ' + submissionsPerWeek + ' submissions. Please try again next week.');
+    const mine = [...db.cases, ...db.proposals].filter(x => x.sent && (x.owner === a.id || x.device === device));
+    // The daily limit counts every send, even one the sender withdrew, so a slip can be fixed but not repeated without end.
+    // The weekly limit counts only submissions that stayed sent.
+    const stamp = x => Date.parse(x.sent);
+    const inLast = (ms, list) => list.filter(x => Number.isFinite(stamp(x)) && now - stamp(x) < ms).length;
+    check(inLast(86400000, mine) < submissionsPerDay, 'This phone has reached today’s limit of ' + submissionsPerDay + ' submissions. Please try again tomorrow.');
+    check(inLast(7 * 86400000, mine.filter(x => x.status !== 'withdrawn')) < submissionsPerWeek, 'This phone has reached this week’s limit of ' + submissionsPerWeek + ' submissions. Please try again next week.');
   }
   const onDesk = c => c.kind !== 'inspection' && ['chair', 'vice'].includes(c.assigned);
   // Who may read a case. The sender always can. Records requests go to the secretary.
@@ -699,6 +710,7 @@
     check(v.consent === true, 'Please read the Privacy Notice and tick the box to agree.');
     const login = mobileNumber(v.mobile);
     check(!db.accounts.some(x => x.login === login && x !== a), 'An account already uses this mobile number.');
+    check(!deviceFull(db, a.id, device), PHONE_FULL);
     a.login = login;
     a.joinedAt = at();
     delete a.invite;
@@ -1076,7 +1088,7 @@
             // Parent or officer account, the same details MyNaga asks for with grade and section in place of barangay.
             login = mobileNumber(v.mobile);
             check(!db.accounts.some(x => x.login === login), 'An account already uses this mobile number. Sign in instead.');
-            check(!device || db.accounts.filter(x => x.devices?.[0] === device).length < accountsPerDevice, 'This phone already has two accounts. Sign in instead.');
+            check(!device || db.accounts.filter(x => !x.demo && x.devices?.includes(device)).length < accountsPerDevice, 'This phone already has two accounts. Sign in instead.');
             name = words(v.firstName, 'First name', 1, 40) + ' ' + words(v.lastName, 'Last name', 1, 40);
             homeroom = words(v.homeroom, 'Grade and section', 2, 80);
             if (v.childName !== undefined) childName = words(v.childName, 'Child’s full name', 2, 80);
@@ -2411,6 +2423,8 @@
     expire,
     resetCheck,
     seenOn,
+    deviceFull,
+    PHONE_FULL,
     createLive,
     addSeats,
     setOpening,

@@ -697,6 +697,7 @@ function createApi(store, config = {}) {
         const record = u && await store.getAuth(u.id);
         const digest = scryptSync(v.password, record?.salt || Buffer.alloc(16), 32);
         if (!record || !timingSafeEqual(digest, Buffer.from(record.digest))) throw new HttpError(401, 'The mobile number or password is incorrect.');
+        if (E.deviceFull(db, u.id, device)) throw new HttpError(403, E.PHONE_FULL);
         const t = await store.atomic(async tx => {
           const tok = await setLogin(tx, u.id, stay(u));
           const fresh = await tx.load();

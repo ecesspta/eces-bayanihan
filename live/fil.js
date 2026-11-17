@@ -1118,6 +1118,7 @@
  "Your child’s full name": "Buong pangalan ng anak mo",
  "My students": "Mga estudyante ko",
  "List your students’ names, grades and sections. Only you can see this list.": "Ilista ang pangalan, grade at section ng mga estudyante mo. Ikaw lang ang makakakita ng listahang ito.",
+ "This phone already has two accounts. A third account cannot be used on it.": "Dalawa na ang account sa teleponong ito. Hindi na magagamit dito ang pangatlong account.",
  "Show password": "Ipakita ang password",
  "Hide password": "Itago ang password",
  "Back": "Bumalik",
