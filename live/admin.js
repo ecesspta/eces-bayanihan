@@ -1,7 +1,8 @@
 
 var api=(document.querySelector('meta[name="eces-api"]')||{}).content||'';
 var msg=document.getElementById('msg'),out=document.getElementById('out');
-function say(t){msg.textContent=t}
+function say(t){msg.textContent=t;msg.className=/^Working/.test(t)?'busy':/^(Done|Saved|Backup downloaded|List downloaded)/.test(t)?'ok':'err'}
+var secs=document.querySelectorAll('details.sec');secs.forEach(function(d){d.addEventListener('toggle',function(){if(d.open){secs.forEach(function(o){if(o!==d)o.open=false});setTimeout(function(){d.scrollIntoView({block:'start',behavior:'smooth'})},50)}})});
 function call(method,route,body){if(!api){say('No server address yet. connection.js is empty.');return Promise.reject()}
  return fetch(api+route,{method:method,headers:{'x-admin-key':document.getElementById('key').value.trim(),'Content-Type':'application/json'},body:method==='POST'?JSON.stringify(body||{}):undefined}).then(function(r){return r.json().then(function(d){if(!r.ok)throw Error(d.error||'Failed');return d})})}
 function save(name,text){var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type:'text/plain'}));a.download=name;a.click()}

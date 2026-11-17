@@ -6,26 +6,40 @@
 h1{font-size:22px}label{display:block;margin:14px 0 4px;font-weight:600}input{width:100%;padding:10px;font-size:16px;border:1px solid #9aa9c4;border-radius:8px;box-sizing:border-box}
 button{margin:10px 8px 0 0;padding:11px 16px;font-size:16px;border:0;border-radius:8px;background:#102b59;color:#fff}
 button.alt{background:#fff;color:#102b59;border:1px solid #102b59}pre{white-space:pre-wrap;word-break:break-all;background:#fff;border:1px solid #cdd6e6;border-radius:8px;padding:10px;font-size:13px}
-.note{background:#fff7dd;border:1px solid #e6c766;border-radius:8px;padding:10px;font-size:14px}</style></head><body>
+.note{background:#fff7dd;border:1px solid #e6c766;border-radius:8px;padding:10px;font-size:14px}
+#bar{position:sticky;top:0;z-index:5;background:#f6f8fc;padding:4px 0}
+#msg{margin:0;padding:10px 12px;border-radius:8px;font-weight:600;font-size:15px;border:1px solid #9aa9c4;background:#fff}#msg:empty{display:none}
+#msg.ok{background:#e6f5ec;border-color:#2e9b5f;color:#0b5a30}#msg.err{background:#fde9e9;border-color:#d04a4a;color:#8a1c1c}#msg.busy{background:#eef2fa}
+#bar pre{max-height:38vh;overflow:auto;margin:6px 0 0}
+details.sec{scroll-margin-top:70px;background:#fff;border:1px solid #cdd6e6;border-radius:10px;margin-top:10px}
+details.sec>summary{cursor:pointer;padding:14px;font-size:17px;font-weight:700;list-style:none;display:flex;justify-content:space-between;align-items:center}
+details.sec>summary::-webkit-details-marker{display:none}
+details.sec>summary::after{content:"+";font-size:22px;line-height:1}details.sec[open]>summary::after{content:"\2212"}
+.secbody{padding:0 14px 14px}.secbody>.note:first-child{margin-top:0}
+.top{background:#fff;border:1px solid #cdd6e6;border-radius:10px;padding:0 14px 14px;margin-top:10px}</style></head><body>
 <h1>ECES Bayanihan · Admin</h1>
-<p class="note">For the SPTA chairperson or the person who runs the app. The admin key is typed here and sent only to your own server. Never share it or save it in a file.</p>
+<div id="bar"><p id="msg" role="status" aria-live="polite"></p><pre id="out" hidden></pre></div>
+<div class="top"><p class="note" style="margin-bottom:0">For the SPTA chairperson or the person who runs the app. The admin key is typed here and sent only to your own server. Never share it or save it in a file.</p>
 <label for="key">Admin key</label><input id="key" type="password" autocomplete="off">
-<button id="setup">Set up rehearsal data</button><button id="backup" class="alt">Download backup</button>
-<h2 style="font-size:18px;margin-top:28px">Start the real record</h2>
+<button id="setup">Set up rehearsal data</button><button id="backup" class="alt">Download backup</button></div>
+<details class="sec"><summary>Start the real record</summary><div class="secbody">
 <p class="note">This replaces the fictional rehearsal with an empty school record and the officers below. It is refused once real data exists. One officer per line, as <b>role: Full Name</b>. Roles: head, chair, vice, secretary, treasurer, collector.</p>
 <textarea id="officers" rows="6" style="width:100%;padding:10px;font-size:16px;border:1px solid #9aa9c4;border-radius:8px;box-sizing:border-box" placeholder="chair: Full Name"></textarea>
 <button id="start">Start real record</button>
-<h2 style="font-size:18px;margin-top:28px">Add the HPTA presidents</h2>
+</div></details>
+<details class="sec"><summary>Add the HPTA presidents</summary><div class="secbody">
 <p class="note">One section per line, as <b>Grade · Section | President's name</b>, for example <b>Grade 1 · Ramos | Full Name</b>. For kindergarten write <b>Kindergarten · Biala A.M. | Full Name</b>. Running it again only adds sections that are missing.</p>
 <textarea id="seats" rows="8" style="width:100%;padding:10px;font-size:16px;border:1px solid #9aa9c4;border-radius:8px;box-sizing:border-box" placeholder="Grade 1 · Ramos | Full Name"></textarea>
 <button id="addseats">Add presidents</button>
-<h2 style="font-size:18px;margin-top:28px">Opening balance and finished project</h2>
+</div></details>
+<details class="sec"><summary>Opening balance and finished project</summary><div class="secbody">
 <p class="note">Use the treasurer's paper. The balance is one figure on one date and can only be set before any money is recorded in the app. The finished project is shown as Completed, with no vote, no signatures and no SPTA money used. Fill in only what you need.</p>
 <label for="obal">Balance (pesos)</label><input id="obal" inputmode="decimal" placeholder="12345.67"><label for="odate">Balance as of (date)</label><input id="odate" type="date">
 <label for="ptitle">Finished project: title</label><input id="ptitle"><label for="ptext">What was done</label><textarea id="ptext" rows="3" style="width:100%;padding:10px;font-size:16px;border:1px solid #9aa9c4;border-radius:8px;box-sizing:border-box"></textarea>
 <label for="psponsor">Paid for by</label><input id="psponsor"><label for="pdate">Completed on</label><input id="pdate" type="date">
 <button id="opening">Save</button>
-<h2 style="font-size:18px;margin-top:28px">Project cancelled before the app</h2>
+</div></details>
+<details class="sec"><summary>Project cancelled before the app</summary><div class="secbody">
 <p class="note">For a project that was cancelled earlier, so parents can see it for transparency. It shows under Cancelled with the reason and what became of the money. It has no vote and no signatures, and it does not change the SPTA balance. Add one project at a time.</p>
 <label for="ctitle">Project title</label><input id="ctitle"><label for="ctext">What the project was going to be</label><textarea id="ctext" rows="3" style="width:100%;padding:10px;font-size:16px;border:1px solid #9aa9c4;border-radius:8px;box-sizing:border-box"></textarea>
 <label for="creason">Why it was cancelled (shown to parents)</label><textarea id="creason" rows="3" style="width:100%;padding:10px;font-size:16px;border:1px solid #9aa9c4;border-radius:8px;box-sizing:border-box"></textarea>
@@ -34,11 +48,13 @@ button.alt{background:#fff;color:#102b59;border:1px solid #102b59}pre{white-spac
 <label for="cremainder">What happened to the money?</label><textarea id="cremainder" rows="2" style="width:100%;padding:10px;font-size:16px;border:1px solid #9aa9c4;border-radius:8px;box-sizing:border-box" placeholder="Example: No money was spent. The funds stay in the general SPTA fund."></textarea>
 <label for="cdate">Cancelled on</label><input id="cdate" type="date">
 <button id="cancelled">Add cancelled project</button>
-<h2 style="font-size:18px;margin-top:28px">New code for one officer</h2>
+</div></details>
+<details class="sec"><summary>New code for one officer</summary><div class="secbody">
 <p class="note">For a lost phone or forgotten sign-in, or to add the collecting officer later. Add the name only for a new officer.</p>
 <label for="orole">Role</label><input id="orole" placeholder="collector"><label for="oname">Name (new officer only)</label><input id="oname">
 <button id="reissue" class="alt">Make a new code</button>
-<h2 style="font-size:18px;margin-top:28px">Project already voted on</h2>
+</div></details>
+<details class="sec"><summary>Project already voted on</summary><div class="secbody">
 <p class="note">For a project the officers already voted on and the School Head already approved on paper. It goes straight to a draft resolution, so the secretary can release it and the officers can sign in the app. The vote needs at least 51% yes. Add one project at a time.</p>
 <label for="vtitle">Project title</label><input id="vtitle"><label for="vtext">What the project is</label><textarea id="vtext" rows="3" style="width:100%;padding:10px;font-size:16px;border:1px solid #9aa9c4;border-radius:8px;box-sizing:border-box"></textarea>
 <label for="vbudget">Amount voted (pesos)</label><input id="vbudget" inputmode="decimal" placeholder="12000">
@@ -46,12 +62,14 @@ button.alt{background:#fff;color:#102b59;border:1px solid #102b59}pre{white-spac
 <label for="voff">Officers on the roster</label><input id="voff" inputmode="numeric"><label for="vyes">Yes</label><input id="vyes" inputmode="numeric"><label for="vno">No</label><input id="vno" inputmode="numeric"><label for="vabs">Abstain</label><input id="vabs" inputmode="numeric">
 <label for="vappr">Date the School Head approved</label><input id="vappr" type="date"><label for="vnum">Resolution number (optional, for example 3)</label><input id="vnum" inputmode="numeric">
 <button id="voted">Add voted project</button>
-<h2 style="font-size:18px;margin-top:28px">Who is on the app</h2>
+</div></details>
+<details class="sec"><summary>Who is on the app</summary><div class="secbody">
 <p class="note">Everyone with an account, and whether they can sign in. It shows no passwords, invite codes or private messages. Mobile numbers are partly hidden.</p>
 <button id="people">Show all users</button><button id="peoplecsv" class="alt">Download list</button>
 <div id="peoplebox" hidden><div id="peoplesum" class="sum"></div>
 <label for="pfind">Find a name, grade or role</label><input id="pfind" placeholder="Type to filter">
 <label for="pstatus">Show</label><select id="pstatus" style="width:100%;padding:10px;font-size:16px;border:1px solid #9aa9c4;border-radius:8px"><option value="">Everyone</option><option value="active">Can sign in</option><option value="invited">Invited, not joined yet</option><option value="vacant">Vacant HPTA seats</option><option value="waiting">Waiting for approval as an officer</option><option value="deactivated">Deactivated</option></select>
 <div id="peoplelist"></div></div>
-<p id="msg"></p><pre id="out" hidden></pre>
+</div></details>
+
 <script src="admin.js"></script></body></html>
