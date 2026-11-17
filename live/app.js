@@ -801,7 +801,8 @@
     const chips = [['all', 'All'], ['money', 'Money'], ['projects', 'Projects'], ['proposals', 'Proposals'], ['records', 'Resolutions and minutes'], ['people', 'People and access'], ['retracted', 'Withdrawn or returned']].map(([key, label]) => '<button type="button" class="chip' + (f === key ? ' on' : '') + '" data-do="histfilter" data-id="' + key + '"' + (f === key ? ' aria-pressed="true"' : ' aria-pressed="false"') + '>' + esc(label) + '</button>').join('');
     const when = at => {
       try {
-        return new Intl.DateTimeFormat('en-PH', {dateStyle: 'medium', timeStyle: 'short'}).format(new Date(at));
+        const d = new Date(at);
+        return new Intl.DateTimeFormat('en-PH', d.getFullYear() === new Date().getFullYear() ? {month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'} : {dateStyle: 'medium', timeStyle: 'short'}).format(d);
       } catch (e) {
         return at;
       }
@@ -809,14 +810,16 @@
     const entry = x => {
       const acct = db().accounts.find(a => a.id === x.who),
         role = x.role || acct?.role,
-        by = x.who === 'system' ? 'Done automatically' : (acct?.name || x.who) + (role ? ' · ' + (E.roles[role] || role) : '') + (x.cover ? ' · standing in for the ' + (E.roles[x.cover] || x.cover) : '');
-      const lines = [];
-      if (x.what || x.ref) lines.push((x.what ? x.what + ' · ' : '') + x.ref);
-      if (x.cents) lines.push(cash(x.cents));
-      if (x.decision && DECISIONS[x.decision]) lines.push(DECISIONS[x.decision]);
-      return '<article class="entry audit-entry' + (isRetraction(x) ? ' is-retracted' : '') + '"><div class="entry-top"><span class="entry-meta">' + esc(when(x.at)) + '</span>' + (x.outcome && labels[x.outcome] ? badge(x.outcome) : '') + '</div><h3>' + esc(x.event) + '</h3><p class="audit-who"><b>' + esc(by) + '</b></p>' + lines.map(para).join('') + (x.reason ? '<p class="audit-reason">' + esc(x.reason) + '</p>' : '') + '</article>';
+        by = x.who === 'system' ? 'Done automatically' : (acct?.name || x.who) + (role ? ' · ' + (E.roles[role] || role) : '') + (x.cover ? ' · standing in for the ' + (E.roles[x.cover] || x.cover) : ''),
+        bits = [when(x.at), by];
+      if (x.what || x.ref) bits.push((x.what ? x.what + ' · ' : '') + x.ref);
+      if (x.cents) bits.push(cash(x.cents));
+      if (x.decision && DECISIONS[x.decision]) bits.push(DECISIONS[x.decision]);
+      const title = String(x.event || '').replace(/,? without an officer vote$/i, '');
+      return '<article class="entry audit-entry audit-compact' + (isRetraction(x) ? ' is-retracted' : '') + '"><div class="audit-row"><h3>' + esc(title) + '</h3>' + (x.outcome && labels[x.outcome] ? badge(x.outcome) : '') + '</div><p class="audit-sub">' + bits.map(esc).join(' · ') + '</p>' + (x.reason ? '<p class="audit-reason">' + esc(x.reason) + '</p>' : '') + '</article>';
     };
-    return '<p class="page-lead">Every major change is recorded here: who did it, in which role, and what was decided. Entries are added automatically. The app has no way to edit or remove them.</p><div class="chips" role="group" aria-label="Filter the history">' + chips + '</div>' + (shown.length ? shown.slice(0, 100).map(entry).join('') + (shown.length > 100 ? para('Showing the latest 100 of ' + shown.length + '.') : '') : empty('Nothing recorded for this filter yet.'));
+    const limit = ui.historyLimit || 20;
+    return '<p class="page-lead">Every major change is recorded here: who did it, in which role, and what was decided. Entries are added automatically. The app has no way to edit or remove them.</p><div class="chips" role="group" aria-label="Filter the history">' + chips + '</div>' + (shown.length ? shown.slice(0, limit).map(entry).join('') + (shown.length > limit ? '<div class="entry-actions">' + btn('Show 20 more', 'histmore', '', 'light') + '</div>' + para('Showing the latest ' + limit + ' of ' + shown.length + '.') : '') : empty('Nothing recorded for this filter yet.'));
   }
   const sections = {
     home,
@@ -1295,8 +1298,13 @@
         }
         return;
       }
+      if (act === 'histmore') {
+        ui.historyLimit = (ui.historyLimit || 20) + 20;
+        return render();
+      }
       if (act === 'histfilter') {
         ui.historyFilter = id;
+        ui.historyLimit = 20;
         return render();
       }
       if (act === 'queue:next') {
