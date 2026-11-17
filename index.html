@@ -6551,7 +6551,7 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
   ];
   const bold = s => esc(s).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
   const privacyPart = p => Array.isArray(p) ? '<ul>' + p.map(i => '<li>' + bold(i) + '</li>').join('') + '</ul>' : '<p>' + bold(p) + '</p>';
-  const privacyBody = () => '<p><strong>ECES SPTA Community App</strong></p>' + PRIVACY.map(([h, ps]) => '<h4>' + esc(h) + '</h4>' + ps.map(privacyPart).join('')).join('') + (PRIVACY_DRAFT ? '<div class="portal-note">Draft wording. The school’s Data Protection Officer confirms the final text before the real launch.</div>' : '');
+  const privacyBody = () => PRIVACY.map(([h, ps]) => '<h4>' + esc(h) + '</h4>' + ps.map(privacyPart).join('')).join('') + (PRIVACY_DRAFT ? '<div class="portal-note">Draft wording. The school’s Data Protection Officer confirms the final text before the real launch.</div>' : '');
   // Public project photos. The picture itself loads after the page is drawn, then stays ready for later redraws.
   const photoState = ph => ph.status || 'approved';
   const shownPhotos = p => (p.photos || []).filter(x => photoState(x) === 'approved' || onRole(E.leaders));
