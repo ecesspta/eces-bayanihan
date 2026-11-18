@@ -2719,6 +2719,14 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
  "The chairperson or Vice-Chairperson refers this.": "Ang Chairperson o Vice-Chairperson ang nagpapasa nito.",
  "For an urgent matter about a child’s safety, please go to your child’s adviser directly.": "Para sa urgent na usapin tungkol sa kaligtasan ng bata, pumunta po agad sa adviser ng inyong anak.",
  "If it is urgent, please go to your child’s adviser directly.": "Kung urgent ito, pumunta po agad sa adviser ng inyong anak.",
+ "This is being handled.": "Inaasikaso na ito.",
+ "It will be handled right away.": "Aasikasuhin ito agad.",
+ "Referred. This is being handled.": "Naipasa na. Inaasikaso na ito.",
+ "Possible child-protection concern referred": "Naipasa ang posibleng concern sa child protection",
+ "Possible child-protection concerns are shown to you for monitoring, and you may act on them.": "Ipinapakita sa iyo ang mga posibleng concern sa child protection para bantayan, at puwede mo rin itong aksyunan.",
+ "The secretary can reply to the sender for you.": "Puwedeng sumagot ang Secretary sa nagpadala para sa iyo.",
+ "The chairperson and Vice-Chairperson read every suggestion and private concern first.": "Unang binabasa ng Chairperson at Vice-Chairperson ang bawat suhestiyon at private na concern.",
+ "They pass on school matters and PTA disputes.": "Ipinapasa nila ang mga usaping pampaaralan at alitan sa PTA.",
  "Show password": "Ipakita ang password",
  "Hide password": "Itago ang password",
  "Back": "Bumalik",
@@ -2931,6 +2939,8 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
       [/^Open photo: (.+)$/, "Buksan ang photo: {1}"],
       [/^Sample (.+)$/, "Sample {1}"],
       [/^Added by (.+)\. It is public once you approve it\.$/, "Idinagdag ni {1}. Magiging public ito kapag in-approve mo."],
+      [/^Referred on (.+)\. This is being handled\.$/, "Naipasa noong {1}. Inaasikaso na ito."],
+      [/^(.+) · URGENT · A possible child-protection concern is being handled\. It is shown to you for monitoring\. You may also act on it\.$/, "{1} · URGENT · May posibleng concern sa child protection na inaasikaso na. Ipinapakita ito sa iyo para bantayan. Puwede mo rin itong aksyunan."],
       [/^Your (concern|suggestion) is being handled\. If it is urgent, please go to your child’s adviser directly\.$/, "Inaasikaso na ang inyong {1}. Kung urgent ito, pumunta po agad sa adviser ng inyong anak."],
       [/^(.+) · Your (concern|suggestion) is being handled\. If it is urgent, please go to your child’s adviser directly\.$/, "{1} · Inaasikaso na ang inyong {2}. Kung urgent ito, pumunta po agad sa adviser ng inyong anak."],
       [/^Referred on (.+)\. The secretary alerts the child’s adviser right away and records what was done\. The School Head monitors it and may act on it\. The SPTA does not investigate it\.$/, "Naipasa noong {1}. Agad na aabisuhan ng Secretary ang adviser ng bata at ire-record ang ginawa. Babantayan ito ng School Head at puwede rin niyang aksyunan. Hindi ito iimbestigahan ng SPTA."],
@@ -5246,9 +5256,9 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
           };
           c.due = today();
           db.accounts.filter(x => x.active && x.role === 'secretary').forEach(x => note(db, x.id, c.id + ' · URGENT · A possible child-protection concern was referred to you. Please alert the child’s adviser today.'));
-          db.accounts.filter(x => x.active && x.role === 'head').forEach(x => note(db, x.id, c.id + ' · URGENT · A possible child-protection concern was referred to the secretary, who will alert the adviser. It is shown to you for monitoring. You may also act on it.'));
+          db.accounts.filter(x => x.active && x.role === 'head').forEach(x => note(db, x.id, c.id + ' · URGENT · A possible child-protection concern is being handled. It is shown to you for monitoring. You may also act on it.'));
           tell(db, c);
-          changed('Possible child-protection concern referred to the secretary and the School Head');
+          changed('Possible child-protection concern referred');
           break;
         }
       case 'caseNote':
@@ -7079,7 +7089,7 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
     const desk2 = desk && ['chair', 'vice'].includes(me().role) && ['received', 'assigned'].includes(c.status) && !c.protection;
     const canForward = desk2 && !c.forwarded;
     const officerView = !mine && (assigned || noter || desk2);
-    const track = !officerView ? '' : c.protection ? '<div class="portal-note urgent"><b>Possible child-protection concern</b>' + para('Referred on ' + date(c.protection.at.slice(0, 10)) + '. The secretary alerts the child’s adviser right away and records what was done. The School Head monitors it and may act on it. The SPTA does not investigate it.') + '</div>' : c.track === 'grievance' ? '<div class="entry-meta">' + icon('info', 'sm') + 'PTA dispute · Formal grievance route. The School Head sets up the proper committee. No informal sanctions.</div>' : c.track === 'school' ? '<div class="entry-meta">' + icon('info', 'sm') + 'School matter · The School Head leads the action.</div>' : c.endorsed ? '<div class="entry-meta">' + icon('users', 'sm') + (c.endorsed.to === S.me ? 'Endorsed to you by the ' + esc(E.roles[c.endorsed.role] || '') + ' · ' + esc(date(c.endorsed.at.slice(0, 10))) : 'SPTA matter · Endorsed to ' + esc(n(c.endorsed.to)) + ' · ' + esc(date(c.endorsed.at.slice(0, 10)))) + '</div>' : '';
+    const track = !officerView ? '' : c.protection ? '<div class="portal-note urgent"><b>Possible child-protection concern</b>' + para('Referred on ' + date(c.protection.at.slice(0, 10)) + '. This is being handled.') + '</div>' : c.track === 'grievance' ? '<div class="entry-meta">' + icon('info', 'sm') + 'PTA dispute · Formal grievance route. The School Head sets up the proper committee. No informal sanctions.</div>' : c.track === 'school' ? '<div class="entry-meta">' + icon('info', 'sm') + 'School matter · The School Head leads the action.</div>' : c.endorsed ? '<div class="entry-meta">' + icon('users', 'sm') + (c.endorsed.to === S.me ? 'Endorsed to you by the ' + esc(E.roles[c.endorsed.role] || '') + ' · ' + esc(date(c.endorsed.at.slice(0, 10))) : 'SPTA matter · Endorsed to ' + esc(n(c.endorsed.to)) + ' · ' + esc(date(c.endorsed.at.slice(0, 10)))) + '</div>' : '';
     const actions = (assigned && !gone ? btn(c.status === 'received' ? 'Mark reviewed or reply' : 'Update or reply', 'dlg:reply', c.id) : '') + (desk2 && !c.forwarded ? (c.endorsed ? btn('Take back', 'caseTakeBack', c.id) : btn('Endorse to an officer', 'dlg:endorse', c.id)) : '') + (canForward ? btn('Pass on to the School Head', 'dlg:forward', c.id, 'primary') : '') + (desk2 && !gone ? btn('Child-protection concern', 'dlg:protect', c.id, 'danger') : '') + (noter && !gone && desk ? btn(holds('secretary') && !assigned ? 'Record follow-up' : c.forwarded ? 'Add a note' : 'Add a private note', 'dlg:caseNote', c.id) : '') + (canWithdraw(c) ? btn('Withdraw', 'dlg:withdraw', c.id) : '');
     return card(c.subject, track + body + evidence, c.id + ' · ' + (c.kind === 'inspection' ? 'Records inspection request' : c.kind === 'concern' ? 'Private concern' : 'Private suggestion'), c.status, actions);
   }
@@ -7293,7 +7303,7 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
     const settings = me().role === 'head' ? section('Follow-up settings', ['ack', 'reminders'].map(k => '<div class="list-line"><span>' + esc(k === 'ack' ? 'In-app submission acknowledgements' : 'Flag overdue feedback first') + '</span>' + btn(db().settings[k] ? 'Turn off' : 'Turn on', 'setting', k) + '</div>').join('')) : '';
     const passed = !['chair', 'vice'].includes(me().role);
     const endorsedOnly = passed && !lead() && !holds('secretary');
-    const intro = endorsedOnly ? para('The chairperson or Vice-Chairperson endorsed these to you. Please act on them, reply to the sender here in the app, and mark each one resolved with what was done.') : me().role === 'head' ? para('The chairperson and Vice-Chairperson read every suggestion and private concern first. They pass on school matters and PTA disputes. Possible child-protection concerns go to the secretary, who alerts the child’s adviser; they are shown to you for monitoring, and you may act on them. The secretary can reply to the sender for you.') : holds('secretary') && passed ? para('These were passed on to the School Head. You can reply to the sender for the School Head and record follow-ups. For a possible child-protection concern, alert the child’s adviser right away. If the concern is about the adviser, go to the guidance teacher or the School Head instead. Record what you did and close it with a reply.') : passed ? para('The chairperson and Vice-Chairperson read every suggestion and private concern first. They pass on the ones worth your attention, with a note when they need more from you.') : para('Only you and the ' + (me().role === 'chair' ? 'Vice-Chairperson' : 'chairperson') + ' can read what parents send. For each one: if a child may be in danger, refer it as a child-protection concern right away. Handle an SPTA matter yourselves or endorse it to an officer. Pass a school matter or a PTA dispute on to the School Head. Close each one with a reply that says what was done.');
+    const intro = endorsedOnly ? para('The chairperson or Vice-Chairperson endorsed these to you. Please act on them, reply to the sender here in the app, and mark each one resolved with what was done.') : me().role === 'head' ? para('The chairperson and Vice-Chairperson read every suggestion and private concern first. They pass on school matters and PTA disputes. Possible child-protection concerns are shown to you for monitoring, and you may act on them. The secretary can reply to the sender for you.') : holds('secretary') && passed ? para('These were passed on to the School Head. You can reply to the sender for the School Head and record follow-ups. For a possible child-protection concern, alert the child’s adviser right away. If the concern is about the adviser, go to the guidance teacher or the School Head instead. Record what you did and close it with a reply.') : passed ? para('The chairperson and Vice-Chairperson read every suggestion and private concern first. They pass on the ones worth your attention, with a note when they need more from you.') : para('Only you and the ' + (me().role === 'chair' ? 'Vice-Chairperson' : 'chairperson') + ' can read what parents send. For each one: if a child may be in danger, refer it as a child-protection concern right away. Handle an SPTA matter yourselves or endorse it to an officer. Pass a school matter or a PTA dispute on to the School Head. Close each one with a reply that says what was done.');
     return intro + section(kind === 'suggestion' ? (passed ? 'Suggestions passed on' : 'Suggestions sent to you') : kind === 'concern' ? (passed ? 'Concerns passed on' : 'Concerns sent to you') : endorsedOnly ? 'Endorsed to you' : passed ? 'Passed on to the School Head' : 'Sent to you', mine.map(caseCard).join('') || empty(kind ? 'Nothing here yet.' : passed ? 'Nothing has been passed on yet.' : 'No private cases sent to you.')) + others + (kind ? '' : settings);
   }
   // Change history: who acted, in which role, on what, what was decided and why. Only the School Head, chairperson and Vice-Chairperson see it.
@@ -7526,13 +7536,13 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
     if (kind === 'protect') {
       const c = db().cases.find(x => x.id === id);
       if (!c) return ['Possible child-protection concern', empty('This is no longer here.')];
-      return ['Possible child-protection concern', para(c.subject) + notice('Use this if a child may be hurt, abused, bullied or in danger. It goes right away to the secretary, who alerts the child’s adviser, and to the School Head for monitoring. Other officers will not see it, and the SPTA does not investigate it. If a child is in danger now, also call the school directly.') + form('caseProtect', ck('confirm', 'Refer this now.', true), 'Refer now', id)];
+      return ['Possible child-protection concern', para(c.subject) + notice('Use this if a child may be hurt, abused, bullied or in danger. It will be handled right away. If a child is in danger now, also call the school directly.') + form('caseProtect', ck('confirm', 'Refer this now.', true), 'Refer now', id)];
     }
     if (kind === 'caseNote') {
       const c = db().cases.find(x => x.id === id);
       if (!c) return ['Note', empty('This is no longer here.')];
       const follow = holds('secretary') && !caseHandler(c);
-      return [follow ? 'Record follow-up' : 'Add a note', para(c.subject) + notice(c.protection ? 'Seen by the secretary, the School Head, the chairperson and the Vice-Chairperson. The sender cannot read it.' : 'Seen by the chairperson, the Vice-Chairperson' + (c.endorsed ? ', the endorsed officer' : '') + (c.forwarded ? ', the School Head and the secretary' : '') + '. The sender cannot read it.') + form('caseNote', area('note', follow ? 'Follow-up' : 'Note', '', 'required minlength="3" maxlength="500"'), 'Save note', id)];
+      return [follow ? 'Record follow-up' : 'Add a note', para(c.subject) + notice(c.protection ? 'The sender cannot read it.' : 'Seen by the chairperson, the Vice-Chairperson' + (c.endorsed ? ', the endorsed officer' : '') + (c.forwarded ? ', the School Head and the secretary' : '') + '. The sender cannot read it.') + form('caseNote', area('note', follow ? 'Follow-up' : 'Note', '', 'required minlength="3" maxlength="500"'), 'Save note', id)];
     }
     if (kind === 'proposalReply') return ['Personal reply', para(p.title) + notice('Optional. The person who proposed already receives an automated response at each status. Only they see this reply.') + form('proposalReply', area('reply', 'Your reply as ' + roleName(a), p.reply || '', 'required minlength="3" maxlength="600"'), 'Send personal reply', id)];
     if (kind === 'resolution') return ['Read resolution', resolutionPaper(r, true)];
@@ -7720,7 +7730,7 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
     caseReply: 'Saved. The sender was told the new status.',
     caseForward: 'Passed on. The School Head and the secretary can read it now.',
     caseEndorse: 'Endorsement saved.',
-    caseProtect: 'Referred to the secretary and the School Head.',
+    caseProtect: 'Referred. This is being handled.',
     caseNote: 'Note saved.',
     proposalReply: 'Personal reply sent.',
     chairProposal: 'Sent to the School Head for approval.',

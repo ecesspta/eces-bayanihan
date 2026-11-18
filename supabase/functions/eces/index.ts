@@ -2229,9 +2229,9 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
           };
           c.due = today();
           db.accounts.filter(x => x.active && x.role === 'secretary').forEach(x => note(db, x.id, c.id + ' · URGENT · A possible child-protection concern was referred to you. Please alert the child’s adviser today.'));
-          db.accounts.filter(x => x.active && x.role === 'head').forEach(x => note(db, x.id, c.id + ' · URGENT · A possible child-protection concern was referred to the secretary, who will alert the adviser. It is shown to you for monitoring. You may also act on it.'));
+          db.accounts.filter(x => x.active && x.role === 'head').forEach(x => note(db, x.id, c.id + ' · URGENT · A possible child-protection concern is being handled. It is shown to you for monitoring. You may also act on it.'));
           tell(db, c);
-          changed('Possible child-protection concern referred to the secretary and the School Head');
+          changed('Possible child-protection concern referred');
           break;
         }
       case 'caseNote':
