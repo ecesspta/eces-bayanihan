@@ -236,7 +236,7 @@
     return lines.length ? '<div class="change-log"><b>Changes</b>' + lines.map(x => '<p>' + esc(x) + '</p>').join('') + '</div>' : '';
   }
   // Privacy Notice. DRAFT until the school's Data Protection Officer confirms the wording. Set PRIVACY_DRAFT to false after that.
-  const PRIVACY_DRAFT = true;
+  const PRIVACY_DRAFT = false;
   const PRIVACY_VERSION = '2026-11b';
   const PRIVACY = [
     ['Who we are', ['This app is managed by the East Central Elementary School SPTA in San Fabian, Pangasinan, with the approval of the School Head.', 'For privacy concerns, please contact the SPTA Chairperson or the School Head’s Office.']],
