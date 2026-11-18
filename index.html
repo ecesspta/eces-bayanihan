@@ -1133,6 +1133,10 @@ img[data-photo].failed {visibility:visible}
 .portal-note.urgent b {display:flex;align-items:center;gap:6px}
 .portal-note.urgent .badge {margin:6px 0 2px}
 .badge.action_taken {background:#e7f0ff;color:#2f5fb3}
+.recovery-code {font-size:28px;font-weight:800;letter-spacing:.08em;text-align:center;margin:12px 0;font-family:ui-monospace,Menlo,Consolas,monospace;color:var(--navy,#0b2a5b)}
+.badge.cp_ack {background:#efe8ff;color:#5b3fa8}
+.tracker li span {hyphens:auto;-webkit-hyphens:auto}
+.tracker:has(li:nth-child(5)) li {font-size:10px}
 
 </style>
       <link rel="manifest" href="manifest.webmanifest" />
@@ -1437,7 +1441,7 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
  "Collecting and Disbursing Officer": "Collecting Officer at Pagbabayad",
  "Parent / Guardian": "Magulang / Guardian",
  "BOD · HPTA President": "BOD · HPTA President",
- "Demo shortcut: one fictional profile for each role. In the live app, everyone signs in with their own account.": "Shortcut sa demo: isang fictional na profile para sa bawat tungkulin. Sa totoong app, bawat isa ay magsa-sign in gamit ang sariling account.",
+ "Demo shortcut: one fictional profile for each role. In the live app, everyone signs in with their own account.": "Shortcut sa demo: isang fictional na profile para sa bawat role. Sa totoong app, bawat isa ay magsa-sign in gamit ang sariling account.",
  "Reset demo": "I-reset ang demo",
  "Sign In to Send": "Mag-sign in para Magpadala",
  "Close": "Isara",
@@ -1462,7 +1466,7 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
  "Not yet spent": "Hindi pa nagagastos",
  "Funding": "Pondo",
  "Covered by SPTA funds": "Sakop ng pondo ng SPTA",
- "Reference": "Sanggunian",
+ "Reference": "Reference",
  "Volunteer setup": "Pag-aayos ng mga boluntaryo",
  "A small practical learning garden supported by volunteer families.": "Maliit na hardin na pang-aral na suportado ng mga boluntaryong pamilya.",
  "School-approved improvements to common handwashing spaces.": "Mga pagpapabuting approved ng paaralan sa mga lugar-hugasan ng kamay.",
@@ -1523,12 +1527,12 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
  "Leave out children’s names and private concerns. The review team checks proposals before sharing them.": "Huwag isama ang pangalan ng mga bata at mga private concern. Nire-review ng review team ang mga proposal bago ibahagi.",
  "Send proposal": "Ipadala ang proposal",
  "Subject": "Paksa",
- "What would you like to improve?": "Ano ang nais mong pagbutihin?",
+ "What would you like to improve?": "Ano ang gusto mong pagbutihin?",
  "Send privately to": "Ipadala nang private kay",
  "SPTA chairperson": "Chairperson ng SPTA",
  "SPTA Vice-Chairperson": "Vice-Chairperson ng SPTA",
  "Hide my name from the reviewer": "Itago ang pangalan ko sa reviewer",
- "If the concern involves the usual recipient, choose another reviewer. For an urgent child-safety matter, contact the school’s designated safeguarding staff directly.": "Kung ang concern ay may kinalaman sa karaniwang tatanggap, pumili ng ibang reviewer. Para sa agarang usapin ng kaligtasan ng bata, direktang kontakin ang itinalagang tagapangalaga ng kaligtasan ng paaralan.",
+ "If the concern involves the usual recipient, choose another reviewer. For an urgent child-safety matter, contact the school’s designated safeguarding staff directly.": "Kung ang concern ay may kinalaman sa karaniwang tatanggap, pumili ng ibang reviewer. Para sa urgent na usapin ng kaligtasan ng bata, direktang kontakin ang itinalagang tagapangalaga ng kaligtasan ng paaralan.",
  "Send privately": "Ipadala nang private",
  "Report a Private Concern": "Magsumbong ng Private concern",
  "What happened?": "Ano ang nangyari?",
@@ -1542,7 +1546,7 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
  "Yes, withdraw this.": "Oo, i-withdraw ito.",
  "Request Records Inspection": "Humiling na Suriin ang mga Record",
  "Record or period requested": "Record o panahong hinihiling",
- "Describe the records you wish to inspect": "Ilarawan ang mga record na nais mong suriin",
+ "Describe the records you wish to inspect": "Ilarawan ang mga record na gusto mong suriin",
  "The secretary receives this request privately. Track the reply in My updates.": "Private na natatanggap ng Secretary ang request na ito. Subaybayan ang sagot sa Aking mga update.",
  "Send to secretary": "Ipadala sa Secretary",
  "Project proposal": "Project proposal",
@@ -1597,7 +1601,7 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
  "Decline": "Tanggihan",
  "Reviewed title": "Na-review na pamagat",
  "Description safe to share": "Paglalarawang ligtas ibahagi",
- "Proposed SPTA allocation (₱)": "Iminungkahing allocation ng SPTA (₱)",
+ "Proposed SPTA allocation (₱)": "Proposed na allocation ng SPTA (₱)",
  "An allocation above this amount will be marked as needing fundraising.": "Ang alokasyong lampas sa halagang ito ay mamarkahang nangangailangan ng pangangalap ng pondo.",
  "This proposal seeks voluntary contributions.": "Humihingi ang proposal na ito ng boluntaryong ambag.",
  "Voting closes on": "Magsasara ang botohan sa",
@@ -1607,7 +1611,7 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
  "Screen proposal": "Suriin ang proposal",
  "Send personal reply": "Magpadala ng personal na sagot",
  "Personal Reply": "Personal na Sagot",
- "Optional. The person who proposed already receives an automated response at each status. Only they see this reply.": "Opsyonal. Awtomatiko nang nakakatanggap ng sagot ang nagmungkahi sa bawat status. Siya lang ang makakakita ng tugong ito.",
+ "Optional. The person who proposed already receives an automated response at each status. Only they see this reply.": "Opsyonal. Awtomatiko nang nakakatanggap ng sagot ang nagmungkahi sa bawat status. Siya lang ang makakakita ng sagot na ito.",
  "Your reply as School Head": "Iyong sagot bilang School Head",
  "Your reply as Chairperson": "Iyong sagot bilang Chairperson",
  "Update progress": "I-update ang progress",
@@ -1649,13 +1653,13 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
  "BOD Requests": "Mga Request sa BOD",
  "BOD Account Requests": "Mga Request sa Account ng BOD",
  "No BOD requests awaiting review.": "Walang request sa BOD na naghihintay ng review.",
- "Current Board Roster": "Kasalukuyang List ng Lupon",
+ "Current Board Roster": "Kasalukuyang List ng Board",
  "All verified HPTA presidents can review screened proposals. Voting seats are recorded per person. New votes use the current roster.": "Lahat ng beripikadong HPTA President ay puwedeng sumuri ng mga na-review na proposal. Nire-record ang seat sa botohan kada tao. Ginagamit ng mga bagong botohan ang kasalukuyang list.",
  "Edit": "I-edit",
  "Voting seat": "Seat sa botohan",
  "Acting Chairperson": "Pansamantalang Chairperson",
  "Chairperson holds posting and meeting authority.": "May awtoridad ang Chairperson sa pag-post at sa meeting.",
- "Assign Vice-Chairperson": "Italaga ang Vice-Chairperson",
+ "Assign Vice-Chairperson": "I-designate ang Vice-Chairperson",
  "Voting Seat": "Seat sa Botohan",
  "Include this officer in future votes.": "Isama ang officer na ito sa mga susunod na botohan.",
  "I checked the current school roster.": "Ni-review ko ang kasalukuyang list ng paaralan.",
@@ -1675,9 +1679,9 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
  "Approve for posting": "Aprubahang i-post",
  "Return for correction": "Ibalik para itama",
  "I opened the supporting original and checked the entries.": "Binuksan ko ang original na document at ni-review ang mga entry.",
- "The published purpose contains no identifying or bank details.": "Walang pagkakakilanlan o detalye ng bangko ang ipa-publish na purpose.",
+ "The published purpose contains no identifying or bank details.": "Walang identity o detalye ng bangko ang ipa-publish na purpose.",
  "What needs correcting?": "Ano ang kailangang itama?",
- "Posting updates the parent fund view. Spending authorization is recorded in the school’s financial process.": "Ina-update ng pag-post ang tanaw ng magulang sa pondo. Nire-record sa proseso ng finance ng paaralan ang pahintulot sa paggastos.",
+ "Posting updates the parent fund view. Spending authorization is recorded in the school’s financial process.": "Ina-update ng pag-post ang tanaw ng magulang sa pondo. Nire-record sa proseso ng finance ng paaralan ang permiso sa paggastos.",
  "Record review": "I-record ang review",
  "Add for School-Head Approval": "Idagdag para sa Approval ng School Head",
  "Project details": "Mga detalye ng proyekto",
@@ -1704,7 +1708,7 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
  "When the secretary, treasurer or Collecting and Disbursing Officer is away, you can do their tasks for a set period. It is recorded in the audit trail.": "Kapag wala ang Secretary, Treasurer o Collecting Officer at Pagbabayad, magagawa mo ang kanilang mga gawain sa takdang panahon. Nire-record ito sa audit trail.",
  "Stand in for an officer": "Pumalit sa isang officer",
  "You do that officer’s tasks until the date you set. A fund record you send or check while standing in gets its final approval from the Vice-Chairperson, so two people still check every record.": "Gagawin mo ang mga gawain ng officer na iyon hanggang sa petsang itinakda mo. Ang record ng pondong ipapadala o ire-review mo habang pumapalit ay pinal na aaprubahan ng Vice-Chairperson, kaya dalawang tao pa rin ang sumusuri sa bawat record.",
- "What would you like to do?": "Ano ang nais mong gawin?",
+ "What would you like to do?": "Ano ang gusto mong gawin?",
  "Stop standing in": "Itigil ang pagpalit",
  "Officer who is away": "Officer na wala",
  "Until": "Hanggang",
@@ -1750,7 +1754,7 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
  "Declined": "Tinanggihan",
  "Screened": "Na-review",
  "For School-Head approval": "Para sa approval ng School Head",
- "Board did not adopt": "Hindi inadopt ng lupon",
+ "Board did not adopt": "Hindi inadopt ng board",
  "Withdrawn": "Na-withdraw",
  "For treasurer approval": "Para sa approval ng Treasurer",
  "Posted": "Naipost",
@@ -1769,7 +1773,7 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
  "Received by treasurer": "Natanggap ng Treasurer",
  "Enter a peso amount with up to two decimal places.": "Maglagay ng halagang piso na hanggang dalawang decimal.",
  "Enter an amount above zero.": "Maglagay ng halagang higit sa zero.",
- "Enter a valid date.": "Maglagay ng wastong petsa.",
+ "Enter a valid date.": "Maglagay ng tamang petsa.",
  "Enter a mobile number such as 09171234567.": "Maglagay ng mobile number tulad ng 09171234567.",
  "Those details do not match an account used on this phone. Ask the SPTA secretary for help.": "Hindi tugma ang mga detalyeng ito sa anumang account na ginamit sa teleponong ito. Humingi ng tulong sa Secretary ng SPTA.",
  "That record is no longer available.": "Wala na ang record na iyon.",
@@ -1811,7 +1815,7 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
  "Choose a matching seat or a confirmed additional seat.": "Pumili ng tugmang seat o ng nakumpirmang karagdagang seat.",
  "Choose the existing seat for this homeroom.": "Piliin ang kasalukuyang seat para sa homeroom na ito.",
  "This seat was already assigned.": "Naitalaga na ang upuang ito.",
- "Choose a current board officer.": "Pumili ng kasalukuyang officer ng lupon.",
+ "Choose a current board officer.": "Pumili ng kasalukuyang officer ng board.",
  "Confirm the roster entry.": "I-confirm ang entry sa list.",
  "Choose a current HPTA president.": "Pumili ng kasalukuyang HPTA President.",
  "Confirm that this officer’s term ended.": "I-confirm na tapos na ang termino ng officer na ito.",
@@ -1830,7 +1834,7 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
  "A vote has already been received from this account.": "May natanggap nang boto mula sa account na ito.",
  "This ballot is closed.": "Sarado na ang balotang ito.",
  "Confirm the voting period has ended.": "I-confirm na tapos na ang panahon ng botohan.",
- "Confirm that you want to withdraw this.": "I-confirm na nais mong i-withdraw ito.",
+ "Confirm that you want to withdraw this.": "I-confirm na gusto mong i-withdraw ito.",
  "Only the sender can withdraw this.": "Ang nagpadala lamang ang puwedeng bumawi nito.",
  "This proposal was already decided and can no longer be withdrawn.": "Napagdesisyunan na ang proposal na ito at hindi na puwedeng i-withdraw.",
  "This was already resolved and can no longer be withdrawn.": "Naresolba na ito at hindi na puwedeng i-withdraw.",
@@ -1838,11 +1842,11 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
  "Choose an end date within the next 60 days.": "Pumili ng petsa ng pagtatapos sa loob ng susunod na 60 araw.",
  "The School Head, chairperson or secretary publishes announcements.": "Ang School Head, Chairperson o Secretary ang nagpa-publish ng mga announcement.",
  "Message": "Mensahe",
- "Confirm that you want to remove this announcement.": "I-confirm na nais mong alisin ang announcement na ito.",
+ "Confirm that you want to remove this announcement.": "I-confirm na gusto mong alisin ang announcement na ito.",
  "A closed passing vote on this version is required.": "Kailangan ng saradong botong pumasa para sa version na ito.",
  "This proposal is not waiting for the School Head.": "Hindi naghihintay sa School Head ang proposal na ito.",
  "Added by the chairperson": "Idinagdag ng Chairperson",
- "General Assembly agreement reference": "Sanggunian ng kasunduan ng General Assembly",
+ "General Assembly agreement reference": "Reference ng agreement ng General Assembly",
  "Record School-Head concurrence for voluntary contributions.": "I-record ang pagsang-ayon ng School Head sa boluntaryong ambag.",
  "This project has ended.": "Tapos na ang proyektong ito.",
  "The new allocation is below what has already been spent.": "Mas mababa ang bagong allocation kaysa sa nagastos na.",
@@ -1862,8 +1866,8 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
  "The secretary does this. The chairperson may stand in while the secretary is away.": "Ang Secretary ang gumagawa nito. Puwedeng pumalit ang Chairperson kapag wala ang Secretary.",
  "Reopen the current draft version.": "Buksang muli ang kasalukuyang draft.",
  "Review the exact resolution before releasing it.": "Suriin ang eksaktong resolution bago ito ilabas.",
- "Choose required signers from the invited board members.": "Pumili ng mga kailangang pumirma mula sa mga inimbitahang miyembro ng lupon.",
- "School signer policy reference": "Sanggunian ng patakaran ng paaralan sa pirma",
+ "Choose required signers from the invited board members.": "Pumili ng mga kailangang pumirma mula sa mga inimbitahang miyembro ng board.",
+ "School signer policy reference": "Reference ng patakaran ng paaralan sa pirma",
  "Resolution text": "Teksto ng resolution",
  "Reopen the current released version.": "Buksang muli ang kasalukuyang inilabas na version.",
  "Version correction reason": "Dahilan ng correction ng version",
@@ -1872,10 +1876,10 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
  "You have already responded to this version.": "Sumagot ka na sa version na ito.",
  "Confirm that you reviewed this version and that this is your own response.": "I-confirm na na-review mo ang version na ito at ikaw mismo ang sumagot.",
  "This version is not open for filing.": "Hindi bukas para i-file ang version na ito.",
- "Confirm that school-required signatures were checked.": "I-confirm na na-review ang mga lagdang hinihingi ng paaralan.",
+ "Confirm that school-required signatures were checked.": "I-confirm na na-review ang mga pirmang hinihingi ng paaralan.",
  "Every required signer must personally acknowledge this version before filing.": "Dapat personal na kilalanin ng bawat kailangang pumirma ang version na ito bago i-file.",
  "Summary safe to share with families": "Buod na ligtas ibahagi sa mga pamilya",
- "Signer policy / exceptions and filing reference": "Patakaran sa pirma / mga eksepsyon at sanggunian sa pag-file",
+ "Signer policy / exceptions and filing reference": "Patakaran sa pirma / mga eksepsyon at reference sa pag-file",
  "A records inspection request needs your name.": "Kailangan ng pangalan mo ang request na suriin ang record.",
  "Hidden-name sending is turned off for this account. Send it with your name.": "Naka-off ang pagtatago ng pangalan sa account na ito. Ipadala ito nang may pangalan mo.",
  "Only the assigned reviewer may update this case.": "Ang nakatalagang reviewer lamang ang puwedeng mag-update ng kasong ito.",
@@ -1889,8 +1893,8 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
  "Only the person who sent a returned record can revise it.": "Ang nagpadala lamang ng ibinalik na record ang puwedeng magbago nito.",
  "Confirm that you checked the line items against the original.": "I-confirm na ni-review mo ang bawat linya laban sa original.",
  "Public purpose": "Public na purpose",
- "Receipt / batch reference": "Sanggunian ng resibo / batch",
- "This receipt reference is already recorded.": "Na-record na ang sanggunian ng resibong ito.",
+ "Receipt / batch reference": "Reference ng resibo / batch",
+ "This receipt reference is already recorded.": "Na-record na ang reference ng resibong ito.",
  "Private item description": "Private na description ng aytem",
  "Add 1 to 60 checked items.": "Magdagdag ng 1 hanggang 60 na-review na aytem.",
  "Choose an active expense project.": "Pumili ng aktibong proyektong paggagastusan.",
@@ -1899,13 +1903,13 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
  "Use the allocation on the original entry for a correction.": "Gamitin ang allocation ng original na entry para sa correction.",
  "Choose a posted entry with the opposite direction.": "Pumili ng naipost na entry na kabaligtaran ang direksyon.",
  "Corrections exceed the original entry.": "Lampas sa original na entry ang mga correction.",
- "Retain the original adjustment reference.": "Panatilihin ang original na sanggunian ng pagsasaayos.",
+ "Retain the original adjustment reference.": "Panatilihin ang original na reference ng pagsasaayos.",
  "The treasurer does this. The chairperson may stand in while the treasurer is away.": "Ang Treasurer ang gumagawa nito. Puwedeng pumalit ang Chairperson kapag wala ang Treasurer.",
  "This record is not waiting for the treasurer.": "Hindi naghihintay sa Treasurer ang record na ito.",
  "Reason for return": "Dahilan ng pagbabalik",
  "Confirm that you received this amount and checked it against the original.": "I-confirm na natanggap mo ang halagang ito at ni-review laban sa original.",
- "An independently submitted pending batch is required. The Vice-Chairperson gives the final approval on records the chairperson sent or checked.": "Kailangan ng hiwalay na isinumiteng nakabinbing batch. Ang Vice-Chairperson ang nagbibigay ng pinal na approval sa mga record na ipinadala o ni-review ng Chairperson.",
- "This finance submission changed. Open its latest version before reviewing.": "Nagbago ang isinumiteng ito sa finance. Buksan ang pinakabagong version bago suriin.",
+ "An independently submitted pending batch is required. The Vice-Chairperson gives the final approval on records the chairperson sent or checked.": "Kailangan ng pending na batch na ibang officer ang nag-submit. Ang Vice-Chairperson ang nagbibigay ng pinal na approval sa mga record na ipinadala o ni-review ng Chairperson.",
+ "This finance submission changed. Open its latest version before reviewing.": "Nagbago ang na-submit na ito sa finance. Buksan ang pinakabagong version bago suriin.",
  "Open the supporting file and confirm your review.": "Buksan ang attachment na file at i-confirm ang iyong review.",
  "Confirm the purpose is safe to publish.": "I-confirm na ligtas i-publish ang purpose.",
  "The project allocation no longer permits this expense.": "Hindi na pinapahintulutan ng allocation ng proyekto ang gastos na ito.",
@@ -1936,7 +1940,7 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
  "Note and file": "I-record at i-file",
  "Review request": "Suriin ang request",
  "Review access": "Suriin ang access",
- "End assignment": "Tapusin ang pagtatalaga",
+ "End assignment": "Tapusin ang designation",
  "Request BOD role": "Humiling ng tungkulin sa BOD",
  "BOD role request": "Request sa tungkulin sa BOD",
  "Verified BOD review access.": "Beripikadong access sa review bilang BOD.",
@@ -1948,8 +1952,8 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
  "Earlier fictional records are loaded. Reset demo starts the sample meeting and finance review.": "Nai-load ang mga naunang fictional na record. Sisimulan ng Reset demo ang sample meeting at review sa finance.",
  "Show all assigned feedback": "Ipakita ang lahat ng nakatalagang puna",
  "Turn on": "Buksan",
- "Suggestions sent to you": "Mga mungkahing ipinadala sa iyo",
- "Concerns sent to you": "Mga alalahaning ipinadala sa iyo",
+ "Suggestions sent to you": "Mga suggestion na ipinadala sa iyo",
+ "Concerns sent to you": "Mga concern na ipinadala sa iyo",
  "Nothing here yet.": "Wala pa rito.",
  "Matches the total written on the paper.": "Tugma sa kabuuang nakasulat sa papel.",
  "What it is for": "Para saan ito",
@@ -2029,23 +2033,23 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
  "Finance posting reviewed": "Na-review ang pag-post sa finance",
  "Roster request reviewed": "Na-review ang request sa list",
  "Acting chair assigned": "Naitalagang pansamantalang Chairperson",
- "Acting chair assignment ended": "Natapos ang pagtatalaga ng pansamantalang Chairperson",
+ "Acting chair assignment ended": "Natapos ang designation ng pansamantalang Chairperson",
  "BOD term ended": "Natapos ang termino sa BOD",
  "Meeting eligibility updated for future ballots": "Na-update ang pagiging karapat-dapat sa meeting para sa mga susunod na ballot",
  "Hidden-name sending turned off for the sender of a case": "Pinatay ang pagtatago ng pangalan para sa nagpadala ng isang kaso",
  "Chairperson added a proposal for School-Head approval without an officer vote": "Nagdagdag ang Chairperson ng proposal para sa approval ng School Head nang walang boto ng mga officer",
- "End acting assignment": "Tapusin ang pansamantalang pagtatalaga",
- "Assign acting chairperson": "Magtalaga ng pansamantalang Chairperson",
- "School assignment reference": "Sanggunian ng pagtatalaga ng paaralan",
- "Last day of assignment": "Huling araw ng pagtatalaga",
- "Save assignment": "I-save ang pagtatalaga",
+ "End acting assignment": "Tapusin ang pansamantalang designation",
+ "Assign acting chairperson": "Mag-designate ng pansamantalang Chairperson",
+ "School assignment reference": "Reference ng designation ng paaralan",
+ "Last day of assignment": "Huling araw ng designation",
+ "Save assignment": "I-save ang designation",
  "Request BOD access": "Humiling ng access sa BOD",
  "The chairperson or School Head will verify your HPTA presidency.": "Ibeberipika ng Chairperson o ng School Head ang iyong pagkapangulo sa HPTA.",
  "Send request": "Ipadala ang request",
  "Verify BOD request": "Beripikahin ang request sa BOD",
  "Approve BOD access": "I-approve ang access sa BOD",
  "Return with a reason": "Ibalik na may dahilan",
- "Match the board seat": "Itugma ang seat sa lupon",
+ "Match the board seat": "Itugma ang seat sa board",
  "Choose the matching seat": "Piliin ang tugmang seat",
  "Vacant": "Bakante",
  "Additional seat confirmed on the roster": "Karagdagang upuang nakumpirma sa list",
@@ -2078,7 +2082,7 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
  "Resolution wording": "Pananalita ng resolution",
  "Required signatures": "Mga kailangang pirma",
  "Named signers under a documented school rule": "Mga pinangalanang lalagda ayon sa dokumentadong patakaran ng paaralan",
- "School signer policy or resolution reference": "Patakaran ng paaralan sa pirma o sanggunian ng resolution",
+ "School signer policy or resolution reference": "Patakaran ng paaralan sa pirma o reference ng resolution",
  "I verified the wording and required signers against the school record.": "Ni-review ko ang pananalita at ang mga kailangang pumirma laban sa record ng paaralan.",
  "Publish for signatures": "I-publish para sa mga pirma",
  "My response": "Aking sagot",
@@ -2088,7 +2092,7 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
  "I reviewed this exact version and this is my own response.": "Ni-review ko ang eksaktong version na ito at ito ang sarili kong sagot.",
  "Record my response": "I-record ang aking sagot",
  "File resolution": "I-file ang resolution",
- "Record the applicable signer policy, exceptions and filing reference": "I-record ang naaangkop na patakaran sa pirma, mga eksepsyon at sanggunian sa pag-file",
+ "Record the applicable signer policy, exceptions and filing reference": "I-record ang naaangkop na patakaran sa pirma, mga eksepsyon at reference sa pag-file",
  "I checked that the required signers have signed under the applicable school procedure.": "Ni-review kong pumirma ang mga kailangang pumirma ayon sa naaangkop na pamamaraan ng paaralan.",
  "File and publish parent summary": "I-file at i-publish ang buod para sa magulang",
  "Correct resolution wording": "Itama ang pananalita ng resolution",
@@ -2107,7 +2111,7 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
  "Account": "Account",
  "This action is unavailable.": "Hindi available ang aksyong ito.",
  "SPTA community": "Komunidad ng SPTA",
- "Suggestions raised": "Mga mungkahing inilahad",
+ "Suggestions raised": "Mga suggestion na inilahad",
  "Private concerns": "Mga private concern",
  "SPTA funds": "Pondo ng SPTA",
  "Shared rehearsal": "Pinagsasaluhang practice",
@@ -2181,7 +2185,7 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
  "Your reply as": "Iyong sagot bilang",
  "Home page": "Home page",
  "Not held": "Hindi isinagawa",
- "Required signature(s) outstanding": "Mga kailangang lagdang hindi pa naisusumite",
+ "Required signature(s) outstanding": "Mga kailangang pirmang hindi pa nai-submit",
  "Tab": "Tab",
  "Escape": "Escape",
  "Loading…": "Naglo-load…",
@@ -2262,11 +2266,11 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
  "More Visible School Safety Signages": "Mas Kapansin-pansing mga Karatula sa Kaligtasan ng Paaralan",
  "Add simple, child-friendly direction and emergency reminder signs where needed.": "Magdagdag ng simple at madaling maintindihang mga karatula ng direksyon at paalala sa emerhensiya kung saan kailangan.",
  "Leaking Tap in a Wash Area": "Tumutulong Gripo sa Lugar-Hugasan",
- "Sample maintenance concern submitted for routing to the authorized school office.": "Sample concern sa pagpapanatili na na-submit para ipasa sa awtorisadong tanggapan ng paaralan.",
+ "Sample maintenance concern submitted for routing to the authorized school office.": "Sample concern sa maintenance na na-submit para ipasa sa authorized na opisina ng paaralan.",
  "Clarify Dismissal Schedule Announcement": "Linawin ang Announcement sa Iskedyul ng Uwian",
  "Sample question about a school-wide scheduling announcement.": "Sample tanong tungkol sa announcement sa iskedyul para sa buong paaralan.",
  "Broken Light Near a Covered Corridor": "Sirang Ilaw Malapit sa May Bubong na Pasilyo",
- "Sample safety and maintenance observation.": "Sample obserbasyon sa kaligtasan at pagpapanatili.",
+ "Sample safety and maintenance observation.": "Sample obserbasyon sa kaligtasan at maintenance.",
  "Water Puddling After a Heavy Rain": "Naiipong Tubig Pagkatapos ng Malakas na Ulan",
  "Sample report of a slippery area requiring attention.": "Sample ulat ng madulas na lugar na kailangang pansinin.",
  "Community Reading Corner": "Sulok ng Pagbabasa ng Komunidad",
@@ -2275,7 +2279,7 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
  "Weekend School Mural Day": "Araw ng Mural sa Paaralan Tuwing Weekend",
  "A sample student-and-parent mural activity for an unused school wall.": "Sample gawaing mural ng mga estudyante at magulang para sa hindi ginagamit na pader ng paaralan.",
  "The wall needs repair before the mural can be painted.": "Kailangang ayusin ang pader bago maipinta ang mural.",
- "The proposed wall needs repair first. No materials were purchased, and the illustrative budget remains unspent.": "Kailangan munang ayusin ang iminungkahing pader. Walang binili na materyales, at hindi nagastos ang sample badyet.",
+ "The proposed wall needs repair first. No materials were purchased, and the illustrative budget remains unspent.": "Kailangan munang ayusin ang proposed na pader. Walang binili na materyales, at hindi nagastos ang sample badyet.",
  "Safety signage proposal received": "Natanggap ang proposal sa karatula ng kaligtasan",
  "EC-0024 · Automated acknowledgement sent": "EC-0024 · Naipadala ang awtomatikong pagkilala sa pagtanggap",
  "Today": "Ngayon",
@@ -2297,8 +2301,8 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
  "Demo record": "Record sa demo",
  "Attach a document uploaded by this profile.": "Mag-attach ng dokumentong in-upload ng profile na ito.",
  "File or request too large.": "Masyadong malaki ang file o request.",
- "Invalid action.": "Hindi wastong aksyon.",
- "Invalid document type or contents.": "Hindi wastong uri o laman ng document.",
+ "Invalid action.": "Hindi tamang aksyon.",
+ "Invalid document type or contents.": "Hindi tamang uri o laman ng document.",
  "Open the current supporting original with this profile before posting.": "Buksan muna ang kasalukuyang original na attachment gamit ang profile na ito bago mag-post.",
  "Sign in again to continue.": "Mag-sign in muli para magpatuloy.",
  "Too many attempts. Try again in one minute.": "Masyadong maraming pagtatangka. Subukan muli sa loob ng isang minutes.",
@@ -2545,7 +2549,7 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
  "Everyone": "Lahat",
  "Status: Approved": "Status: Na-approve",
  "BOD access request": "Request para sa BOD access",
- "For an urgent child-safety matter, contact the school’s designated safeguarding staff directly.": "Para sa agarang usapin ng kaligtasan ng bata, direktang makipag-ugnayan sa itinalagang kawani ng paaralan para sa kaligtasan ng mga bata.",
+ "For an urgent child-safety matter, contact the school’s designated safeguarding staff directly.": "Para sa urgent na usapin ng kaligtasan ng bata, direktang makipag-ugnayan sa naka-assign na staff ng paaralan para sa kaligtasan ng mga bata.",
  "Only you and the Vice-Chairperson can read what parents send.": "Ikaw at ang Vice-Chairperson lamang ang makakabasa ng ipinapadala ng mga magulang.",
  "Only you and the chairperson can read what parents send.": "Ikaw at ang Chairperson lamang ang makakabasa ng ipinapadala ng mga magulang.",
  "Pass an item on to the School Head if it is worth their time.": "Ipasa sa School Head ang bagay na sulit nilang bigyang-oras.",
@@ -2569,7 +2573,7 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
  "Minutes of the SPTA Meeting": "Minutes ng SPTA Meeting",
  "The SPTA meeting on November 17, 2026, covered raffle ticket sales and fund allocations, outstanding collections, PTA annual fees, proposed funding for Gate 1 replacement and the Reading Park, a school-based fundraising raffle for solar panel installation, the officers’ year-end party, and the pre-launch demonstration of the SPTA Community App.": "Tinalakay sa SPTA meeting noong Nobyembre 17, 2026 ang bentahan ng raffle ticket at paglalaan ng pondo, ang mga hindi pa nakokolektang bayarin, ang taunang bayad sa PTA, ang iminumungkahing pondo para sa pagpapalit ng Gate 1 at para sa Reading Park, ang fundraising raffle ng paaralan para sa pagkakabit ng solar panel, ang year-end party ng mga officer, at ang pre-launch na demonstrasyon ng SPTA Community App.",
  "The District Initiative Reading Park is a district-level competition aimed at promoting literacy, encouraging reading habits, and creating an engaging learning environment for students.": "Ang District Initiative Reading Park ay isang patimpalak sa antas ng distrito na naglalayong isulong ang literasiya, hikayatin ang mga gawi sa pagbabasa, at lumikha ng kaaya-ayang kapaligirang pampagkatuto para sa mga estudyante.",
- "The project will be a collaborative effort between the ECES School Administration and the SPTA Organization, working together to develop a functional, accessible, and student-friendly reading space.": "Ang proyekto ay magiging sama-samang pagsisikap ng Administrasyon ng ECES at ng SPTA, na magtutulungan upang makabuo ng isang gumagana, madaling marating, at kaaya-ayang espasyo sa pagbabasa para sa mga estudyante.",
+ "The project will be a collaborative effort between the ECES School Administration and the SPTA Organization, working together to develop a functional, accessible, and student-friendly reading space.": "Ang proyekto ay magiging sama-samang pagsisikap ng Administrasyon ng ECES at ng SPTA, na magtutulungan para makabuo ng isang gumagana, madaling marating, at kaaya-ayang espasyo sa pagbabasa para sa mga estudyante.",
  "SPTA General Assembly": "Pangkalahatang Meeting ng SPTA",
  "School grounds": "Bakuran ng paaralan",
  "All parents are invited. The officers will report on projects and SPTA funds.": "Inaanyayahan ang lahat ng magulang. Mag-uulat ang mga officer tungkol sa mga proyekto at pondo ng SPTA.",
@@ -2580,7 +2584,7 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
  "Shelves and floor mats in place for the reading corner": "Nakalagay na ang mga estante at floor mat para sa reading corner",
  "Show 20 more": "Magpakita ng 20 pa",
  "ECES SPTA Community App": "ECES SPTA Community App",
- "This app is managed by the East Central Elementary School SPTA in San Fabian, Pangasinan, with the approval of the School Head.": "Ang app na ito ay pinamamahalaan ng SPTA ng East Central Elementary School sa San Fabian, Pangasinan, na may pahintulot ng School Head.",
+ "This app is managed by the East Central Elementary School SPTA in San Fabian, Pangasinan, with the approval of the School Head.": "Ang app na ito ay pinamamahalaan ng SPTA ng East Central Elementary School sa San Fabian, Pangasinan, na may permiso ng School Head.",
  "For privacy concerns, please contact the SPTA Chairperson or the School Head’s Office.": "Para sa mga concern tungkol sa privacy, makipag-ugnayan sa Chairperson ng SPTA o sa Opisina ng School Head.",
  "What information we collect": "Anong impormasyon ang kinokolekta namin",
  "We collect your name, mobile number, and your child’s name, grade, and section. You may also add information about your other children.": "Kinokolekta namin ang inyong pangalan, mobile number, at ang pangalan, grade, at section ng inyong anak. Puwede rin kayong magdagdag ng impormasyon tungkol sa iba ninyong anak.",
@@ -2590,15 +2594,15 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
  "Adding a profile picture is optional.": "Opsyonal ang pagdagdag ng profile picture.",
  "We use this information to manage SPTA activities, review proposals, record decisions, respond to concerns, and provide transparent financial reports.": "Ginagamit namin ang impormasyong ito para pamahalaan ang mga aktibidad ng SPTA, suriin ang mga proposal, i-record ang mga desisyon, sagutin ang mga concern, at magbigay ng bukás na ulat pinansyal.",
  "Everyone can view approved projects, published financial reports, announcements, and resolutions.": "Makikita ng lahat ang mga approved na proyekto, nailathalang ulat pinansyal, announcement, at resolution.",
- "Private concerns and requests are accessible only to authorized officers or school officials responsible for handling them.": "Ang mga private concern at request ay makikita lamang ng mga awtorisadong officer o officer ng paaralan na may hawak ng mga ito.",
- "Your children’s information and profile picture are not displayed publicly. Authorized administrators may access account information when necessary.": "Hindi ipinapakita sa publiko ang impormasyon ng inyong mga anak at ang inyong profile picture. Puwedeng tingnan ng mga awtorisadong administrator ang impormasyon ng account kapag kinakailangan.",
+ "Private concerns and requests are accessible only to authorized officers or school officials responsible for handling them.": "Ang mga private concern at request ay makikita lamang ng mga authorized na officer o officer ng paaralan na may hawak ng mga ito.",
+ "Your children’s information and profile picture are not displayed publicly. Authorized administrators may access account information when necessary.": "Hindi ipinapakita sa publiko ang impormasyon ng inyong mga anak at ang inyong profile picture. Puwedeng tingnan ng mga authorized na administrator ang impormasyon ng account kapag kinakailangan.",
  "Officer voting results are displayed as totals. Published resolutions may include officers’ names and signatures.": "Kabuuang bilang lamang ang ipinapakita sa resulta ng botohan ng mga officer. Puwedeng nakasaad sa mga nailathalang resolution ang pangalan at pirma ng mga officer.",
  "Financial documents and project photos are reviewed before publication to protect private information.": "Nire-review muna ang mga dokumentong pinansyal at photo ng proyekto bago ilathala para maprotektahan ang private na impormasyon.",
  "Children’s privacy": "Privacy ng mga bata",
  "We collect only the information needed for SPTA-related purposes.": "Kinokolekta lamang namin ang impormasyong kailangan para sa mga purpose ng SPTA.",
  "Please do not upload photos or documents that unnecessarily show students’ faces, names, or personal information.": "Pakiusap, huwag mag-upload ng mga photo o dokumentong hindi kailangang magpakita ng mukha, pangalan, o personal na impormasyon ng mga estudyante.",
  "How we protect your information": "Paano namin pinoprotektahan ang inyong impormasyon",
- "Access to private information is limited to authorized users based on their roles.": "Ang pag-access sa private na impormasyon ay limitado sa mga awtorisadong user ayon sa kanilang tungkulin.",
+ "Access to private information is limited to authorized users based on their roles.": "Ang pag-access sa private na impormasyon ay limitado sa mga authorized na user ayon sa kanilang role.",
  "The app may use third-party hosting and storage services, which must follow applicable privacy and security requirements.": "Puwedeng gumamit ang app ng third-party na hosting at storage service, na kailangang sumunod sa mga umiiral na patakaran sa privacy at seguridad.",
  "How long we keep your information": "Gaano katagal namin iniingatan ang inyong impormasyon",
  "We follow different retention periods depending on the type of information.": "Iba-iba ang haba ng pag-iingat namin depende sa uri ng impormasyon.",
@@ -2607,7 +2611,7 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
  "Profile pictures: Kept until removed by the user or the account is deleted.": "Mga profile picture: Iniingatan hanggang alisin ng user o hanggang mabura ang account.",
  "Private suggestions and resolved concerns: Kept for one year after closure, unless needed for further action.": "Mga private na suhestiyon at nalutas na concern: Iniingatan sa loob ng isang taon pagkatapos isara, maliban kung kailangan pa para sa karagdagang aksyon.",
  "Financial records and receipts: Normally kept for 10 years, or longer if required by applicable rules.": "Mga record na pinansyal at resibo: Karaniwang iniingatan sa loob ng 10 taon, o mas matagal kung hinihingi ng mga umiiral na patakaran.",
- "Meeting minutes, resolutions, voting results, and project records: Kept in the SPTA’s official archive for accountability and future reference, following approved school recordkeeping rules.": "Minutes ng meeting, resolution, resulta ng botohan, at record ng proyekto: Iniingatan sa officer na archive ng SPTA para sa pananagutan at sanggunian sa hinaharap, ayon sa approved na patakaran ng paaralan sa pag-iingat ng record.",
+ "Meeting minutes, resolutions, voting results, and project records: Kept in the SPTA’s official archive for accountability and future reference, following approved school recordkeeping rules.": "Minutes ng meeting, resolution, resulta ng botohan, at record ng proyekto: Iniingatan sa officer na archive ng SPTA para sa accountability at reference sa hinaharap, ayon sa approved na patakaran ng paaralan sa pag-iingat ng record.",
  "Announcements and routine activities: Normally kept until 90 days after the school year ends, unless needed for official records.": "Mga announcement at karaniwang aktibidad: Karaniwang iniingatan hanggang 90 araw pagkatapos ng school year, maliban kung kailangan para sa officer na record.",
  "Information involved in unresolved complaints, audits, or legal matters may be kept longer when necessary.": "Ang impormasyong may kinalaman sa hindi pa nalulutas na reklamo, audit, o usaping legal ay puwedeng iingatan nang mas matagal kapag kinakailangan.",
  "Official SPTA records are preserved and properly turned over to incoming officers each school year.": "Iniingatan ang mga officer na record ng SPTA at maayos na ipinapasa sa mga papasok na officer bawat school year.",
@@ -2617,10 +2621,10 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
  "For assistance, contact the SPTA Chairperson or the School Head’s Office.": "Para sa tulong, makipag-ugnayan sa Chairperson ng SPTA o sa Opisina ng School Head.",
  "You may also file a complaint with the National Privacy Commission at privacy.gov.ph.": "Puwede rin kayong magsampa ng reklamo sa National Privacy Commission sa privacy.gov.ph.",
  "Creating an account is voluntary. You can view public projects, financial reports, and announcements without registering.": "Kusang-loob ang paggawa ng account. Puwede ninyong makita ang mga public na proyekto, ulat pinansyal, at announcement kahit hindi nagrerehistro.",
- "You may withdraw your consent and request account closure by contacting the SPTA Chairperson.": "Puwede ninyong i-withdraw ang inyong pahintulot at hilingin na isara ang account sa pamamagitan ng pakikipag-ugnayan sa Chairperson ng SPTA.",
+ "You may withdraw your consent and request account closure by contacting the SPTA Chairperson.": "Puwede ninyong i-withdraw ang inyong consent at hilingin na isara ang account sa pamamagitan ng pakikipag-ugnayan sa Chairperson ng SPTA.",
  "However, information that forms part of official SPTA records may still be kept when required by law or school recordkeeping policies.": "Gayunman, ang impormasyong bahagi ng officer na record ng SPTA ay puwede pa ring iingatan kapag hinihingi ng batas o ng patakaran ng paaralan sa pag-iingat ng record.",
- "Changes to this notice": "Mga pagbabago sa paunawang ito",
- "We may update this notice when the app’s features or privacy practices change. Important updates will be communicated to users.": "Puwede naming baguhin ang paunawang ito kapag nagbago ang mga feature o gawi ng app sa privacy. Ipapaalam sa mga user ang mahahalagang pagbabago.",
+ "Changes to this notice": "Mga pagbabago sa notice na ito",
+ "We may update this notice when the app’s features or privacy practices change. Important updates will be communicated to users.": "Puwede naming baguhin ang notice na ito kapag nagbago ang mga feature o gawi ng app sa privacy. Ipapaalam sa mga user ang mahahalagang pagbabago.",
  "Parent accounts:": "Mga account ng magulang:",
  "Kept during the school year and for 90 days afterward if the account is no longer active.": "Iniingatan sa buong school year at sa loob ng 90 araw pagkatapos nito kung hindi na aktibo ang account.",
  "Officer accounts:": "Mga account ng officer:",
@@ -2632,7 +2636,7 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
  "Financial records and receipts:": "Mga record na pinansyal at resibo:",
  "Normally kept for 10 years, or longer if required by applicable rules.": "Karaniwang iniingatan sa loob ng 10 taon, o mas matagal kung hinihingi ng mga umiiral na patakaran.",
  "Meeting minutes, resolutions, voting results, and project records:": "Minutes ng meeting, resolution, resulta ng botohan, at record ng proyekto:",
- "Kept in the SPTA’s official archive for accountability and future reference, following approved school recordkeeping rules.": "Iniingatan sa officer na archive ng SPTA para sa pananagutan at sanggunian sa hinaharap, ayon sa approved na patakaran ng paaralan sa pag-iingat ng record.",
+ "Kept in the SPTA’s official archive for accountability and future reference, following approved school recordkeeping rules.": "Iniingatan sa officer na archive ng SPTA para sa accountability at reference sa hinaharap, ayon sa approved na patakaran ng paaralan sa pag-iingat ng record.",
  "Announcements and routine activities:": "Mga announcement at karaniwang aktibidad:",
  "Normally kept until 90 days after the school year ends, unless needed for official records.": "Karaniwang iniingatan hanggang 90 araw pagkatapos ng school year, maliban kung kailangan para sa officer na record.",
  "You may also file a complaint with the National Privacy Commission at": "Puwede rin kayong magsampa ng reklamo sa National Privacy Commission sa",
@@ -2648,7 +2652,7 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
  "The School Head also installed exhaust fans and adjusted class schedules to help students avoid extreme heat.": "Nagkabit din ang School Head ng mga exhaust fan at inayos ang mga schedule ng klase para maiwasan ng mga estudyante ang matinding init.",
  "The SPTA decided that the funds would be better used for projects that will benefit the school for a longer time.": "Nagpasya ang SPTA na mas mabuting gamitin ang pondo sa mga proyektong mas matagal na makikinabang ang paaralan.",
  "No funds were spent.": "Walang pondong nagamit.",
- "The proposed allocation remains available for other approved SPTA projects.": "Nananatiling magagamit ang iminungkahing allocation para sa ibang approved na proyekto ng SPTA.",
+ "The proposed allocation remains available for other approved SPTA projects.": "Nananatiling magagamit ang proposed na allocation para sa ibang approved na proyekto ng SPTA.",
  "The project aimed to improve the learning environment of Grade 1–Lianita by installing reflective insulation beneath the classroom's metal roofing to reduce excessive heat, minimize noise, and improve classroom comfort.": "Purpose ng proyekto na pagandahin ang learning environment ng Grade 1–Lianita sa pamamagitan ng pagkakabit ng reflective insulation sa ilalim ng metal na bubong ng classroom para mabawasan ang sobrang init at ingay, at maging mas komportable sa classroom.",
  "The project aimed to improve the learning environment of Grade 1–Lianita by installing reflective insulation beneath the classroom’s metal roofing to reduce excessive heat, minimize noise, and improve classroom comfort.": "Purpose ng proyekto na pagandahin ang learning environment ng Grade 1–Lianita sa pamamagitan ng pagkakabit ng reflective insulation sa ilalim ng metal na bubong ng classroom para mabawasan ang sobrang init at ingay, at maging mas komportable sa classroom.",
  "Endorse to an officer": "I-endorse sa isang officer",
@@ -2767,7 +2771,7 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
  "The School Head or the secretary can return this.": "Ang School Head o ang Secretary ang puwedeng magbalik nito.",
  "Thank you for reporting this concern. Because it involves a child’s safety, please inform your child’s class adviser or the School Head immediately. The school’s designated child-protection personnel should assess and address the report. Your child’s safety and privacy are important to us.": "Salamat po sa pag-report ng concern na ito. Dahil may kinalaman ito sa kaligtasan ng isang bata, pakisabihan po agad ang class adviser ng inyong anak o ang School Head. Ang itinalagang child-protection personnel ng paaralan ang dapat sumuri at umaksyon sa report. Mahalaga sa amin ang kaligtasan at privacy ng inyong anak.",
  "Waiting for the school to acknowledge.": "Hinihintay ang acknowledgement ng paaralan.",
- "The school assesses and handles this case. The SPTA only coordinates: ask the parent only what they already know, and do not interview pupils, contact other families or try to verify the report.": "Ang paaralan ang susuri at hahawak sa kasong ito. Tagapag-ugnay lang ang SPTA: itanong lang sa magulang ang alam na nila, at huwag mag-interview ng mga estudyante, kumontak ng ibang pamilya, o subukang i-verify ang report.",
+ "The school assesses and handles this case. The SPTA only coordinates: ask the parent only what they already know, and do not interview pupils, contact other families or try to verify the report.": "Ang paaralan ang susuri at hahawak sa kasong ito. Coordinator lang ang SPTA: itanong lang sa magulang ang alam na nila, at huwag mag-interview ng mga estudyante, kumontak ng ibang pamilya, o subukang i-verify ang report.",
  "Acknowledge referral": "I-acknowledge ang referral",
  "Acknowledge Referral": "I-acknowledge ang Referral",
  "Acknowledge": "I-acknowledge",
@@ -2800,7 +2804,7 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
  "Awaiting School Acknowledgment": "Hinihintay ang Acknowledgment ng Paaralan",
  "The school is responsible for assessing and addressing this concern.": "Ang paaralan ang may pananagutang sumuri at umaksyon sa concern na ito.",
  "The SPTA may request additional information from the reporting parent to assist with the referral.": "Puwedeng humingi ang SPTA ng karagdagang impormasyon sa magulang na nag-report para makatulong sa referral.",
- "All investigations, interviews, and appropriate interventions will be handled by authorized school personnel.": "Ang lahat ng imbestigasyon, interview at angkop na interbensyon ay hahawakan ng awtorisadong personnel ng paaralan.",
+ "All investigations, interviews, and appropriate interventions will be handled by authorized school personnel.": "Ang lahat ng imbestigasyon, interview at angkop na interbensyon ay hahawakan ng authorized personnel ng paaralan.",
  "Referred to School": "Nai-refer sa Paaralan",
  "School Handling": "Hawak ng Paaralan",
  "Action taken": "May aksyon na",
@@ -2838,6 +2842,111 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
  "The chairperson or Vice-Chairperson endorsed these to you.": "Ini-endorse ito sa iyo ng Chairperson o Vice-Chairperson.",
  "Personal Reply from the SPTA": "Personal na Sagot mula sa SPTA",
  "Personal Reply Sent": "Naipadalang Personal na Sagot",
+ "This is about a child’s safety (bullying, harm or abuse)": "Tungkol ito sa kaligtasan ng isang bata (bullying, pananakit o pang-aabuso)",
+ "It goes straight to the school. Write what happened, when and where, and whether the child is safe now. You may name the pupils involved if you know them. Only the school will read this.": "Diretso itong mapupunta sa paaralan. Isulat kung ano ang nangyari, kailan at saan, at kung ligtas na ang bata ngayon. Puwede ninyong banggitin ang pangalan ng mga batang sangkot kung alam ninyo. Ang paaralan lang ang makakabasa nito.",
+ "It goes straight to the school.": "Diretso itong mapupunta sa paaralan.",
+ "Write what happened, when and where, and whether the child is safe now.": "Isulat kung ano ang nangyari, kailan at saan, at kung ligtas na ang bata ngayon.",
+ "You may name the pupils involved if you know them.": "Puwede ninyong banggitin ang pangalan ng mga batang sangkot kung alam ninyo.",
+ "Only the school will read this.": "Ang paaralan lang ang makakabasa nito.",
+ "If a child is in immediate danger, contact their class adviser or the school administration directly now. This app is not an emergency channel.": "Kung may batang nasa panganib ngayon, makipag-ugnayan agad sa kanilang class adviser o sa administrasyon ng paaralan. Hindi pang-emergency ang app na ito.",
+ "If a child is in immediate danger, contact their class adviser or the school administration directly now.": "Kung may batang nasa panganib ngayon, makipag-ugnayan agad sa kanilang class adviser o sa administrasyon ng paaralan.",
+ "This app is not an emergency channel.": "Hindi pang-emergency ang app na ito.",
+ "Thank you for reporting this concern. This app could not send it to the school yet. If a child is in immediate danger, contact their class adviser or the school administration directly now.": "Salamat po sa pag-report ng concern na ito. Hindi pa ito naipadala ng app sa paaralan. Kung may batang nasa panganib ngayon, makipag-ugnayan agad sa kanilang class adviser o sa administrasyon ng paaralan.",
+ "Ask the SPTA chairperson or the School Head for a one-time code. They will check who you are in person first. The code works once, within 30 minutes. Choose your new password yourself; never tell it to anyone.": "Humingi ng one-time code sa Chairperson ng SPTA o sa School Head. Kikilalanin muna nila kayo nang personal. Isang beses lang gagana ang code, sa loob ng 30 minutes. Kayo mismo ang pipili ng bagong password; huwag itong sabihin kaninuman.",
+ "One-time code": "One-time code",
+ "That code is not valid or has expired. Ask the SPTA chairperson or the School Head for a new one.": "Hindi tama o expired na ang code na iyan. Humingi ng bago sa Chairperson ng SPTA o sa School Head.",
+ "Too many tries. Wait 15 minutes, then try again.": "Masyadong maraming subok. Maghintay ng 15 minutes, saka subukan ulit.",
+ "Help a parent reset their password": "Tulungan ang magulang na i-reset ang password",
+ "Help a Parent Reset Their Password": "Tulungan ang Magulang na I-reset ang Password",
+ "Only do this with the parent in front of you. Check who they are against the school’s records first, the way the school has approved. A child’s name, grade or section alone is not proof. The parent types the code and chooses a new password on their own phone. Never ask for their password.": "Gawin lang ito kung kaharap ninyo ang magulang. Kilalanin muna sila gamit ang records ng paaralan, ayon sa paraang na-approve ng paaralan. Hindi sapat na patunay ang pangalan, grade o section ng bata. Ang magulang ang magta-type ng code at pipili ng bagong password sa sarili nilang phone. Huwag kailanman itanong ang password nila.",
+ "The parent’s mobile number": "Mobile number ng magulang",
+ "I checked this parent’s identity in person.": "Personal kong kinilala ang magulang na ito.",
+ "Make a one-time code": "Gumawa ng one-time code",
+ "One-Time Code": "One-Time Code",
+ "Show it to the parent only. It is not shown again. The parent opens Sign in, taps Forgot password, and enters their mobile number, this code and a new password.": "Ipakita ito sa magulang lang. Hindi na ito ipapakita ulit. Bubuksan ng magulang ang Sign in, pipindutin ang Forgot password, at ilalagay ang mobile number, ang code na ito at bagong password.",
+ "Done": "Tapos na",
+ "Confirm that you checked the parent’s identity in person.": "I-confirm na personal ninyong kinilala ang magulang.",
+ "Forgotten passwords": "Nakalimutang password",
+ "Forgotten Passwords": "Nakalimutang Password",
+ "A parent who forgot their password gets a one-time code from you, after you check who they are in person.": "Ang magulang na nakalimot ng password ay makakakuha ng one-time code mula sa inyo, matapos ninyo silang kilalanin nang personal.",
+ "Lost or shared phone": "Nawala o hiniram na phone",
+ "Lost or Shared Phone": "Nawala o Hiniram na Phone",
+ "Sign out of this account on every phone, including this one. Then sign in again on your own phone.": "Mag-sign out sa account na ito sa lahat ng phone, kasama ang phone na ito. Saka mag-sign in ulit sa sarili ninyong phone.",
+ "Sign out on all phones": "Mag-sign out sa lahat ng phone",
+ "Signed out on all phones.": "Naka-sign out na sa lahat ng phone.",
+ "Parents can read this once it is posted. Do not write a parent’s or pupil’s name.": "Mababasa ito ng mga magulang kapag na-post na. Huwag isulat ang pangalan ng magulang o estudyante.",
+ "Pilot version. The school’s Data Protection Officer is still reviewing the Privacy Notice below.": "Pilot version. Nire-review pa ng Data Protection Officer ng paaralan ang Privacy Notice sa ibaba.",
+ "Stop follow-ups": "Itigil ang follow-up",
+ "Stop Follow-Ups": "Itigil ang Follow-Up",
+ "The school already received this report, so it stays with the school. It cannot be taken back, because the school must look after every child’s safety. If you continue, the SPTA will stop following up with you here. You can still talk to your child’s class adviser or the school administration at any time.": "Natanggap na ng paaralan ang report na ito, kaya mananatili ito sa paaralan. Hindi na ito mababawi, dahil responsibilidad ng paaralan na bantayan ang kaligtasan ng bawat bata. Kapag itinuloy ninyo, ititigil na ng SPTA ang pag-follow up sa inyo rito. Puwede pa rin kayong makipag-usap sa class adviser ng inyong anak o sa administrasyon ng paaralan anumang oras.",
+ "Stop follow-ups from the SPTA.": "Itigil ang follow-up ng SPTA.",
+ "You asked the SPTA to stop following up. The school keeps the report it already received.": "Hiniling ninyong itigil ng SPTA ang pag-follow up. Itatago ng paaralan ang report na natanggap na nito.",
+ "The parent asked the SPTA to stop following up. The school keeps the report.": "Hiniling ng magulang na itigil ng SPTA ang pag-follow up. Itatago ng paaralan ang report.",
+ "Alerts appear only inside this app. There are no text messages or emails, so open the app every school day.": "Sa loob lang ng app lumalabas ang mga alerto. Walang text o email, kaya buksan ang app tuwing may pasok.",
+ "Not yet acknowledged · Overdue": "Hindi pa na-acknowledge · Lampas na",
+ "Acknowledged": "Na-acknowledge",
+ "The parent marked this as a child-safety concern, but no school account could receive it. The parent was told to contact the school directly. Refer it as soon as the School Head’s account is set up.": "Minarkahan ito ng magulang bilang concern sa kaligtasan ng bata, pero walang account ng paaralan na makakatanggap nito. Sinabihan ang magulang na direktang makipag-ugnayan sa paaralan. I-refer ito agad kapag na-set up na ang account ng School Head.",
+ "Update or close": "I-update o isara",
+ "School handling": "Hawak ng paaralan",
+ "Child-protection intake": "Pagtanggap ng child-protection report",
+ "Child-Protection Intake": "Pagtanggap ng Child-Protection Report",
+ "You always receive possible child-protection concerns for the school. You may also designate the secretary, as your acting secretary and a teacher, to receive and handle them with you.": "Lagi ninyong natatanggap ang mga posibleng concern sa child protection para sa paaralan. Puwede rin ninyong i-designate ang Secretary, bilang inyong acting secretary at isang guro, para tumanggap at humawak nito kasama ninyo.",
+ "Only you receive them now.": "Kayo lang ang tumatanggap nito ngayon.",
+ "Designate the secretary": "I-designate ang Secretary",
+ "Designate the Secretary": "I-designate ang Secretary",
+ "End the secretary’s designation": "Tapusin ang designation sa Secretary",
+ "End the Secretary’s Designation": "Tapusin ang Designation sa Secretary",
+ "From now on only you receive possible child-protection concerns. The secretary loses access to the open ones.": "Simula ngayon, kayo lang ang makakatanggap ng mga posibleng concern sa child protection. Mawawalan ng access ang Secretary sa mga bukas pa.",
+ "The secretary will receive possible child-protection concerns with you, acknowledge them and handle them under the school’s child protection procedure. She also sees the open ones. Use this only if the school has authorized her.": "Matatanggap ng Secretary ang mga posibleng concern sa child protection kasama ninyo, ia-acknowledge at hahawakan ayon sa child protection procedure ng paaralan. Makikita rin niya ang mga bukas pa. Gamitin lang ito kung authorized siya ng paaralan.",
+ "Reference, such as a school memo number or date (optional)": "Reference, gaya ng numero o petsa ng school memo (opsyonal)",
+ "End the designation.": "Tapusin ang designation.",
+ "I designate the secretary for child-protection intake.": "Itinatalaga ko ang Secretary sa pagtanggap ng child-protection report.",
+ "End designation": "Tapusin",
+ "Designate": "I-designate",
+ "Child-protection intake updated.": "Na-update ang pagtanggap ng child-protection report.",
+ "Acknowledge the referral first.": "I-acknowledge muna ang referral.",
+ "The sender asked to stop follow-ups.": "Hiniling ng nagpadala na itigil ang follow-up.",
+ "No school account can receive this yet. Tell the parent to contact the class adviser or the school administration directly.": "Wala pang account ng paaralan na makakatanggap nito. Sabihan ang magulang na direktang makipag-ugnayan sa class adviser o sa administrasyon ng paaralan.",
+ "Choose “Private concern” for a child-safety report.": "Piliin ang “Private concern” para sa report tungkol sa kaligtasan ng bata.",
+ "This was already closed or stopped.": "Sarado na o itinigil na ito.",
+ "Secretary designated for child-protection intake": "In-designate ang Secretary sa pagtanggap ng child-protection report",
+ "Secretary designation for child-protection intake ended": "Tinapos ang designation sa Secretary sa pagtanggap ng child-protection report",
+ "Sender stopped follow-ups on a child-protection referral": "Itinigil ng nagpadala ang follow-up sa isang child-protection referral",
+ "The School Head designated you to receive child-protection reports for the school.": "In-designate kayo ng School Head na tumanggap ng mga child-protection report para sa paaralan.",
+ "The School Head ended your designation to receive child-protection reports.": "Tinapos ng School Head ang designation sa inyo na tumanggap ng mga child-protection report.",
+ "Password changed with a one-time code": "Napalitan ang password gamit ang one-time code",
+ "One-time password code made for a parent account": "Gumawa ng one-time password code para sa account ng magulang",
+ "Confirmed by School": "Kinumpirma ng Paaralan",
+ "This goes privately to the school. Only the school staff who handle child-protection reports can read it. The SPTA officers cannot.": "Private itong mapupunta sa paaralan. Ang mga staff lang ng paaralan na humahawak ng child-protection report ang makakabasa nito. Hindi ito mababasa ng mga officer ng SPTA.",
+ "This goes privately to the school.": "Private itong mapupunta sa paaralan.",
+ "Only the school staff who handle child-protection reports can read it.": "Ang mga staff lang ng paaralan na humahawak ng child-protection report ang makakabasa nito.",
+ "The SPTA officers cannot.": "Hindi ito mababasa ng mga officer ng SPTA.",
+ "The school will not see your name or section and will reply here in the app.": "Hindi makikita ng paaralan ang pangalan o section ninyo at sasagot ito dito sa app.",
+ "The school may need to reach you to keep a child safe, so leave your name on if you can.": "Baka kailangan kayong makausap ng paaralan para mapanatiling ligtas ang bata, kaya iwanang nakikita ang pangalan ninyo kung kaya.",
+ "It goes straight to the school. Write what happened, when and where, and whether the child is safe now. You may name the pupils involved if you know them.": "Diretso itong mapupunta sa paaralan. Isulat kung ano ang nangyari, kailan at saan, at kung ligtas na ang bata ngayon. Puwede ninyong banggitin ang pangalan ng mga batang sangkot kung alam ninyo.",
+ "You may designate an authorized personnel, the secretary as your acting secretary, to receive, acknowledge, coordinate and monitor child-protection referrals.": "Puwede kayong mag-designate ng authorized personnel, ang Secretary bilang inyong acting secretary, para tumanggap, mag-acknowledge, mag-coordinate at magbantay ng mga child-protection referral.",
+ "Formal assessment, investigation and intervention remain the responsibility of authorized school personnel.": "Nananatiling responsibilidad ng authorized personnel ng paaralan ang pormal na review, imbestigasyon at interbensyon.",
+ "The secretary will receive, acknowledge, coordinate and monitor child-protection referrals with you, and sees the open ones.": "Tatanggap, mag-a-acknowledge, magko-coordinate at magbabantay ang Secretary ng mga child-protection referral kasama ninyo, at makikita niya ang mga bukas pa.",
+ "Only you can record that a report is not a child-protection matter.": "Kayo lang ang puwedeng magtala na hindi usapin ng child protection ang isang report.",
+ "The school’s authorization or approved procedure": "Awtorisasyon o approved na proseso ng paaralan",
+ "Example: School Memo No. 12, s. 2026": "Halimbawa: School Memo No. 12, s. 2026",
+ "If the School Head has designated you, you also receive, acknowledge, coordinate and monitor child-protection referrals.": "Kung in-designate kayo ng School Head, kayo rin ang tatanggap, mag-a-acknowledge, magko-coordinate at magbabantay ng mga child-protection referral.",
+ "Possible child-protection concerns are referred to the school right away.": "Agad na nire-refer sa paaralan ang mga posibleng concern sa child protection.",
+ "You, or the secretary if you designate her, acknowledge each one; the school assesses and handles it under its child protection procedure.": "Kayo, o ang Secretary kung ide-designate ninyo siya, ang mag-a-acknowledge sa bawat isa; ang paaralan ang susuri at hahawak dito ayon sa child protection procedure nito.",
+ "Only the School Head can record that this is not a child-protection matter.": "Ang School Head lang ang puwedeng magtala na hindi ito usapin ng child protection.",
+ "The School Head designated you to receive, acknowledge, coordinate and monitor child-protection referrals for the school.": "In-designate kayo ng School Head na tumanggap, mag-acknowledge, mag-coordinate at magbantay ng mga child-protection referral para sa paaralan.",
+ "The School Head ended your designation for child-protection referrals.": "Tinapos ng School Head ang designation sa inyo para sa mga child-protection referral.",
+ "Only you will receive child-protection reports.": "Kayo lang ang makakatanggap ng mga child-protection report.",
+ "The secretary will receive and follow up child-protection reports with you.": "Tatanggapin at ifo-follow up ng Secretary ang mga child-protection report kasama ninyo.",
+ "The school still assesses each case.": "Ang paaralan pa rin ang susuri sa bawat kaso.",
+ "School approval": "Approval ng paaralan",
+ "e.g. School Memo No. 12, s. 2026": "hal. School Memo No. 12, s. 2026",
+ "You receive child-protection reports.": "Kayo ang tumatanggap ng mga child-protection report.",
+ "You can also let the secretary receive and follow them up.": "Puwede rin ninyong hayaan ang Secretary na tumanggap at mag-follow up nito.",
+ "The school has authorized the secretary to receive these reports.": "In-authorize ng paaralan ang Secretary na tumanggap ng mga report na ito.",
+ "Memo or reference (optional)": "Memo o reference (opsyonal)",
+ "Confirm that the school has authorized the secretary.": "I-confirm na in-authorize ng paaralan ang Secretary.",
+ "Added by the chairperson.": "Idinagdag ng Chairperson.",
  "Show password": "Ipakita ang password",
  "Hide password": "Itago ang password",
  "Back": "Bumalik",
@@ -2926,10 +3035,10 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
       [/^Completed \((\d+)\)$/, "Tapos na ({1})"],
       [/^Cancelled \((\d+)\)$/, "Kinansela ({1})"],
       [/^Status: (.+)$/, "Status: {1}"],
-      [/^Proposed SPTA allocation (₱[\d,\.]+)$/, "Iminungkahing allocation ng SPTA {1}"],
+      [/^Proposed SPTA allocation (₱[\d,\.]+)$/, "Proposed na allocation ng SPTA {1}"],
       [/^Needs fundraising · short by (₱[\d,\.]+)\.?$/, "Kailangan ng pangangalap ng pondo · kulang ng {1}."],
       [/^SPTA funds available now cover (₱[\d,\.]+) of (₱[\d,\.]+)\.$/, "Sakop ng magagamit na pondo ng SPTA ngayon ang {1} ng {2}."],
-      [/^Voting open · Proposed allocation (₱[\d,\.]+)$/, "Bukas ang botohan · Iminungkahing allocation {1}"],
+      [/^Voting open · Proposed allocation (₱[\d,\.]+)$/, "Bukas ang botohan · Proposed na allocation {1}"],
       [/^You hid your name from the reviewer\.$/, "Itinago mo ang pangalan mo sa reviewer."],
       [/^The officer will not see your name or section and will reply here in the app\. You can do this (\d+) times a month\.$/, "Hindi makikita ng officer ang pangalan o section mo at sasagot siya rito sa app. Puwede mo itong gawin ng {1} beses kada buwan."],
       [/^(\d+) Items? Needs? Your Action$/, "{1} Aytem ang Nangangailangan ng Iyong Aksyon"],
@@ -2963,7 +3072,7 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
       [/^The allocation cannot go below (₱[\d,\.]+), which is already spent\.$/, "Hindi puwedeng bumaba sa {1} ang allocation dahil nagastos na ito."],
       [/^The resolution must state the amount the officers voted \((₱[\d,\.]+)\), and no other amount\. A different amount needs a new officer vote through “Change project”\.$/, "Dapat ang halagang iniboto ng mga officer ({1}) lamang ang nakasaad sa resolution, walang ibang halaga. Ang ibang halaga ay nangangailangan ng bagong boto ng mga officer sa pamamagitan ng “Baguhin ang proyekto”."],
       [/^(.+) must be (\d+)[–-](\d+) characters\.$/, "Dapat {2} hanggang {3} karakter ang {1}."],
-      [/^Choose a valid (.+)\.$/, "Pumili ng wastong {1}."],
+      [/^Choose a valid (.+)\.$/, "Pumili ng tamang {1}."],
       [/^Change to (.+)$/, "Pagbabago sa {1}"],
       [/^Reason: (.+)$/, "Dahilan: {1}"],
       [/^A resolution for “(.+)” was drafted\. Review and publish it for signatures\.$/, "Nagawa ang draft ng resolution para sa “{1}”. Suriin at i-publish ito para sa mga pirma."],
@@ -3029,7 +3138,7 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
       [/^From (.+)$/, "Mula kay {1}"],
       [/^Resolution (R-\d+)$/, "Resolution {1}"],
       [/^(\d+) yes, (\d+) no, (\d+) abstain of (\d+) officers$/, "{1} oo, {2} hindi, {3} hindi bumoto, sa {4} officer"],
-      [/^The SPTA records the board decision on “(.+)” and School-Head approval for the project with an allocation of (₱[\d,\.]+)\.$/, "Nire-record ng SPTA ang desisyon ng lupon tungkol sa “{1}” at ang approval ng School Head para sa proyektong may alokasyong {2}."],
+      [/^The SPTA records the board decision on “(.+)” and School-Head approval for the project with an allocation of (₱[\d,\.]+)\.$/, "Nire-record ng SPTA ang desisyon ng board tungkol sa “{1}” at ang approval ng School Head para sa proyektong may alokasyong {2}."],
       [/^The SPTA records the chairperson’s proposal “(.+)”, added without an officer vote, and School-Head approval for the project with an allocation of (₱[\d,\.]+)\.$/, "Nire-record ng SPTA ang proposal ng Chairperson na “{1}”, idinagdag nang walang boto ng mga officer, at ang approval ng School Head para sa proyektong may alokasyong {2}."],
       [/^This replaces the earlier resolution (.+), which authorized a different allocation\.$/, "Pinapalitan nito ang naunang resolusyong {1}, na nagpahintulot ng ibang allocation."],
       [/^A change to this project is waiting for a new officer vote or the School Head’s decision\. The allocation stays (₱[\d,\.]+) until then\.$/, "May pagbabago sa proyektong ito na naghihintay ng bagong boto ng mga officer o ng desisyon ng School Head. Mananatiling {1} ang allocation hanggang doon."],
@@ -3050,6 +3159,14 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
       [/^Open photo: (.+)$/, "Buksan ang photo: {1}"],
       [/^Sample (.+)$/, "Sample {1}"],
       [/^Added by (.+)\. It is public once you approve it\.$/, "Idinagdag ni {1}. Magiging public ito kapag in-approve mo."],
+      [/^You can hide it (\d+) times a month\.$/, "Puwede ninyong itago ito nang {1} beses sa isang buwan."],
+      [/^Sent to the school by the parent on (.+)\.$/, "Ipinadala ng magulang sa paaralan noong {1}."],
+      [/^For (.+)\. It works once, within (\d+) minutes\.$/, "Para kay {1}. Isang beses lang gagana, sa loob ng {2} minutes."],
+      [/^The secretary is designated \((.+)\) since (.+)\.$/, "In-designate ang Secretary ({1}) mula {2}."],
+      [/^The secretary is designated since (.+)\.$/, "In-designate ang Secretary mula {1}."],
+      [/^(.+) · URGENT · A parent sent a possible child-safety concern to the school\. Please acknowledge it and handle it under the school’s child protection procedure\.$/, "{1} · URGENT · May magulang na nagpadala sa paaralan ng posibleng concern sa kaligtasan ng bata. Pakiacknowledge at hawakan ayon sa child protection procedure ng paaralan."],
+      [/^(.+) · The parent asked to stop follow-ups on a child-protection report\. The school keeps the report and decides what to do\.$/, "{1} · Hiniling ng magulang na itigil ang follow-up sa isang child-protection report. Itatago ng paaralan ang report at ito ang magpapasya sa susunod na gagawin."],
+      [/^(.+) · Thank you for reporting this concern\. This app could not send it to the school yet\. If a child is in immediate danger, contact their class adviser or the school administration directly now\.$/, "{1} · Salamat po sa pag-report ng concern na ito. Hindi pa ito naipadala ng app sa paaralan. Kung may batang nasa panganib ngayon, makipag-ugnayan agad sa kanilang class adviser o sa administrasyon ng paaralan."],
       [/^Action was taken on your (concern|suggestion)\. The SPTA will confirm the outcome before closing it\.$/, "May aksyon na sa inyong {1}. Kukumpirmahin ng SPTA ang resulta bago ito isara."],
       [/^(.+) · Action was taken on your (concern|suggestion)\. The SPTA will confirm the outcome before closing it\.$/, "{1} · May aksyon na sa inyong {2}. Kukumpirmahin ng SPTA ang resulta bago ito isara."],
       [/^(.+) · The (.+) asked for more action before closing\.$/, "{1} · Humingi ang {2} ng karagdagang aksyon bago isara."],
@@ -3258,6 +3375,7 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
     assigned: 'Reviewed',
     action_taken: 'Action taken',
     cp_referred: 'Referred to School',
+    cp_ack: 'Acknowledged',
     cp_handling: 'School Handling',
     cp_closed: 'Closed',
     resolved: 'Resolved',
@@ -3606,6 +3724,7 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
       if (item.status === 'withdrawn') return 'You withdrew this ' + what + '. Nothing more will happen with it.';
       if (item.status === 'resolved') return 'Your ' + what + ' was marked resolved by the ' + who + '.';
       // A possible child-protection concern: the parent is told only that it is being handled, never how.
+      if (item.safety && !item.urgent && item.status !== 'resolved') return 'Thank you for reporting this concern. This app could not send it to the school yet. If a child is in immediate danger, contact their class adviser or the school administration directly now.';
       if (item.urgent) return 'Thank you for reporting this concern. Because it involves a child’s safety, please inform your child’s class adviser or the School Head immediately. The school’s designated child-protection personnel should assess and address the report. Your child’s safety and privacy are important to us.';
       if (item.status === 'assigned') return 'Your ' + what + ' was reviewed by the ' + who + '.';
       if (item.status === 'action_taken') return 'Action was taken on your ' + what + '. The ' + who + ' will confirm the outcome before closing it.';
@@ -3694,7 +3813,10 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
   // acting secretary (authorized school personnel), own it. The chairperson and Vice-Chairperson only coordinate.
   // An SPTA matter may be endorsed to one officer, who then sees that case only.
   function canSeeCase(actor, c) {
-    if (actor.id === c.owner || actor.role === c.assigned) return true;
+    if (actor.id === c.owner) return true;
+    // A child-protection referral: only the school's intake roles, plus the chairperson and Vice-Chairperson if they referred it themselves.
+    if (c.protection) return intakeOf(c).includes(actor.role) || !c.protection.direct && ['chair', 'vice'].includes(actor.role);
+    if (actor.role === c.assigned) return true;
     if (!onDesk(c)) return false;
     if (actor.id && c.endorsed?.to === actor.id) return true;
     if (['chair', 'vice'].includes(actor.role)) return true;
@@ -3704,12 +3826,23 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
   function caseHandler(db, a, c) {
     if (!a?.active) return false;
     if (!onDesk(c)) return holds(db, a, c.assigned);
-    if (c.protection) return a.role === 'head' || holds(db, a, 'secretary');
+    // No stand-in here: a person covering for the secretary in the SPTA is not school personnel.
+    if (c.protection) return intakeOf(c).includes(a.role);
     if (c.endorsed?.to === a.id) return true;
     return ['chair', 'vice'].includes(a.role) || !!c.forwarded && (a.role === 'head' || holds(db, a, 'secretary'));
   }
   // The SPTA officers who coordinate a child-protection referral.
-  const caseCoordinator = (db, a, c) => !!a?.active && !!c.protection && (['chair', 'vice'].includes(a.role) || holds(db, a, 'secretary'));
+  const caseCoordinator = (db, a, c) => !!a?.active && !!c.protection && !c.protection.direct && ['chair', 'vice'].includes(a.role);
+  // Who receives child-protection reports for the school. The School Head always does, once their account is set up.
+  // The secretary does only after the School Head designates her in the app (she is a teacher and the School Head's acting secretary).
+  const intakeReady = x => !!x && x.active && !x.invite && !x.vacant;
+  function intakeRoles(db) {
+    const roles = [];
+    if (db.accounts.some(x => x.role === 'head' && intakeReady(x))) roles.push('head');
+    if (db.settings?.intake?.secretary && db.accounts.some(x => x.role === 'secretary' && intakeReady(x))) roles.push('secretary');
+    return roles;
+  }
+  const intakeOf = c => c.protection?.to || ['head'];
   // Who may add an internal note, and who may ask the sender for more details.
   const caseNoter = (db, a, c) => !!a?.active && onDesk(c) && (caseHandler(db, a, c) || caseCoordinator(db, a, c));
   const caseAsker = caseNoter;
@@ -4669,6 +4802,16 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
               b.withdrawn = true;
             }
             item.published = false;
+          } else if (item.protection) {
+            // Once the school has a child-protection report, the parent can stop the SPTA's follow-ups, but cannot take the report back from the school.
+            check(item.status !== 'resolved' && !item.senderStopped, 'This was already closed or stopped.');
+            item.senderStopped = {
+              at: at()
+            };
+            item.awaiting = false;
+            db.accounts.filter(x => x.active && intakeOf(item).includes(x.role)).forEach(x => note(db, x.id, item.id + ' · The parent asked to stop follow-ups on a child-protection report. The school keeps the report and decides what to do.'));
+            changed('Sender stopped follow-ups on a child-protection referral');
+            break;
           } else check(['received', 'assigned'].includes(item.status), 'This was already resolved and can no longer be withdrawn.');
           item.status = 'withdrawn';
           item.history.push({
@@ -5267,6 +5410,35 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
             notes: [],
             history: []
           });
+          // A possible bullying or child-safety concern goes straight to the school's intake, without waiting for the SPTA.
+          // If no school account can receive it yet, nothing claims it was sent: the parent is told to contact the school directly.
+          if (v.safety === true) {
+            check(kind === 'concern', 'Choose “Private concern” for a child-safety report.');
+            const c = db.cases[0],
+              to = intakeRoles(db);
+            c.safety = true;
+            if (to.length) {
+              c.protection = {
+                at: at(),
+                by: a.id,
+                role: 'sender',
+                direct: true,
+                wasForwarded: null,
+                to
+              };
+              c.forwarded = {
+                at: at(),
+                by: a.id,
+                role: 'sender'
+              };
+              c.track = 'protection';
+              c.urgent = true;
+              // The parent chose this, so telling them it went to the school reveals nothing new.
+              c.toSchool = true;
+              c.due = today();
+              db.accounts.filter(x => x.active && to.includes(x.role)).forEach(x => note(db, x.id, c.id + ' · URGENT · A parent sent a possible child-safety concern to the school. Please acknowledge it and handle it under the school’s child protection procedure.'));
+            }
+          }
           tell(db, db.cases[0]);
           break;
         }
@@ -5279,6 +5451,8 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
           // A child-protection case is closed by the school.
           check(next !== 'resolved' || !onDesk(c) || c.protection || ['chair', 'vice'].includes(a.role), 'Mark it “Action taken”. The chairperson or Vice-Chairperson verifies the outcome and closes it.');
           check(next !== 'action_taken' || onDesk(c) && !c.protection, 'Choose Reviewed or Resolved.');
+          check(!c.protection || c.protection.ack, 'Acknowledge the referral first.');
+          if (c.protection) c.schoolHandling = true;
           // A personal reply is optional. The automated response always tells the sender the new status.
           const reply = String(v.reply ?? '').trim() ? words(v.reply, 'Personal reply', 3, 600) : '';
           // Close the loop: a case is resolved only with a recorded outcome or a clear explanation for the sender.
@@ -5377,16 +5551,19 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
         }
       case 'caseProtect':
         {
-          // A possible child-protection concern leaves the ordinary queue at once. The secretary alerts the adviser; the School Head monitors.
+          // A possible child-protection concern leaves the ordinary queue at once and goes to the school's intake.
           const c = get(db.cases, id);
           check(onDesk(c) && ['chair', 'vice'].includes(a.role) && a.active, 'The chairperson or Vice-Chairperson refers this.');
           check(!c.protection, 'This was already referred.');
           check(!['resolved', 'withdrawn'].includes(c.status), 'This is already closed.');
+          const to = intakeRoles(db);
+          check(to.length, 'No school account can receive this yet. Tell the parent to contact the class adviser or the school administration directly.');
           c.protection = {
             at: at(),
             by: a.id,
             role: a.role,
-            wasForwarded: c.forwarded || null
+            wasForwarded: c.forwarded || null,
+            to
           };
           c.track = 'protection';
           c.urgent = true;
@@ -5397,8 +5574,7 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
             role: a.role
           };
           c.due = today();
-          db.accounts.filter(x => x.active && x.role === 'head').forEach(x => note(db, x.id, c.id + ' · URGENT · A possible child-protection concern was referred to the school. Please acknowledge it and handle it under the school’s child protection procedure.'));
-          db.accounts.filter(x => x.active && x.role === 'secretary').forEach(x => note(db, x.id, c.id + ' · URGENT · A possible child-protection concern was referred to the school. Please acknowledge it and handle it under the school’s child protection procedure.'));
+          db.accounts.filter(x => x.active && to.includes(x.role)).forEach(x => note(db, x.id, c.id + ' · URGENT · A possible child-protection concern was referred to the school. Please acknowledge it and handle it under the school’s child protection procedure.'));
           tell(db, c);
           changed('Possible child-protection concern referred');
           break;
@@ -5410,6 +5586,7 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
           check(caseAsker(db, a, c), 'Only the person handling this can ask the sender.');
           check(!['resolved', 'withdrawn'].includes(c.status), 'This is already closed.');
           check(!c.awaiting, 'You already asked. Wait for the sender to answer.');
+          check(!c.senderStopped, 'The sender asked to stop follow-ups.');
           c.messages = c.messages || [];
           c.messages.push({
             from: 'officer',
@@ -5443,13 +5620,17 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
         {
           // Not a child-protection matter after all (for example, a false or mistaken report): send it back to the chairperson and Vice-Chairperson.
           const c = get(db.cases, id);
-          check(c.protection && (a.role === 'head' || holds(db, a, 'secretary')) && a.active, 'Only the school can decide this is not a child-protection matter.');
+          // Deciding it is not a child-protection matter is an assessment, so only the School Head records it.
+          check(c.protection && a.role === 'head' && caseHandler(db, a, c), 'Only the School Head can record that this is not a child-protection matter.');
           check(!['resolved', 'withdrawn'].includes(c.status), 'This is already closed.');
           const reason = words(v.reason, 'Reason', 6, 350);
           c.forwarded = c.protection.wasForwarded || null;
           c.track = c.forwarded ? 'school' : undefined;
           delete c.protection;
           delete c.urgent;
+          delete c.safety;
+          delete c.toSchool;
+          delete c.schoolAck;
           delete c.schoolHandling;
           c.due = plusDays(today(), 3);
           c.notes = c.notes || [];
@@ -5463,18 +5644,41 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
           changed('Private case returned as not a child-protection concern');
           break;
         }
+      case 'intakeSetting':
+        {
+          // The School Head may designate the secretary, as authorized school personnel, to receive, acknowledge, coordinate and monitor
+          // child-protection referrals. The School Head confirms the authorization; a memo reference is optional. Who and when are recorded.
+          allows(a, ['head']);
+          const on = v.secretary === true;
+          check(!on || v.confirm === true, 'Confirm that the school has authorized the secretary.');
+          db.settings.intake = on ? {
+            secretary: true,
+            by: a.id,
+            at: at(),
+            reference: String(v.reference ?? '').trim() ? words(v.reference, 'Reference', 3, 120) : ''
+          } : {
+            secretary: false,
+            by: a.id,
+            at: at()
+          };
+          // Open referrals follow the new setting.
+          for (const c of db.cases) if (c.protection && !['resolved', 'withdrawn'].includes(c.status)) c.protection.to = on ? [...new Set([...intakeOf(c), 'secretary'])] : intakeOf(c).filter(r => r !== 'secretary');
+          db.accounts.filter(x => x.active && x.role === 'secretary').forEach(x => note(db, x.id, on ? 'The School Head designated you to receive, acknowledge, coordinate and monitor child-protection referrals for the school.' : 'The School Head ended your designation for child-protection referrals.'));
+          changed(on ? 'Secretary designated for child-protection intake' : 'Secretary designation for child-protection intake ended');
+          break;
+        }
       case 'caseAcknowledge':
         {
           // The school confirms it has received the referral. The SPTA sees that it was acknowledged, nothing more.
           const c = get(db.cases, id);
-          check(c.protection && (a.role === 'head' || holds(db, a, 'secretary')) && a.active, 'The school acknowledges a child-protection referral.');
+          check(c.protection && caseHandler(db, a, c), 'The school acknowledges a child-protection referral.');
           check(!c.protection.ack, 'This was already acknowledged.');
           c.protection.ack = {
             at: at(),
             by: a.id
           };
-          c.schoolHandling = true;
-          db.accounts.filter(x => x.active && x.id !== a.id && (['chair', 'vice', 'head'].includes(x.role) || x.role === 'secretary')).forEach(x => note(db, x.id, c.id + ' · The school acknowledged the child-protection referral.'));
+          c.schoolAck = true;
+          db.accounts.filter(x => x.active && x.id !== a.id && canSeeCase(x, c)).forEach(x => note(db, x.id, c.id + ' · The school acknowledged the child-protection referral.'));
           changed('Child-protection referral acknowledged by the school');
           break;
         }
@@ -5912,6 +6116,7 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
     caseNoter,
     caseAsker,
     caseCoordinator,
+    intakeRoles,
     onDesk,
     deskName,
     isChair,
@@ -6385,6 +6590,22 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
       throw e;
     }
   }
+  // Live only: the chairperson or the School Head makes a one-time password code for a parent they checked in person.
+  async function recoveryCode(mobile) {
+    if (!shared) throw Error('This works in the live app only.');
+    return await api('recovery-code', {
+      mobile
+    });
+  }
+  // Live only: end this account's sign-in on every phone.
+  async function logoutAll() {
+    if (!shared) throw Error('This works in the live app only.');
+    try {
+      session(await api('logout-all', {}));
+    } finally {
+      if (apiBase) keep.set('eces-live-token', '');
+    }
+  }
   async function logout() {
     if (shared) {
       try {
@@ -6524,6 +6745,8 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
     join,
     login,
     logout,
+    logoutAll,
+    recoveryCode,
     resetPassword,
     known,
     sample,
@@ -6954,8 +7177,8 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
   function tracker(item) {
     let steps, at, stop = '';
     if (item.kind) {
-      steps = item.urgent ? ['Received', 'Referred to School', 'School Handling', 'Closed'] : item.kind === 'inspection' ? ['Received', 'Reviewed', 'Resolved'] : ['Received', 'Reviewed', 'Action Taken', 'Resolved'];
-      at = item.urgent ? (item.status === 'resolved' ? 3 : item.schoolHandling ? 2 : 1) : item.kind === 'inspection' ? {received: 0, assigned: 1, resolved: 2}[item.status] ?? 0 : {received: 0, assigned: 1, action_taken: 2, resolved: 3}[item.status] ?? 0;
+      steps = item.urgent ? ['Received', 'Referred to School', 'Confirmed by School', 'School Handling', 'Closed'] : item.kind === 'inspection' ? ['Received', 'Reviewed', 'Resolved'] : ['Received', 'Reviewed', 'Action Taken', 'Resolved'];
+      at = item.urgent ? (item.status === 'resolved' ? 4 : item.schoolHandling ? 3 : item.schoolAck ? 2 : 1) : item.kind === 'inspection' ? {received: 0, assigned: 1, resolved: 2}[item.status] ?? 0 : {received: 0, assigned: 1, action_taken: 2, resolved: 3}[item.status] ?? 0;
       if (item.status === 'withdrawn') stop = labels.withdrawn;
     } else {
       steps = item.direct ? ['Added by chairperson', 'School Head', 'Approved'] : ['Received', 'Reviewed', 'Officer vote', 'School Head', 'Approved'];
@@ -7300,7 +7523,7 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
     return hero+cover+feedback+approvalList+section('Latest announcement',announcement)+section('Upcoming activities',soon||empty('No activities are planned yet.'))+section('SPTA projects',projectsList||empty('Approved SPTA projects will appear here.'))+join;
   }
   // A sender may take back a proposal until the School Head approves it, and a suggestion or concern until it is resolved.
-  const canWithdraw = x => x.owner === S.me && (x.kind ? ['received', 'assigned'] : ['received', 'returned', 'screened', 'voting', 'awaiting_head']).includes(x.status);
+  const canWithdraw = x => x.owner === S.me && !x.senderStopped && (x.kind ? ['received', 'assigned'] : ['received', 'returned', 'screened', 'voting', 'awaiting_head']).includes(x.status);
   function proposals() {
     const all = db().proposals.filter(p => E.readableProposal(p, me()));
     if (me().role === 'head') all.sort((a, b) => (b.status === 'awaiting_head') - (a.status === 'awaiting_head'));
@@ -7323,6 +7546,13 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
     if (isGuest()) return section('My submissions', signInPrompt('Sign in to send a proposal, suggestion or concern and to follow its status here.')) + announcements;
     return section('My submissions', mine.map(p => card(proposalName(p), tracker(p) + (p.reason ? '<div class="portal-note"><b>Note from the Reviewer</b>' + para(p.reason) + '</div>' : ''), p.id + ' · Project proposal', p.status, (p.status === 'returned' ? btn('Revise', 'dlg:resubmit', p.id) : '') + (canWithdraw(p) ? btn('Withdraw', 'dlg:withdraw', p.id) : ''))).join('') + cases.map(caseCard).join('') || empty('You have no submissions yet.')) + section('Notifications', db().notes.filter(x => x.owner === S.me).slice(0, 20).map(x => card(x.text, '', date(x.at), '', '', true)).join('') || empty('Updates will appear here.')) + announcements;
   }
+  // What officers read at the top of a child-protection referral. Each line is backed by a recorded event.
+  function cpBanner(c) {
+    const p = c.protection,
+      school = E.caseHandler(db(), me(), c),
+      late = !p.ack && Date.now() - Date.parse(p.at) > 86400000 && c.status !== 'resolved';
+    return '<div class="portal-note urgent"><b>' + icon('shield', 'sm') + 'Possible Child Protection Concern</b>' + para((p.direct ? 'Sent to the school by the parent on ' : 'Referred to the school on ') + longDate(p.at) + '.') + (p.ack ? badgeText('Acknowledged by the school · ' + date(p.ack.at.slice(0, 10))) : '<span class="badge await">' + esc(late ? 'Not yet acknowledged · Overdue' : 'Awaiting School Acknowledgment') + '</span>') + para('The school is responsible for assessing and addressing this concern.') + (p.direct ? '' : para('The SPTA may request additional information from the reporting parent to assist with the referral. All investigations, interviews, and appropriate interventions will be handled by authorized school personnel.')) + (c.senderStopped ? para('The parent asked the SPTA to stop following up. The school keeps the report.') : '') + (school ? para('Alerts appear only inside this app. There are no text messages or emails, so open the app every school day.') : '') + '</div>';
+  }
   function caseCard(c) {
     const gone = c.status === 'withdrawn',
       assigned = caseHandler(c),
@@ -7333,16 +7563,17 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
     // A parent only reads that it went to the SPTA. Officers see who can read it.
     const to = desk ? mine && !noter ? 'SPTA' : E.deskName : E.recipients[c.assigned] || E.roles[c.assigned];
     const notes = (c.notes || []).map(x => '<div class="portal-note' + (x.followUp ? ' personal' : '') + '"><b>' + esc((x.followUp ? 'Follow-up · ' : x.toHead ? 'Note for the School Head · ' : 'Note · ') + (E.roles[x.role] || x.role)) + '</b>' + para(x.text) + '<small>' + esc(date(x.at.slice(0, 10))) + '</small></div>').join('');
-    const body = para(c.body) + (c.hidden ? '<div class="entry-meta hidden-name">' + icon('lock', 'sm') + esc(mine ? 'You hid your name from the reviewer.' : 'Name hidden by the sender. Reply here in the app.') + '</div>' : (assigned || noter) && !mine ? fromLine(c) : '') + (mine ? tracker(c) : c.reply ? '<div class="portal-note personal"><b>' + (c.replyFor === 'head' ? 'Personal Reply Sent by the Secretary for the School Head' : 'Personal Reply Sent') + '</b>' + para(c.reply) + '</div>' : '') + (!mine || noter ? notes : '') + '<div class="entry-meta">Sent to the ' + esc(to) + (c.forwarded && !mine && !c.protection ? ' · Passed on to the School Head' + (c.forwarded.role && noter ? ' by the ' + esc(E.roles[c.forwarded.role] || '') : '') + ' ' + esc(date(c.forwarded.at.slice(0, 10))) : '') + (assigned && !gone ? ' · Next update by ' + esc(date(c.due)) : '') + (late ? ' · <b class="overdue">Overdue</b>' : '') + '</div>';
-    const thread = (c.messages || []).map(m => '<div class="portal-note' + (m.from === 'sender' ? '' : ' personal') + '"><b>' + esc(mine ? (m.from === 'sender' ? 'Your answer' : 'The SPTA asked') : (m.from === 'sender' ? 'Answer from the sender' : 'Question to the sender')) + '</b>' + para(m.text) + '<small>' + esc(date(m.at.slice(0, 10))) + '</small></div>').join('') + (c.awaiting && !gone ? '<div class="entry-meta">' + icon('info', 'sm') + esc(mine ? 'Please answer so the SPTA can help.' : 'Waiting for the sender to answer.') + '</div>' : '');
+    const body = para(c.body) + (c.hidden ? '<div class="entry-meta hidden-name">' + icon('lock', 'sm') + esc(mine ? 'You hid your name from the reviewer.' : 'Name hidden by the sender. Reply here in the app.') + '</div>' : (assigned || noter) && !mine ? fromLine(c) : '') + (mine ? tracker(c) : c.reply ? '<div class="portal-note personal"><b>' + (c.replyFor === 'head' ? 'Personal Reply Sent by the Secretary for the School Head' : 'Personal Reply Sent') + '</b>' + para(c.reply) + '</div>' : '') + (!mine || noter ? notes : '') + '<div class="entry-meta">Sent to the ' + esc(mine && c.toSchool ? 'school' : to) + (c.forwarded && !mine && !c.protection ? ' · Passed on to the School Head' + (c.forwarded.role && noter ? ' by the ' + esc(E.roles[c.forwarded.role] || '') : '') + ' ' + esc(date(c.forwarded.at.slice(0, 10))) : '') + (assigned && !gone ? ' · Next update by ' + esc(date(c.due)) : '') + (late ? ' · <b class="overdue">Overdue</b>' : '') + '</div>';
+    const stopped = mine && c.senderStopped ? '<div class="entry-meta">' + icon('info', 'sm') + 'You asked the SPTA to stop following up. The school keeps the report it already received.</div>' : '';
+    const thread = stopped + (c.messages || []).map(m => '<div class="portal-note' + (m.from === 'sender' ? '' : ' personal') + '"><b>' + esc(mine ? (m.from === 'sender' ? 'Your answer' : 'The SPTA asked') : (m.from === 'sender' ? 'Answer from the sender' : 'Question to the sender')) + '</b>' + para(m.text) + '<small>' + esc(date(m.at.slice(0, 10))) + '</small></div>').join('') + (c.awaiting && !gone ? '<div class="entry-meta">' + icon('info', 'sm') + esc(mine ? 'Please answer so the SPTA can help.' : 'Waiting for the sender to answer.') + '</div>' : '');
     const evidence = (c.photos || []).length ? '<div class="proj-photos case-photos" aria-label="Photo evidence">' + c.photos.map((ph, i) => '<button type="button" class="proj-photo" data-do="dlg:casePhoto" data-id="' + esc(c.id + '|' + i) + '" aria-label="' + esc('Open photo ' + (i + 1)) + '">' + photoImg({file: ph}, 'Photo evidence ' + (i + 1)) + '</button>').join('') + '</div>' : '';
     const desk2 = desk && ['chair', 'vice'].includes(me().role) && ['received', 'assigned'].includes(c.status) && !c.protection;
     const canForward = desk2 && !c.forwarded;
     const officerView = !mine && (assigned || noter || desk2);
     const asker = !mine && E.caseAsker(db(), me(), c);
-    const track = !officerView ? '' : c.protection ? '<div class="portal-note urgent"><b>' + icon('shield', 'sm') + 'Possible Child Protection Concern</b>' + para('Referred to the school on ' + longDate(c.protection.at) + '.') + (c.protection.ack ? badgeText('Acknowledged by the school · ' + date(c.protection.ack.at.slice(0, 10))) : '<span class="badge await">Awaiting School Acknowledgment</span>') + para('The school is responsible for assessing and addressing this concern.') + para('The SPTA may request additional information from the reporting parent to assist with the referral. All investigations, interviews, and appropriate interventions will be handled by authorized school personnel.') + '</div>' : c.track === 'grievance' ? '<div class="entry-meta">' + icon('info', 'sm') + 'PTA dispute · Formal grievance route. The School Head sets up the proper committee. No informal sanctions.</div>' : c.track === 'school' ? '<div class="entry-meta">' + icon('info', 'sm') + 'School matter · The School Head leads the action.</div>' : c.endorsed ? '<div class="entry-meta">' + icon('users', 'sm') + (c.endorsed.to === S.me ? 'Endorsed to you by the ' + esc(E.roles[c.endorsed.role] || '') + ' · ' + esc(date(c.endorsed.at.slice(0, 10))) : 'SPTA matter · Endorsed to ' + esc(n(c.endorsed.to)) + ' · ' + esc(date(c.endorsed.at.slice(0, 10)))) + '</div>' : '';
-    const actions = (mine && c.awaiting && !gone ? btn('Answer', 'dlg:caseAnswer', c.id, 'primary') : '') + (c.status === 'action_taken' && desk && !c.protection && ['chair', 'vice'].includes(me().role) ? btn('Verify outcome', 'dlg:caseVerify', c.id, 'primary') : '') + (assigned && !gone ? btn(c.status === 'received' ? 'Mark reviewed or reply' : 'Update or reply', 'dlg:reply', c.id) : '') + (c.protection && assigned && !c.protection.ack && !gone ? btn('Acknowledge referral', 'dlg:caseAck', c.id, 'primary') : '') + (asker && !gone && !c.awaiting && c.status !== 'resolved' ? btn('Ask for more details', 'dlg:caseAsk', c.id) : '') + (c.protection && assigned && !mine && !gone && c.status !== 'resolved' ? btn('Not a child-protection concern', 'dlg:caseReturn', c.id) : '') + (desk2 && !c.forwarded ? (c.endorsed ? btn('Take back', 'caseTakeBack', c.id) : btn('Endorse to an officer', 'dlg:endorse', c.id)) : '') + (canForward ? btn('Pass on to the School Head', 'dlg:forward', c.id, 'primary') : '') + (desk2 && !gone ? btn('Child-protection concern', 'dlg:protect', c.id, 'danger') : '') + (noter && !gone && desk ? btn(!assigned && (holds('secretary') || c.protection) ? 'Record follow-up' : c.forwarded ? 'Add a note' : 'Add a private note', 'dlg:caseNote', c.id) : '') + (canWithdraw(c) ? btn('Withdraw', 'dlg:withdraw', c.id) : '');
-    const shown = (c.urgent || c.protection) && !gone ? (c.status === 'resolved' ? 'cp_closed' : c.schoolHandling || c.protection?.ack ? 'cp_handling' : 'cp_referred') : c.status;
+    const track = !officerView ? '' : c.protection ? cpBanner(c) : c.safety ? '<div class="portal-note urgent"><b>' + icon('shield', 'sm') + 'Possible Child Protection Concern</b>' + para('The parent marked this as a child-safety concern, but no school account could receive it. The parent was told to contact the school directly. Refer it as soon as the School Head’s account is set up.') + '</div>' : c.track === 'grievance' ? '<div class="entry-meta">' + icon('info', 'sm') + 'PTA dispute · Formal grievance route. The School Head sets up the proper committee. No informal sanctions.</div>' : c.track === 'school' ? '<div class="entry-meta">' + icon('info', 'sm') + 'School matter · The School Head leads the action.</div>' : c.endorsed ? '<div class="entry-meta">' + icon('users', 'sm') + (c.endorsed.to === S.me ? 'Endorsed to you by the ' + esc(E.roles[c.endorsed.role] || '') + ' · ' + esc(date(c.endorsed.at.slice(0, 10))) : 'SPTA matter · Endorsed to ' + esc(n(c.endorsed.to)) + ' · ' + esc(date(c.endorsed.at.slice(0, 10)))) + '</div>' : '';
+    const actions = (mine && c.awaiting && !gone ? btn('Answer', 'dlg:caseAnswer', c.id, 'primary') : '') + (c.status === 'action_taken' && desk && !c.protection && ['chair', 'vice'].includes(me().role) ? btn('Verify outcome', 'dlg:caseVerify', c.id, 'primary') : '') + (assigned && !gone && (!c.protection || c.protection.ack) ? btn(c.protection ? 'Update or close' : c.status === 'received' ? 'Mark reviewed or reply' : 'Update or reply', 'dlg:reply', c.id) : '') + (c.protection && assigned && !c.protection.ack && !gone ? btn('Acknowledge referral', 'dlg:caseAck', c.id, 'primary') : '') + (asker && !gone && !c.awaiting && c.status !== 'resolved' ? btn('Ask for more details', 'dlg:caseAsk', c.id) : '') + (c.protection && assigned && me().role === 'head' && !mine && !gone && c.status !== 'resolved' ? btn('Not a child-protection concern', 'dlg:caseReturn', c.id) : '') + (desk2 && !c.forwarded ? (c.endorsed ? btn('Take back', 'caseTakeBack', c.id) : btn('Endorse to an officer', 'dlg:endorse', c.id)) : '') + (canForward ? btn('Pass on to the School Head', 'dlg:forward', c.id, 'primary') : '') + (desk2 && !gone ? btn('Child-protection concern', 'dlg:protect', c.id, 'danger') : '') + (noter && !gone && desk ? btn(!assigned && (holds('secretary') || c.protection) ? 'Record follow-up' : c.forwarded ? 'Add a note' : 'Add a private note', 'dlg:caseNote', c.id) : '') + (canWithdraw(c) ? btn(mine && c.urgent ? 'Stop follow-ups' : 'Withdraw', 'dlg:withdraw', c.id) : '');
+    const shown = (c.urgent || c.protection) && !gone ? (c.status === 'resolved' ? 'cp_closed' : c.schoolHandling ? 'cp_handling' : c.schoolAck || c.protection?.ack ? 'cp_ack' : 'cp_referred') : c.status;
     return card(c.subject, track + body + thread + evidence, c.id + ' · ' + (c.kind === 'inspection' ? 'Records inspection request' : c.kind === 'concern' ? 'Private concern' : 'Private suggestion'), shown, actions);
   }
   function pulse() {
@@ -7545,17 +7776,21 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
     const phone = a.guest || a.demo ? '' : section('Switch account', others.map(x => '<div class="list-line"><span><b>' + esc(x.name) + '</b><small>' + esc(mask(x.login)) + '</small></span>' + btn('Switch', 'switchTo', x.login) + '</div>').join('') + (S.known().length < E.accountsPerDevice ? btn('Add another account', 'dlg:register') : ''));
     const cover = canChair() ? section('Stand in for an absent officer', para(standIn() ? 'You are standing in for the ' + E.roles[standIn()] + ' until ' + date(db().cover.until) + '. Reason: ' + db().cover.reason : 'When the secretary, treasurer or Collecting and Disbursing Officer is away, you can do their tasks for a set period. It is recorded in the audit trail.') + btn(standIn() ? 'Change or end' : 'Stand in for an officer', 'dlg:cover')) : '';
     const practice = S.shared ? '' : section('Practice mode', (db().legacy ? notice('Earlier fictional records are loaded. Reset demo starts the sample meeting and finance review.') : '') + practiceSelector() + btn('Reset demo', 'dlg:reset', '', 'danger'));
-    return (a.guest ? signIn : profile + picture + children + phone + cover) + practice;
+    const helpReset = S.shared && (me().role === 'head' || canChair()) ? section('Forgotten passwords', para('A parent who forgot their password gets a one-time code from you, after you check who they are in person.') + btn('Help a parent reset their password', 'dlg:recovery')) : '';
+    const everywhere = S.shared && !a.guest ? section('Lost or shared phone', para('Sign out of this account on every phone, including this one. Then sign in again on your own phone.') + btn('Sign out on all phones', 'logoutAll', '', 'danger')) : '';
+    return (a.guest ? signIn : profile + picture + children + phone + cover + helpReset + everywhere) + practice;
   }
   function assignedCases() {
     const late = c => db().settings.reminders && c.status !== 'resolved' && c.due < t();
     const kind = ui.caseFilter;
     const mine = ownCases().filter(c => c.kind !== 'inspection' && c.owner !== S.me && (caseHandler(c) || caseNoter(c) || c.protection && ['chair', 'vice'].includes(me().role)) && (!kind || c.kind === kind)).sort((a, b) => (a.status === 'resolved') - (b.status === 'resolved') || late(b) - late(a));
     const others = kind ? btn('Show all assigned feedback', 'tab:cases') : '';
-    const settings = me().role === 'head' ? section('Follow-up settings', ['ack', 'reminders'].map(k => '<div class="list-line"><span>' + esc(k === 'ack' ? 'In-app submission acknowledgements' : 'Flag overdue feedback first') + '</span>' + btn(db().settings[k] ? 'Turn off' : 'Turn on', 'setting', k) + '</div>').join('')) : '';
+    const intake = db().settings.intake || {};
+    const intakeBox = me().role === 'head' ? section('Child-protection intake', para('You receive child-protection reports. You can also let the secretary receive and follow them up.') + para(intake.secretary ? 'The secretary is designated' + (intake.reference ? ' (' + intake.reference + ')' : '') + ' since ' + date(intake.at.slice(0, 10)) + '.' : 'Only you receive them now.') + btn(intake.secretary ? 'End the secretary’s designation' : 'Designate the secretary', 'dlg:intake')) : '';
+    const settings = intakeBox + (me().role === 'head' ? section('Follow-up settings', ['ack', 'reminders'].map(k => '<div class="list-line"><span>' + esc(k === 'ack' ? 'In-app submission acknowledgements' : 'Flag overdue feedback first') + '</span>' + btn(db().settings[k] ? 'Turn off' : 'Turn on', 'setting', k) + '</div>').join('')) : '');
     const passed = !['chair', 'vice'].includes(me().role);
     const endorsedOnly = passed && !lead() && !holds('secretary');
-    const intro = endorsedOnly ? para('The chairperson or Vice-Chairperson endorsed these to you. Please act on them, reply to the sender here in the app, and mark each one “Action taken” with what was done. The chairperson or Vice-Chairperson then verifies it and closes it.') : me().role === 'head' ? para('The chairperson and Vice-Chairperson read every suggestion and private concern first. They pass on school matters and PTA disputes. Possible child-protection concerns are referred to the school right away: you or the secretary, as your acting secretary, acknowledge each one and handle it under the school’s child protection procedure. On other matters the secretary can reply to the sender for you. When the action is done, mark it “Action taken”; the chairperson or Vice-Chairperson verifies it and closes it.') : holds('secretary') && passed ? para('These were passed on to the School Head. You can reply to the sender for the School Head and record follow-ups. As the School Head’s acting secretary, you also handle possible child-protection concerns for the school: acknowledge each one, then handle it under the school’s child protection procedure. When the action on an ordinary concern is done, mark it “Action taken”; the chairperson or Vice-Chairperson verifies it and closes it.') : passed ? para('The chairperson and Vice-Chairperson read every suggestion and private concern first. They pass on the ones worth your attention, with a note when they need more from you.') : para('Only you and the ' + (me().role === 'chair' ? 'Vice-Chairperson' : 'chairperson') + ' can read what parents send. For each one: if a child may be in danger, refer it as a child-protection concern right away. Handle an SPTA matter yourselves or endorse it to an officer. Pass a school matter or a PTA dispute on to the School Head. When someone marks one “Action taken”, verify the outcome before closing it.');
+    const intro = endorsedOnly ? para('The chairperson or Vice-Chairperson endorsed these to you. Please act on them, reply to the sender here in the app, and mark each one “Action taken” with what was done. The chairperson or Vice-Chairperson then verifies it and closes it.') : me().role === 'head' ? para('The chairperson and Vice-Chairperson read every suggestion and private concern first. They pass on school matters and PTA disputes. Possible child-protection concerns are referred to the school right away. You, or the secretary if you designate her, acknowledge each one; the school assesses and handles it under its child protection procedure. On other matters the secretary can reply to the sender for you. When the action is done, mark it “Action taken”; the chairperson or Vice-Chairperson verifies it and closes it.') : holds('secretary') && passed ? para('These were passed on to the School Head. You can reply to the sender for the School Head and record follow-ups. If the School Head has designated you, you also receive, acknowledge, coordinate and monitor child-protection referrals. Formal assessment, investigation and intervention remain the responsibility of authorized school personnel. When the action on an ordinary concern is done, mark it “Action taken”; the chairperson or Vice-Chairperson verifies it and closes it.') : passed ? para('The chairperson and Vice-Chairperson read every suggestion and private concern first. They pass on the ones worth your attention, with a note when they need more from you.') : para('Only you and the ' + (me().role === 'chair' ? 'Vice-Chairperson' : 'chairperson') + ' can read what parents send. For each one: if a child may be in danger, refer it as a child-protection concern right away. Handle an SPTA matter yourselves or endorse it to an officer. Pass a school matter or a PTA dispute on to the School Head. When someone marks one “Action taken”, verify the outcome before closing it.');
     return intro + section(kind === 'suggestion' ? (passed ? 'Suggestions passed on' : 'Suggestions sent to you') : kind === 'concern' ? (passed ? 'Concerns passed on' : 'Concerns sent to you') : endorsedOnly ? 'Endorsed to you' : passed ? 'Passed on to the School Head' : 'Sent to you', mine.map(caseCard).join('') || empty(kind ? 'Nothing here yet.' : passed ? 'Nothing has been passed on yet.' : 'No private cases sent to you.')) + others + (kind ? '' : settings);
   }
   // Change history: who acted, in which role, on what, what was decided and why. Only the School Head, chairperson and Vice-Chairperson see it.
@@ -7666,7 +7901,7 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
       source = '<div class="scan-attached">' + scanPreview(scan, false) + '<div><b>Scanned Original</b>' + para(scan.file.name + ' is attached for the chairperson.') + btn('Scan a different photo', 'scanAgain', '', 'light', 'camera') + '</div></div>';
       intro = '<div class="scan-result">' + icon('check', 'sm') + '<span><b>' + read.items.length + ' Lines Filled In for You</b>' + esc(flagged ? flagged + ' line' + (flagged === 1 ? ' is' : 's are') + ' marked in gold because the writing was hard to read.' : 'Every line was read clearly.') + ' Compare each one with the paper and fix anything that is wrong.</span></div>' + (read.matchesImage ? '' : notice('Practice mode: this demo cannot read a real photo yet, so it filled in the fictional sample collection amounts. The live app will read the photo you took.'));
     } else if (kind === 'finance' && !id && !isLive()) intro = btn('Scan a photo instead', 'scanAgain', '', 'light', 'camera');
-    return intro + form('financeSubmit', (officer || orig ? hidden('direction', dir) + notice(officer ? 'Collection handover · Money in' : 'Linked correction for ' + orig.id + ' · Money ' + dir) : select('direction', 'Movement', [['in', 'Money in'], ['out', 'Money out']], dir)) + hidden('adjustment', orig?.id || prior?.adjustment || '') + input('date', officer ? 'Collection date' : 'Transaction date', read?.date || prior?.date || t(), 'date') + input('receipt', 'Receipt / batch reference', read?.receipt || prior?.receipt || '') + input('purpose', 'Purpose shown to parents', read?.purpose || prior?.purpose || (orig ? 'Correction · ' + orig.purpose : ''), 'text', 'required maxlength="140"') + (orig || officer ? hidden('project', '') : select('project', 'Expense allocation', [['', 'General fund (not for a project)'], ...db().projects.filter(x => x.status !== 'cancelled').map(x => [x.id, x.title]), ...allActivities().filter(x => x.status === 'scheduled').map(x => [x.id, 'Activity: ' + x.title])], prior?.project || '')) + '<fieldset><legend>' + (scan ? 'Scanned Line Items' : 'Private Line Items') + '</legend><div id="item-rows">' + initItems.map(row).join('') + '</div>' + btn(scan ? 'Add a missed line' : 'Add item', 'addItem', '', 'light', 'plus') + totalLine(lineSum(initItems), read ? read.writtenTotal : null) + '</fieldset>' + source + ck('verifiedItems', scan ? 'I compared every scanned line with the paper original and corrected anything that was wrong.' : 'I checked the amounts and item descriptions against the supporting document.', true), officer ? 'Submit to treasurer' : 'Submit to chairperson', prior?.id || '');
+    return intro + form('financeSubmit', (officer || orig ? hidden('direction', dir) + notice(officer ? 'Collection handover · Money in' : 'Linked correction for ' + orig.id + ' · Money ' + dir) : select('direction', 'Movement', [['in', 'Money in'], ['out', 'Money out']], dir)) + hidden('adjustment', orig?.id || prior?.adjustment || '') + input('date', officer ? 'Collection date' : 'Transaction date', read?.date || prior?.date || t(), 'date') + input('receipt', 'Receipt / batch reference', read?.receipt || prior?.receipt || '') + '<div class="entry-meta">Parents can read this once it is posted. Do not write a parent’s or pupil’s name.</div>' + input('purpose', 'Purpose shown to parents', read?.purpose || prior?.purpose || (orig ? 'Correction · ' + orig.purpose : ''), 'text', 'required maxlength="140"') + (orig || officer ? hidden('project', '') : select('project', 'Expense allocation', [['', 'General fund (not for a project)'], ...db().projects.filter(x => x.status !== 'cancelled').map(x => [x.id, x.title]), ...allActivities().filter(x => x.status === 'scheduled').map(x => [x.id, 'Activity: ' + x.title])], prior?.project || '')) + '<fieldset><legend>' + (scan ? 'Scanned Line Items' : 'Private Line Items') + '</legend><div id="item-rows">' + initItems.map(row).join('') + '</div>' + btn(scan ? 'Add a missed line' : 'Add item', 'addItem', '', 'light', 'plus') + totalLine(lineSum(initItems), read ? read.writtenTotal : null) + '</fieldset>' + source + ck('verifiedItems', scan ? 'I compared every scanned line with the paper original and corrected anything that was wrong.' : 'I checked the amounts and item descriptions against the supporting document.', true), officer ? 'Submit to treasurer' : 'Submit to chairperson', prior?.id || '');
   }
   function cleanScan() {
     if (ui.scan?.url) URL.revokeObjectURL(ui.scan.url);
@@ -7719,12 +7954,14 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
       d = db()?.batches?.find(i => i.id === id);
     if (kind === 'needAccount') return ['Sign in to send', signInPrompt('Guests can read everything here. To send a proposal, suggestion or private concern, sign in with your mobile number so the SPTA knows it comes from an ECES parent.') + btn('Keep browsing as a guest', 'close', '', 'text')];
     if (kind === 'login') return ['Sign in', (S.known().length ? '<div class="known-accounts"><small>Accounts on this phone</small>' + S.known().map(x => '<button type="button" class="known-account" data-do="switchTo" data-id="' + esc(x.login) + '"><b>' + esc(x.name) + '</b><span>' + esc(mask(x.login)) + '</span></button>').join('') + '</div>' : '') + form('login', input('login', 'Mobile number', ui.prefill || '', 'tel', 'required autocomplete="username" placeholder="09171234567"') + input('password', 'Password', '', 'password', 'required autocomplete="current-password"'), 'Sign in') + '<div class="entry-actions">' + btn('Forgot password?', 'dlg:forgot', '', 'text') + btn('Create account', 'dlg:register', '', 'text') + '</div>'];
+    if (kind === 'forgot' && S.shared) return ['Reset your password', notice('Ask the SPTA chairperson or the School Head for a one-time code. They will check who you are in person first. The code works once, within 30 minutes. Choose your new password yourself; never tell it to anyone.') + form('reset', input('mobile', 'Mobile number', ui.prefill || '', 'tel', 'required autocomplete="username" placeholder="09171234567"') + input('code', 'One-time code', '', 'text', 'required minlength="12" maxlength="16" autocomplete="one-time-code" autocapitalize="characters" placeholder="ABCD-EFGH-JKLM"') + input('password', 'New password (10 or more characters)', '', 'password', 'required minlength="10" maxlength="128" autocomplete="new-password"'), 'Save new password') + btn('Back to sign in', 'dlg:login', '', 'text')];
     if (kind === 'forgot') return ['Reset your password', notice('This works on a phone you have signed in on before. On a new phone, ask an SPTA officer for help.') + form('reset', input('mobile', 'Mobile number', ui.prefill || '', 'tel', 'required autocomplete="username" placeholder="09171234567"') + input('lastName', 'Last name', '', 'text', 'required maxlength="40" autocomplete="family-name"') + gradePair('homeroom', '', 'Your child’s grade and section, as you registered it') + input('password', 'New password (10 or more characters)', '', 'password', 'required minlength="10" maxlength="128" autocomplete="new-password"'), 'Save new password') + btn('Back to sign in', 'dlg:login', '', 'text')];
     if (kind === 'children') return [me().childName ? 'Other students' : 'My students', form('profileUpdate', '<div id="student-rows">' + (a.children || []).concat((a.children || []).length ? [] : ['']).map(x => studentRow(...splitChild(x))).join('') + '</div>' + btn('Add another student', 'addStudent', '', 'light', 'plus'), 'Save list')];
     if (kind === 'cover') return ['Stand in for an absent officer', notice('You do that officer’s tasks until the date you set. A fund record you send or check while standing in gets its final approval from the Vice-Chairperson, so two people still check every record.') + form('cover', select('enabled', 'What would you like to do?', [['yes', 'Stand in for an officer'], ['no', 'Stop standing in']], 'yes') + '<div data-when="enabled" data-values="yes">' + select('role', 'Officer who is away', E.coverRoles.map(r => [r, E.roles[r]]), E.coverRoles.includes(id) ? id : standIn()) + input('until', 'Until', db().cover?.until || weekAhead(), 'date', 'required min="' + t() + '"') + input('reason', 'Reason', db().cover?.reason || '', 'text', 'required minlength="3" maxlength="150" placeholder="On leave or has not joined the app yet"') + '</div>', 'Save')];
     if (kind === 'withdraw') {
       const item = p || db().cases.find(x => x.id === id);
       if (!item) return ['Withdraw', empty('This is no longer available.')];
+      if (!p && item.protection) return ['Stop follow-ups', '<h3>' + esc(titleCase(item.subject)) + '</h3>' + notice('The school already received this report, so it stays with the school. It cannot be taken back, because the school must look after every child’s safety. If you continue, the SPTA will stop following up with you here. You can still talk to your child’s class adviser or the school administration at any time.') + form('withdraw', hidden('kind', 'case') + ck('confirm', 'Stop follow-ups from the SPTA.', true), 'Stop follow-ups', id)];
       return ['Withdraw ' + (p ? 'proposal' : item.kind === 'concern' ? 'concern' : item.kind === 'inspection' ? 'request' : 'suggestion'), '<h3>' + esc(titleCase(p ? proposalName(p) : item.subject)) + '</h3>' + notice(p ? 'Withdrawing stops the proposal where it is. If the officers are voting on it, the vote is closed. You cannot withdraw it once the School Head has approved it.' : 'Withdrawing tells the reviewer you no longer need a response. It cannot be undone.') + form('withdraw', hidden('kind', p ? 'proposal' : 'case') + ck('confirm', 'Yes, withdraw this.', true), 'Withdraw', id)];
     }
     if (kind === 'deadline') return ['Change closing date', para(b.title) + notice('When this date passes, the vote closes by itself and the result is recorded with the votes received.') + form('voteDeadline', input('closes', 'Voting closes on', E.voteCloses(b), 'date', 'required min="' + t() + '"'), 'Save date', id)];
@@ -7735,7 +7972,7 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
       return ['Edit announcement', form('announceEdit', input('title', 'Announcement title', x.title) + area('body', 'Complete message', x.body, 'required minlength="6" maxlength="1600"') + select('audience', 'Audience', [['everyone', 'All parents and officers'], ['officers', 'Officers only']], x.audience) + input('until', 'Show until (optional)', x.until || '', 'date', ''), 'Save changes', id)];
     }
     if (kind === 'join') return ['Officer sign-up', para('Use the invite code the chairperson gave you. Choose your own mobile number and password. Nobody else will know your password.') + form('join', input('code', 'Invite code', '', 'text', 'required autocomplete="off" autocapitalize="characters" placeholder="XXXX-XXXX-XXXX"') + input('mobile', 'Mobile number', '', 'tel', 'required autocomplete="tel" placeholder="09171234567"') + input('password', 'Password (10 or more characters)', '', 'password', 'required minlength="10" maxlength="128" autocomplete="new-password"') + '<details class="privacy-notice"><summary>Read the Privacy Notice</summary>' + privacyBody() + '</details>' + ck('consent', 'I have read the Privacy Notice. I agree that the SPTA may collect and use my information as described.', true), 'Set up my account')];
-    if (kind === 'register') return ['Create an account', (isLive() ? '' : notice('Use fictional details for this rehearsal.')) + form('register', '<div class="name-pair">' + input('firstName', 'First name', '', 'text', 'required maxlength="40" autocomplete="given-name"') + input('lastName', 'Last name', '', 'text', 'required maxlength="40" autocomplete="family-name"') + '</div>' + input('mobile', 'Mobile number', '', 'tel', 'required autocomplete="tel" placeholder="09171234567"') + input('childName', 'Your child’s full name', '', 'text', 'required maxlength="80" autocomplete="off"') + gradePair('homeroom', '', 'Your child’s grade and section') + input('password', 'Password (10 or more characters)', '', 'password', 'required minlength="10" maxlength="128" autocomplete="new-password"') + ck('officer', 'I am the HPTA president of this section and I am requesting officer access.') + '<div class="entry-meta">Officer access starts after the School Head or chairperson checks the roster.</div><details class="privacy-notice"><summary>Read the Privacy Notice</summary>' + privacyBody() + '</details>' + ck('consent', 'I have read the Privacy Notice. I agree that the SPTA may collect and use my information, and my child’s grade and section, as described.', true), 'Create account')];
+    if (kind === 'register') return ['Create an account', (isLive() ? '' : notice('Use fictional details for this rehearsal.')) + (PRIVACY_DRAFT && isLive() ? notice('Pilot version. The school’s Data Protection Officer is still reviewing the Privacy Notice below.') : '') + form('register', '<div class="name-pair">' + input('firstName', 'First name', '', 'text', 'required maxlength="40" autocomplete="given-name"') + input('lastName', 'Last name', '', 'text', 'required maxlength="40" autocomplete="family-name"') + '</div>' + input('mobile', 'Mobile number', '', 'tel', 'required autocomplete="tel" placeholder="09171234567"') + input('childName', 'Your child’s full name', '', 'text', 'required maxlength="80" autocomplete="off"') + gradePair('homeroom', '', 'Your child’s grade and section') + input('password', 'Password (10 or more characters)', '', 'password', 'required minlength="10" maxlength="128" autocomplete="new-password"') + ck('officer', 'I am the HPTA president of this section and I am requesting officer access.') + '<div class="entry-meta">Officer access starts after the School Head or chairperson checks the roster.</div><details class="privacy-notice"><summary>Read the Privacy Notice</summary>' + privacyBody() + '</details>' + ck('consent', 'I have read the Privacy Notice. I agree that the SPTA may collect and use my information, and my child’s grade and section, as described.', true), 'Create account')];
     if (kind === 'privacy') return ['Privacy Notice', privacyBody()];
     if (!a) return ['Sign in', empty('Sign in to continue.')];
     if (kind === 'acting') {
@@ -7753,7 +7990,7 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
       return ['Voting seat', para(user.name) + form('setSeat', ck('voting', 'Include this officer in future votes.', false, user.boardSeat) + ck('verified', 'I checked the current school roster.', true), 'Save seat', id) + (user.role === 'bod' ? form('endBod', ck('confirm', 'This HPTA presidency has ended. Remove officer access and retain the parent profile.', true), 'End BOD term', id) : '')];
     }
     if (kind === 'proposal' || kind === 'resubmit') return [kind === 'proposal' ? 'Propose a project' : 'Revise proposal', form(kind === 'proposal' ? 'submitProposal' : 'resubmit', input('title', 'Project title', p?.title || '', 'text', 'required minlength="4" maxlength="100"') + (p ? '' : select('category', 'Category', E.categories)) + area('details', 'What does the school need?', p?.details || '', 'required minlength="8" maxlength="700"') + para('Leave out children’s names and private concerns. The review team checks proposals before sharing them.'), p ? 'Resubmit' : 'Send proposal', p?.id || '')];
-    if (['concern', 'suggestion'].includes(kind)) return [kind === 'concern' ? 'Report a private concern' : 'Make a suggestion', form('caseSubmit', hidden('kind', kind) + input('subject', 'Subject', '', 'text', 'required minlength="3" maxlength="100"') + select('category', 'Category', E.categories) + area('body', kind === 'concern' ? 'What happened?' : 'What would you like to improve?', '', 'required minlength="6" maxlength="700"') + '<fieldset class="evidence"><legend>Photo evidence (optional, up to ' + E.photosPerCase + ')</legend><label>Photo 1<input type="file" name="evidence1" accept="image/jpeg,image/png,image/webp"></label><label>Photo 2<input type="file" name="evidence2" accept="image/jpeg,image/png,image/webp"></label><div class="entry-meta">Please do not photograph children’s faces. A photo can show who you are, so if you hide your name, choose photos that do not.</div></fieldset>' + hidden('assigned', 'chair') + notice('This goes privately to the SPTA. Only the officers who handle feedback can read it.') + ck('hideName', 'Hide my name from the reviewer') + '<div class="entry-meta">The officer will not see your name or section and will reply here in the app. You can do this ' + E.hiddenPerMonth + ' times a month.</div>' + notice('For an urgent matter about a child’s safety, please go to your child’s adviser directly.'), 'Send privately')];
+    if (['concern', 'suggestion'].includes(kind)) return [kind === 'concern' ? 'Report a private concern' : 'Make a suggestion', form('caseSubmit', hidden('kind', kind) + input('subject', 'Subject', '', 'text', 'required minlength="3" maxlength="100"') + select('category', 'Category', E.categories) + area('body', kind === 'concern' ? 'What happened?' : 'What would you like to improve?', '', 'required minlength="6" maxlength="700"') + '<fieldset class="evidence"><legend>Photo evidence (optional, up to ' + E.photosPerCase + ')</legend><label>Photo 1<input type="file" name="evidence1" accept="image/jpeg,image/png,image/webp"></label><label>Photo 2<input type="file" name="evidence2" accept="image/jpeg,image/png,image/webp"></label><div class="entry-meta">Please do not photograph children’s faces. A photo can show who you are, so if you hide your name, choose photos that do not.</div></fieldset>' + hidden('assigned', 'chair') + (kind === 'concern' ? ck('safety', 'This is about a child’s safety (bullying, harm or abuse)') + '<div class="entry-meta" data-when="safety" data-values="yes">It goes straight to the school. Write what happened, when and where, and whether the child is safe now. You may name the pupils involved if you know them.</div>' : '') + (kind === 'concern' ? '<div data-when="safety" data-values="yes">' + notice('This goes privately to the school. Only the school staff who handle child-protection reports can read it. The SPTA officers cannot.') + '</div><div data-when="safety" data-values="no">' + notice('This goes privately to the SPTA. Only the officers who handle feedback can read it.') + '</div>' : notice('This goes privately to the SPTA. Only the officers who handle feedback can read it.')) + ck('hideName', 'Hide my name from the reviewer') + (kind === 'concern' ? '<div class="entry-meta" data-when="safety" data-values="yes">The school will not see your name or section and will reply here in the app. The school may need to reach you to keep a child safe, so leave your name on if you can. You can hide it ' + E.hiddenPerMonth + ' times a month.</div><div class="entry-meta" data-when="safety" data-values="no">' : '<div class="entry-meta">') + 'The officer will not see your name or section and will reply here in the app. You can do this ' + E.hiddenPerMonth + ' times a month.</div>' + notice('If a child is in immediate danger, contact their class adviser or the school administration directly now. This app is not an emergency channel.'), 'Send privately')];
     if (kind === 'screen') return [p.title, '<div class="entry-meta step-line">For screening</div>' + para(p.details) + form('screen', select('decision', 'Next step', [['screen', 'Publish and open the officers’ vote'], ['return', 'Return for revision'], ['decline', 'Decline']]) + '<div data-when="decision" data-values="screen">' + input('title', 'Reviewed title', p.publicTitle || p.title) + area('text', 'Description safe to share', p.publicText || p.details) + input('budget', 'Proposed SPTA allocation (₱)', p.budget / 100, 'number', 'required min="0" step="0.01"') + '<div class="fund-check ok" id="screen-fund" data-available="' + E.funding(db()).available + '">' + icon('info', 'sm') + '<span><b>SPTA funds available now: ' + cash(E.funding(db()).available) + '</b><span id="screen-fund-note">An allocation above this amount will be marked as needing fundraising.</span></span></div>' + ck('fundraising', 'This proposal seeks voluntary contributions.', false, !!p.fundraising) + input('closes', 'Voting closes on', E.voteCloses({date: t()}), 'date', 'required min="' + t() + '"') + '<div class="entry-meta">Officers have one month to vote unless you change this date.</div></div><div data-when="decision" data-values="return decline">' + area('reason', 'Feedback for the parent') + '</div>', 'Save screening', id)];
     if (kind === 'vote') return [b.title, '<div class="entry-meta step-line">For your vote</div>' + upara(b.body) + '<div class="entry-meta">Proposed SPTA allocation ' + cash(b.budget) + '</div>' + ballotFund(b) + notice('Voting closes on ' + date(E.voteCloses(b)) + '.') + form('vote', select('vote', 'Your vote', [['', 'Choose a response'], ['yes', 'Proceed'], ['no', 'Do not proceed'], ['abstain', 'Abstain']], '', 'required'), 'Submit once', id)];
     if (kind === 'close') return ['Close voting', para(b.title) + notice('Voting closes by itself once the result is decided. Closing early records the result with the votes received so far.') + form('closeBallot', ck('confirm', 'The voting period has ended. Record the result.', true), 'Close and record', id)];
@@ -7772,7 +8009,7 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
     if (kind === 'reply') {
       const c = db().cases.find(x => x.id === id);
       const verifyFirst = !!c && E.onDesk(c) && !c.protection && !['chair', 'vice'].includes(me().role);
-      return ['Update status or reply', para(c.subject) + notice('The sender receives an automated response for each status. ' + (verifyFirst ? 'When the action is done, choose “Action taken” and write what was done. The chairperson or Vice-Chairperson then verifies it and closes it.' : 'To mark it resolved, write what was done, or explain why no action is needed.') + (c.forwarded && !lead() && !c.endorsed && !c.protection ? ' The sender reads your reply as coming from the SPTA, for the School Head.' : '')) + form('caseReply', select('status', 'Status', verifyFirst ? [['assigned', 'Reviewed'], ['action_taken', 'Action taken']] : [['assigned', 'Reviewed'], ['resolved', 'Resolved']], verifyFirst ? (c.status === 'action_taken' ? 'action_taken' : 'assigned') : c.status === 'resolved' ? 'resolved' : 'assigned') + area('reply', verifyFirst ? 'Personal reply (needed for Action taken)' : 'Personal reply (needed to resolve)', '', 'maxlength="600"') + input('due', 'Next update by', c.due, 'date') + (c.hidden ? ck('block', 'This was a false or abusive report. Stop this sender from hiding their name again. Their name stays hidden.') : ''), 'Save', id)];
+      return ['Update status or reply', para(c.subject) + notice('The sender receives an automated response for each status. ' + (verifyFirst ? 'When the action is done, choose “Action taken” and write what was done. The chairperson or Vice-Chairperson then verifies it and closes it.' : 'To mark it resolved, write what was done, or explain why no action is needed.') + (c.forwarded && !lead() && !c.endorsed && !c.protection ? ' The sender reads your reply as coming from the SPTA, for the School Head.' : '')) + form('caseReply', select('status', 'Status', verifyFirst ? [['assigned', 'Reviewed'], ['action_taken', 'Action taken']] : c.protection ? [['assigned', 'School handling'], ['resolved', 'Closed']] : [['assigned', 'Reviewed'], ['resolved', 'Resolved']], verifyFirst ? (c.status === 'action_taken' ? 'action_taken' : 'assigned') : c.status === 'resolved' ? 'resolved' : 'assigned') + area('reply', verifyFirst ? 'Personal reply (needed for Action taken)' : 'Personal reply (needed to resolve)', '', 'maxlength="600"') + input('due', 'Next update by', c.due, 'date') + (c.hidden ? ck('block', 'This was a false or abusive report. Stop this sender from hiding their name again. Their name stays hidden.') : ''), 'Save', id)];
     }
     if (kind === 'forward') {
       const c = db().cases.find(x => x.id === id);
@@ -7806,6 +8043,15 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
       const c = db().cases.find(x => x.id === id);
       if (!c || c.status !== 'action_taken') return ['Verify outcome', empty('Nothing is waiting to be verified.')];
       return ['Verify outcome', '<h3>' + esc(titleCase(c.subject)) + '</h3>' + para(c.body) + (c.reply ? '<div class="portal-note personal"><b>What was done</b>' + para(c.reply) + '</div>' : '') + form('caseVerify', select('decision', 'Outcome', [['close', 'Verified · Close it'], ['more', 'Needs more action']], 'close') + area('note', 'Note (needed if more action is needed)', '', 'maxlength="500"'), 'Save', id)];
+    }
+    if (kind === 'recovery') return ['Help a parent reset their password', notice('Only do this with the parent in front of you. Check who they are against the school’s records first, the way the school has approved. A child’s name, grade or section alone is not proof. The parent types the code and chooses a new password on their own phone. Never ask for their password.') + form('recoveryCode', input('mobile', 'The parent’s mobile number', '', 'tel', 'required placeholder="09171234567"') + ck('confirm', 'I checked this parent’s identity in person.', true), 'Make a one-time code')];
+    if (kind === 'recoveryShown') {
+      const r = ui.recovery || {};
+      return ['One-time code', '<p class="recovery-code">' + esc(r.code || '') + '</p>' + para('For ' + (r.name || '') + (r.homeroom ? ' · ' + r.homeroom : '') + '. It works once, within ' + (r.minutes || 30) + ' minutes.') + notice('Show it to the parent only. It is not shown again. The parent opens Sign in, taps Forgot password, and enters their mobile number, this code and a new password.') + btn('Done', 'closeRecovery', '', 'primary')];
+    }
+    if (kind === 'intake') {
+      const on = !!db().settings.intake?.secretary;
+      return [on ? 'End the secretary’s designation' : 'Designate the secretary', para(on ? 'Only you will receive child-protection reports.' : 'The secretary will receive and follow up child-protection reports with you. The school still assesses each case.') + form('intakeSetting', hidden('secretary', on ? 'no' : 'yes') + (on ? '' : ck('confirm', 'The school has authorized the secretary to receive these reports.', true) + input('reference', 'Memo or reference (optional)', '', 'text', 'maxlength="120" placeholder="e.g. School Memo No. 12, s. 2026"')), on ? 'End designation' : 'Designate')];
     }
     if (kind === 'caseAck') {
       const c = db().cases.find(x => x.id === id);
@@ -7939,7 +8185,9 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
   function updateConditions(scope = document) {
     scope.querySelectorAll('[data-when]').forEach(el => {
       const f = el.closest('form');
-      const active = el.dataset.values.split(' ').includes(f?.elements[el.dataset.when]?.value);
+      const field = f?.elements[el.dataset.when];
+      // A tick box counts as "yes" or "no".
+      const active = el.dataset.values.split(' ').includes(field?.type === 'checkbox' ? (field.checked ? 'yes' : 'no') : field?.value);
       el.hidden = !active;
       el.querySelectorAll('input,select,textarea').forEach(inp => {
         inp.disabled = !active;
@@ -8011,6 +8259,7 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
     caseEndorse: 'Endorsement saved.',
     caseAsk: 'Question sent.',
     caseVerify: 'Saved.',
+    intakeSetting: 'Child-protection intake updated.',
     caseAcknowledge: 'Referral acknowledged.',
     caseAnswer: 'Answer sent. Thank you.',
     caseReturn: 'Returned to the chairperson and Vice-Chairperson.',
@@ -8243,6 +8492,17 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
         return;
       }
       if (act === 'evidence' || act === 'minuteFile') return await attachment(act, id);
+      if (act === 'logoutAll') {
+        await S.logoutAll();
+        ui.tab = 'home';
+        ui.message = 'Signed out on all phones.';
+        return render();
+      }
+      if (act === 'closeRecovery') {
+        ui.recovery = null;
+        ui.dialog = null;
+        return render();
+      }
       if (act === 'caseTakeBack') return await change('caseEndorse', {
         id,
         back: true
@@ -8430,6 +8690,13 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
         render();
         return;
       }
+      if (action === 'recoveryCode') {
+        if (!payload.confirm) throw Error('Confirm that you checked the parent’s identity in person.');
+        ui.recovery = await S.recoveryCode(payload.mobile);
+        ui.dialog = 'recoveryShown';
+        render();
+        return;
+      }
       if (action === 'reset') {
         await S.resetPassword(payload);
         ui.tab = 'home';
@@ -8441,6 +8708,7 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
         return;
       }
       if (action === 'acting' || action === 'cover') payload.enabled = payload.enabled === 'yes';
+      if (action === 'intakeSetting') payload.secretary = payload.secretary === 'yes';
       if (action === 'profileUpdate') {
         const names = data.getAll('childName'),
           grades = data.getAll('childGrade'),
