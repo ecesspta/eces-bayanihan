@@ -2348,7 +2348,8 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
         {
           // Not a child-protection matter after all (for example, a false or mistaken report): send it back to the chairperson and Vice-Chairperson.
           const c = get(db.cases, id);
-          check(c.protection && caseHandler(db, a, c), 'Only the school can decide this is not a child-protection matter.');
+          // Deciding it is not a child-protection matter is an assessment, so only the School Head records it.
+          check(c.protection && a.role === 'head' && caseHandler(db, a, c), 'Only the School Head can record that this is not a child-protection matter.');
           check(!['resolved', 'withdrawn'].includes(c.status), 'This is already closed.');
           const reason = words(v.reason, 'Reason', 6, 350);
           c.forwarded = c.protection.wasForwarded || null;
@@ -2373,14 +2374,15 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
         }
       case 'intakeSetting':
         {
-          // The School Head decides whether the secretary also receives child-protection reports for the school.
+          // The School Head may designate the secretary, as authorized school personnel, to receive, acknowledge, coordinate and monitor
+          // child-protection referrals. It must cite the school's authorization or approved procedure. Assessment stays with the school.
           allows(a, ['head']);
           const on = v.secretary === true;
           db.settings.intake = on ? {
             secretary: true,
             by: a.id,
             at: at(),
-            reference: String(v.reference ?? '').trim() ? words(v.reference, 'Reference', 3, 120) : ''
+            reference: words(v.reference, 'The school’s authorization or approved procedure', 3, 120)
           } : {
             secretary: false,
             by: a.id,
@@ -2388,7 +2390,7 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
           };
           // Open referrals follow the new setting.
           for (const c of db.cases) if (c.protection && !['resolved', 'withdrawn'].includes(c.status)) c.protection.to = on ? [...new Set([...intakeOf(c), 'secretary'])] : intakeOf(c).filter(r => r !== 'secretary');
-          db.accounts.filter(x => x.active && x.role === 'secretary').forEach(x => note(db, x.id, on ? 'The School Head designated you to receive child-protection reports for the school.' : 'The School Head ended your designation to receive child-protection reports.'));
+          db.accounts.filter(x => x.active && x.role === 'secretary').forEach(x => note(db, x.id, on ? 'The School Head designated you to receive, acknowledge, coordinate and monitor child-protection referrals for the school.' : 'The School Head ended your designation for child-protection referrals.'));
           changed(on ? 'Secretary designated for child-protection intake' : 'Secretary designation for child-protection intake ended');
           break;
         }
