@@ -103,6 +103,7 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
     assigned: 'Reviewed',
     action_taken: 'Action taken',
     cp_referred: 'Referred to School',
+    cp_ack: 'Acknowledged',
     cp_handling: 'School Handling',
     cp_closed: 'Closed',
     resolved: 'Resolved',
@@ -451,6 +452,7 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
       if (item.status === 'withdrawn') return 'You withdrew this ' + what + '. Nothing more will happen with it.';
       if (item.status === 'resolved') return 'Your ' + what + ' was marked resolved by the ' + who + '.';
       // A possible child-protection concern: the parent is told only that it is being handled, never how.
+      if (item.safety && !item.urgent && item.status !== 'resolved') return 'Thank you for reporting this concern. This app could not send it to the school yet. If a child is in immediate danger, contact their class adviser or the school administration directly now.';
       if (item.urgent) return 'Thank you for reporting this concern. Because it involves a child’s safety, please inform your child’s class adviser or the School Head immediately. The school’s designated child-protection personnel should assess and address the report. Your child’s safety and privacy are important to us.';
       if (item.status === 'assigned') return 'Your ' + what + ' was reviewed by the ' + who + '.';
       if (item.status === 'action_taken') return 'Action was taken on your ' + what + '. The ' + who + ' will confirm the outcome before closing it.';
@@ -539,7 +541,10 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
   // acting secretary (authorized school personnel), own it. The chairperson and Vice-Chairperson only coordinate.
   // An SPTA matter may be endorsed to one officer, who then sees that case only.
   function canSeeCase(actor, c) {
-    if (actor.id === c.owner || actor.role === c.assigned) return true;
+    if (actor.id === c.owner) return true;
+    // A child-protection referral: only the school's intake roles, plus the chairperson and Vice-Chairperson if they referred it themselves.
+    if (c.protection) return intakeOf(c).includes(actor.role) || !c.protection.direct && ['chair', 'vice'].includes(actor.role);
+    if (actor.role === c.assigned) return true;
     if (!onDesk(c)) return false;
     if (actor.id && c.endorsed?.to === actor.id) return true;
     if (['chair', 'vice'].includes(actor.role)) return true;
@@ -549,12 +554,23 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
   function caseHandler(db, a, c) {
     if (!a?.active) return false;
     if (!onDesk(c)) return holds(db, a, c.assigned);
-    if (c.protection) return a.role === 'head' || holds(db, a, 'secretary');
+    // No stand-in here: a person covering for the secretary in the SPTA is not school personnel.
+    if (c.protection) return intakeOf(c).includes(a.role);
     if (c.endorsed?.to === a.id) return true;
     return ['chair', 'vice'].includes(a.role) || !!c.forwarded && (a.role === 'head' || holds(db, a, 'secretary'));
   }
   // The SPTA officers who coordinate a child-protection referral.
-  const caseCoordinator = (db, a, c) => !!a?.active && !!c.protection && (['chair', 'vice'].includes(a.role) || holds(db, a, 'secretary'));
+  const caseCoordinator = (db, a, c) => !!a?.active && !!c.protection && !c.protection.direct && ['chair', 'vice'].includes(a.role);
+  // Who receives child-protection reports for the school. The School Head always does, once their account is set up.
+  // The secretary does only after the School Head designates her in the app (she is a teacher and the School Head's acting secretary).
+  const intakeReady = x => !!x && x.active && !x.invite && !x.vacant;
+  function intakeRoles(db) {
+    const roles = [];
+    if (db.accounts.some(x => x.role === 'head' && intakeReady(x))) roles.push('head');
+    if (db.settings?.intake?.secretary && db.accounts.some(x => x.role === 'secretary' && intakeReady(x))) roles.push('secretary');
+    return roles;
+  }
+  const intakeOf = c => c.protection?.to || ['head'];
   // Who may add an internal note, and who may ask the sender for more details.
   const caseNoter = (db, a, c) => !!a?.active && onDesk(c) && (caseHandler(db, a, c) || caseCoordinator(db, a, c));
   const caseAsker = caseNoter;
@@ -1514,6 +1530,16 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
               b.withdrawn = true;
             }
             item.published = false;
+          } else if (item.protection) {
+            // Once the school has a child-protection report, the parent can stop the SPTA's follow-ups, but cannot take the report back from the school.
+            check(item.status !== 'resolved' && !item.senderStopped, 'This was already closed or stopped.');
+            item.senderStopped = {
+              at: at()
+            };
+            item.awaiting = false;
+            db.accounts.filter(x => x.active && intakeOf(item).includes(x.role)).forEach(x => note(db, x.id, item.id + ' · The parent asked to stop follow-ups on a child-protection report. The school keeps the report and decides what to do.'));
+            changed('Sender stopped follow-ups on a child-protection referral');
+            break;
           } else check(['received', 'assigned'].includes(item.status), 'This was already resolved and can no longer be withdrawn.');
           item.status = 'withdrawn';
           item.history.push({
@@ -2112,6 +2138,35 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
             notes: [],
             history: []
           });
+          // A possible bullying or child-safety concern goes straight to the school's intake, without waiting for the SPTA.
+          // If no school account can receive it yet, nothing claims it was sent: the parent is told to contact the school directly.
+          if (v.safety === true) {
+            check(kind === 'concern', 'Choose “Private concern” for a child-safety report.');
+            const c = db.cases[0],
+              to = intakeRoles(db);
+            c.safety = true;
+            if (to.length) {
+              c.protection = {
+                at: at(),
+                by: a.id,
+                role: 'sender',
+                direct: true,
+                wasForwarded: null,
+                to
+              };
+              c.forwarded = {
+                at: at(),
+                by: a.id,
+                role: 'sender'
+              };
+              c.track = 'protection';
+              c.urgent = true;
+              // The parent chose this, so telling them it went to the school reveals nothing new.
+              c.toSchool = true;
+              c.due = today();
+              db.accounts.filter(x => x.active && to.includes(x.role)).forEach(x => note(db, x.id, c.id + ' · URGENT · A parent sent a possible child-safety concern to the school. Please acknowledge it and handle it under the school’s child protection procedure.'));
+            }
+          }
           tell(db, db.cases[0]);
           break;
         }
@@ -2124,6 +2179,8 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
           // A child-protection case is closed by the school.
           check(next !== 'resolved' || !onDesk(c) || c.protection || ['chair', 'vice'].includes(a.role), 'Mark it “Action taken”. The chairperson or Vice-Chairperson verifies the outcome and closes it.');
           check(next !== 'action_taken' || onDesk(c) && !c.protection, 'Choose Reviewed or Resolved.');
+          check(!c.protection || c.protection.ack, 'Acknowledge the referral first.');
+          if (c.protection) c.schoolHandling = true;
           // A personal reply is optional. The automated response always tells the sender the new status.
           const reply = String(v.reply ?? '').trim() ? words(v.reply, 'Personal reply', 3, 600) : '';
           // Close the loop: a case is resolved only with a recorded outcome or a clear explanation for the sender.
@@ -2222,16 +2279,19 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
         }
       case 'caseProtect':
         {
-          // A possible child-protection concern leaves the ordinary queue at once. The secretary alerts the adviser; the School Head monitors.
+          // A possible child-protection concern leaves the ordinary queue at once and goes to the school's intake.
           const c = get(db.cases, id);
           check(onDesk(c) && ['chair', 'vice'].includes(a.role) && a.active, 'The chairperson or Vice-Chairperson refers this.');
           check(!c.protection, 'This was already referred.');
           check(!['resolved', 'withdrawn'].includes(c.status), 'This is already closed.');
+          const to = intakeRoles(db);
+          check(to.length, 'No school account can receive this yet. Tell the parent to contact the class adviser or the school administration directly.');
           c.protection = {
             at: at(),
             by: a.id,
             role: a.role,
-            wasForwarded: c.forwarded || null
+            wasForwarded: c.forwarded || null,
+            to
           };
           c.track = 'protection';
           c.urgent = true;
@@ -2242,8 +2302,7 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
             role: a.role
           };
           c.due = today();
-          db.accounts.filter(x => x.active && x.role === 'head').forEach(x => note(db, x.id, c.id + ' · URGENT · A possible child-protection concern was referred to the school. Please acknowledge it and handle it under the school’s child protection procedure.'));
-          db.accounts.filter(x => x.active && x.role === 'secretary').forEach(x => note(db, x.id, c.id + ' · URGENT · A possible child-protection concern was referred to the school. Please acknowledge it and handle it under the school’s child protection procedure.'));
+          db.accounts.filter(x => x.active && to.includes(x.role)).forEach(x => note(db, x.id, c.id + ' · URGENT · A possible child-protection concern was referred to the school. Please acknowledge it and handle it under the school’s child protection procedure.'));
           tell(db, c);
           changed('Possible child-protection concern referred');
           break;
@@ -2255,6 +2314,7 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
           check(caseAsker(db, a, c), 'Only the person handling this can ask the sender.');
           check(!['resolved', 'withdrawn'].includes(c.status), 'This is already closed.');
           check(!c.awaiting, 'You already asked. Wait for the sender to answer.');
+          check(!c.senderStopped, 'The sender asked to stop follow-ups.');
           c.messages = c.messages || [];
           c.messages.push({
             from: 'officer',
@@ -2288,13 +2348,16 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
         {
           // Not a child-protection matter after all (for example, a false or mistaken report): send it back to the chairperson and Vice-Chairperson.
           const c = get(db.cases, id);
-          check(c.protection && (a.role === 'head' || holds(db, a, 'secretary')) && a.active, 'Only the school can decide this is not a child-protection matter.');
+          check(c.protection && caseHandler(db, a, c), 'Only the school can decide this is not a child-protection matter.');
           check(!['resolved', 'withdrawn'].includes(c.status), 'This is already closed.');
           const reason = words(v.reason, 'Reason', 6, 350);
           c.forwarded = c.protection.wasForwarded || null;
           c.track = c.forwarded ? 'school' : undefined;
           delete c.protection;
           delete c.urgent;
+          delete c.safety;
+          delete c.toSchool;
+          delete c.schoolAck;
           delete c.schoolHandling;
           c.due = plusDays(today(), 3);
           c.notes = c.notes || [];
@@ -2308,18 +2371,39 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
           changed('Private case returned as not a child-protection concern');
           break;
         }
+      case 'intakeSetting':
+        {
+          // The School Head decides whether the secretary also receives child-protection reports for the school.
+          allows(a, ['head']);
+          const on = v.secretary === true;
+          db.settings.intake = on ? {
+            secretary: true,
+            by: a.id,
+            at: at(),
+            reference: String(v.reference ?? '').trim() ? words(v.reference, 'Reference', 3, 120) : ''
+          } : {
+            secretary: false,
+            by: a.id,
+            at: at()
+          };
+          // Open referrals follow the new setting.
+          for (const c of db.cases) if (c.protection && !['resolved', 'withdrawn'].includes(c.status)) c.protection.to = on ? [...new Set([...intakeOf(c), 'secretary'])] : intakeOf(c).filter(r => r !== 'secretary');
+          db.accounts.filter(x => x.active && x.role === 'secretary').forEach(x => note(db, x.id, on ? 'The School Head designated you to receive child-protection reports for the school.' : 'The School Head ended your designation to receive child-protection reports.'));
+          changed(on ? 'Secretary designated for child-protection intake' : 'Secretary designation for child-protection intake ended');
+          break;
+        }
       case 'caseAcknowledge':
         {
           // The school confirms it has received the referral. The SPTA sees that it was acknowledged, nothing more.
           const c = get(db.cases, id);
-          check(c.protection && (a.role === 'head' || holds(db, a, 'secretary')) && a.active, 'The school acknowledges a child-protection referral.');
+          check(c.protection && caseHandler(db, a, c), 'The school acknowledges a child-protection referral.');
           check(!c.protection.ack, 'This was already acknowledged.');
           c.protection.ack = {
             at: at(),
             by: a.id
           };
-          c.schoolHandling = true;
-          db.accounts.filter(x => x.active && x.id !== a.id && (['chair', 'vice', 'head'].includes(x.role) || x.role === 'secretary')).forEach(x => note(db, x.id, c.id + ' · The school acknowledged the child-protection referral.'));
+          c.schoolAck = true;
+          db.accounts.filter(x => x.active && x.id !== a.id && canSeeCase(x, c)).forEach(x => note(db, x.id, c.id + ' · The school acknowledged the child-protection referral.'));
           changed('Child-protection referral acknowledged by the school');
           break;
         }
@@ -2757,6 +2841,7 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
     caseNoter,
     caseAsker,
     caseCoordinator,
+    intakeRoles,
     onDesk,
     deskName,
     isChair,
@@ -3035,6 +3120,9 @@ const newCode = () => {
   const c = Array.from(b, x => CODE_CHARS[x % CODE_CHARS.length]).join('');
   return c.slice(0, 4) + '-' + c.slice(4, 8) + '-' + c.slice(8, 12);
 };
+// One-time password codes for parents. An officer hands one over only after checking the parent's identity in person.
+const recoveryHash = code => createHash('sha256').update('recovery:' + String(code || '').toUpperCase().replace(/[^A-Z0-9]/g, '')).digest('hex');
+const RECOVERY_MINUTES = 30;
 const inviteHash = code => createHash('sha256').update('invite:' + String(code || '').toUpperCase().replace(/[^A-Z0-9]/g, '')).digest('hex');
 const enc = s => Buffer.from(s);
 class HttpError extends Error {
@@ -3440,18 +3528,54 @@ function createApi(store, config = {}) {
       const v = JSON.parse(body.toString() || '{}');
       const passOk = p => typeof p === 'string' && p.length >= 10 && p.length <= 128;
       if (route === '/api/reset') {
+        // A new password needs a one-time code from the chairperson or the School Head. Knowing the phone, name or section is not enough.
         await limit();
         if (!passOk(v.password)) throw new HttpError(400, 'Use a password of 10–128 characters.');
-        const id = E.resetCheck(db, v, device);
-        const t = await store.atomic(async tx => {
-          await tx.delAuth(id);
-          await addCredential(tx, id, v.password);
-          await tx.delSessionsOf(id);
-          return setLogin(tx, id, stay(E.account(db, id)));
+        let login = '';
+        try {
+          login = E.loginKey(v.mobile);
+        } catch (_) {}
+        await brake('reset:' + (login || 'none'), 8, 900000, 'Too many tries. Wait 15 minutes, then try again.');
+        const given = recoveryHash(v.code);
+        const done = await store.atomic(async tx => {
+          const fresh = await tx.load();
+          const a = fresh.accounts.find(x => !x.demo && x.active && x.login === login);
+          const r = a?.recovery;
+          const ok = !!r && r.exp > Date.now() && r.hash.length === given.length && timingSafeEqual(enc(r.hash), enc(given));
+          if (!ok) {
+            // Five wrong tries end the code.
+            if (r) {
+              r.tries = (r.tries || 0) + 1;
+              if (r.tries >= 5 || r.exp <= Date.now()) delete a.recovery;
+              await tx.save(fresh);
+            }
+            return null;
+          }
+          delete a.recovery;
+          fresh.audit.push({
+            who: a.id,
+            role: a.role,
+            event: 'Password changed with a one-time code',
+            ref: '',
+            private: true,
+            at: new Date().toISOString()
+          });
+          await tx.save(fresh);
+          await tx.delAuth(a.id);
+          await addCredential(tx, a.id, v.password);
+          // Every other sign-in on every phone ends.
+          await tx.delSessionsOf(a.id);
+          return {
+            fresh,
+            a,
+            t: await setLogin(tx, a.id, stay(a))
+          };
         });
+        // The same answer whether the number, the code or its age was wrong, so nobody can learn which numbers have accounts.
+        if (!done) throw new HttpError(400, 'That code is not valid or has expired. Ask the SPTA chairperson or the School Head for a new one.');
         return send(200, {
-          ...state(db, E.account(db, id)),
-          token: t,
+          ...state(done.fresh, done.a),
+          token: done.t,
           device
         });
       }
@@ -3530,6 +3654,52 @@ function createApi(store, config = {}) {
       if (route === '/api/logout') {
         await store.delSeen(tokenH);
         await store.delSession(tokenH);
+        if (cfg.cookies) out.cookies.push('eces_session=; Path=/; Max-Age=0; HttpOnly; SameSite=Strict');
+        return send(200, state(db, null));
+      }
+      if (route === '/api/recovery-code') {
+        // The chairperson or the School Head, after checking the parent's identity in person, makes a one-time code.
+        // The code is shown once to the officer. Only its fingerprint is kept, it lasts 30 minutes and works once.
+        if (!me || !(me.role === 'head' || E.isChair(db, me))) throw new HttpError(403, 'Only the chairperson or the School Head can make a password code.');
+        await brake('recovery-issue:' + me.id, 10, 3600000, 'Too many codes made in the last hour. Try again later.');
+        const code = newCode();
+        let login = '';
+        try {
+          login = E.loginKey(v.mobile);
+        } catch (_) {}
+        const target = await store.atomic(async tx => {
+          const fresh = await tx.load();
+          const a = fresh.accounts.find(x => !x.demo && x.active && x.login === login && ['parent', 'bod'].includes(x.role));
+          if (!a) throw new HttpError(404, 'No parent account uses that mobile number. Officers get a new invite code from the admin page instead.');
+          if (a.id === me.id) throw new HttpError(400, 'Ask another officer to make your code.');
+          a.recovery = {
+            hash: recoveryHash(code),
+            exp: Date.now() + RECOVERY_MINUTES * 60000,
+            tries: 0,
+            by: me.id
+          };
+          fresh.audit.push({
+            who: me.id,
+            role: me.role,
+            event: 'One-time password code made for a parent account',
+            ref: '',
+            private: true,
+            at: new Date().toISOString()
+          });
+          await tx.save(fresh);
+          return a;
+        });
+        return send(201, {
+          code,
+          minutes: RECOVERY_MINUTES,
+          name: target.name,
+          homeroom: target.homeroom || ''
+        });
+      }
+      if (route === '/api/logout-all') {
+        // Lost or shared phone: end every sign-in of this account, on every phone.
+        if (!me || me.guest) throw new HttpError(403, 'Sign in first.');
+        await store.atomic(async tx => tx.delSessionsOf(me.id));
         if (cfg.cookies) out.cookies.push('eces_session=; Path=/; Max-Age=0; HttpOnly; SameSite=Strict');
         return send(200, state(db, null));
       }

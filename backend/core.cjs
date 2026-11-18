@@ -251,6 +251,9 @@ const newCode = () => {
   const c = Array.from(b, x => CODE_CHARS[x % CODE_CHARS.length]).join('');
   return c.slice(0, 4) + '-' + c.slice(4, 8) + '-' + c.slice(8, 12);
 };
+// One-time password codes for parents. An officer hands one over only after checking the parent's identity in person.
+const recoveryHash = code => createHash('sha256').update('recovery:' + String(code || '').toUpperCase().replace(/[^A-Z0-9]/g, '')).digest('hex');
+const RECOVERY_MINUTES = 30;
 const inviteHash = code => createHash('sha256').update('invite:' + String(code || '').toUpperCase().replace(/[^A-Z0-9]/g, '')).digest('hex');
 const enc = s => Buffer.from(s);
 class HttpError extends Error {
@@ -656,18 +659,54 @@ function createApi(store, config = {}) {
       const v = JSON.parse(body.toString() || '{}');
       const passOk = p => typeof p === 'string' && p.length >= 10 && p.length <= 128;
       if (route === '/api/reset') {
+        // A new password needs a one-time code from the chairperson or the School Head. Knowing the phone, name or section is not enough.
         await limit();
         if (!passOk(v.password)) throw new HttpError(400, 'Use a password of 10–128 characters.');
-        const id = E.resetCheck(db, v, device);
-        const t = await store.atomic(async tx => {
-          await tx.delAuth(id);
-          await addCredential(tx, id, v.password);
-          await tx.delSessionsOf(id);
-          return setLogin(tx, id, stay(E.account(db, id)));
+        let login = '';
+        try {
+          login = E.loginKey(v.mobile);
+        } catch (_) {}
+        await brake('reset:' + (login || 'none'), 8, 900000, 'Too many tries. Wait 15 minutes, then try again.');
+        const given = recoveryHash(v.code);
+        const done = await store.atomic(async tx => {
+          const fresh = await tx.load();
+          const a = fresh.accounts.find(x => !x.demo && x.active && x.login === login);
+          const r = a?.recovery;
+          const ok = !!r && r.exp > Date.now() && r.hash.length === given.length && timingSafeEqual(enc(r.hash), enc(given));
+          if (!ok) {
+            // Five wrong tries end the code.
+            if (r) {
+              r.tries = (r.tries || 0) + 1;
+              if (r.tries >= 5 || r.exp <= Date.now()) delete a.recovery;
+              await tx.save(fresh);
+            }
+            return null;
+          }
+          delete a.recovery;
+          fresh.audit.push({
+            who: a.id,
+            role: a.role,
+            event: 'Password changed with a one-time code',
+            ref: '',
+            private: true,
+            at: new Date().toISOString()
+          });
+          await tx.save(fresh);
+          await tx.delAuth(a.id);
+          await addCredential(tx, a.id, v.password);
+          // Every other sign-in on every phone ends.
+          await tx.delSessionsOf(a.id);
+          return {
+            fresh,
+            a,
+            t: await setLogin(tx, a.id, stay(a))
+          };
         });
+        // The same answer whether the number, the code or its age was wrong, so nobody can learn which numbers have accounts.
+        if (!done) throw new HttpError(400, 'That code is not valid or has expired. Ask the SPTA chairperson or the School Head for a new one.');
         return send(200, {
-          ...state(db, E.account(db, id)),
-          token: t,
+          ...state(done.fresh, done.a),
+          token: done.t,
           device
         });
       }
@@ -746,6 +785,52 @@ function createApi(store, config = {}) {
       if (route === '/api/logout') {
         await store.delSeen(tokenH);
         await store.delSession(tokenH);
+        if (cfg.cookies) out.cookies.push('eces_session=; Path=/; Max-Age=0; HttpOnly; SameSite=Strict');
+        return send(200, state(db, null));
+      }
+      if (route === '/api/recovery-code') {
+        // The chairperson or the School Head, after checking the parent's identity in person, makes a one-time code.
+        // The code is shown once to the officer. Only its fingerprint is kept, it lasts 30 minutes and works once.
+        if (!me || !(me.role === 'head' || E.isChair(db, me))) throw new HttpError(403, 'Only the chairperson or the School Head can make a password code.');
+        await brake('recovery-issue:' + me.id, 10, 3600000, 'Too many codes made in the last hour. Try again later.');
+        const code = newCode();
+        let login = '';
+        try {
+          login = E.loginKey(v.mobile);
+        } catch (_) {}
+        const target = await store.atomic(async tx => {
+          const fresh = await tx.load();
+          const a = fresh.accounts.find(x => !x.demo && x.active && x.login === login && ['parent', 'bod'].includes(x.role));
+          if (!a) throw new HttpError(404, 'No parent account uses that mobile number. Officers get a new invite code from the admin page instead.');
+          if (a.id === me.id) throw new HttpError(400, 'Ask another officer to make your code.');
+          a.recovery = {
+            hash: recoveryHash(code),
+            exp: Date.now() + RECOVERY_MINUTES * 60000,
+            tries: 0,
+            by: me.id
+          };
+          fresh.audit.push({
+            who: me.id,
+            role: me.role,
+            event: 'One-time password code made for a parent account',
+            ref: '',
+            private: true,
+            at: new Date().toISOString()
+          });
+          await tx.save(fresh);
+          return a;
+        });
+        return send(201, {
+          code,
+          minutes: RECOVERY_MINUTES,
+          name: target.name,
+          homeroom: target.homeroom || ''
+        });
+      }
+      if (route === '/api/logout-all') {
+        // Lost or shared phone: end every sign-in of this account, on every phone.
+        if (!me || me.guest) throw new HttpError(403, 'Sign in first.');
+        await store.atomic(async tx => tx.delSessionsOf(me.id));
         if (cfg.cookies) out.cookies.push('eces_session=; Path=/; Max-Age=0; HttpOnly; SameSite=Strict');
         return send(200, state(db, null));
       }

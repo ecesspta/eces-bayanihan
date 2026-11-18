@@ -15,13 +15,15 @@
 1. Turn on **two-step sign-in** for the Supabase account, the GitHub account and the email address that owns both. This is the biggest real-world risk.
 2. Keep the **admin key** and the **database password** in a password manager. Never in chat, email or the repository. Change the admin key if anyone who knew it leaves.
 3. Share the Supabase project only with people who need it, using their own accounts.
-4. Download a **backup** every week and the day before the General Assembly. Keep it on a private, protected device. The free plan does not promise automatic backups.
+4. Make a **full backup** every week and the day before the General Assembly, as in `BACKUP.md`, and test a restore once a term. The free plan does not make backups for you.
 5. Have the school's **Data Protection Officer** confirm the Privacy Notice and the plan for a data breach (the National Privacy Commission expects notice within 72 hours of a breach).
 6. Open the app at least once a week so the free project does not pause.
 
 ## Known limits
 - Data sits in a Sydney data centre. Say so to the Data Protection Officer.
 - Names and phone numbers are protected by access rules and the provider's disk encryption, not by a separate encryption layer inside the database.
-- A parent who knows another parent's mobile number can learn that an account exists (the sign-up form says so). They cannot sign in without the password.
-- The password reset for parents relies on the phone having signed in before plus the last name and grade and section. Officers reset through a new invite code from the chairperson.
+- A parent who knows another parent's mobile number can learn that an account exists, because the sign-up form says the number is already used. They cannot sign in without the password. The password reset does not reveal it.
+- **Child-protection reports** go only to the School Head and, if the School Head designates her in the app, the secretary. Alerts are in-app only: no text messages or emails. The app is not an emergency channel, and the screens say so.
+- **Forgotten passwords (parents):** the parent asks the chairperson or the School Head in person. The officer checks who they are against the school's records, in the way the school approves (PENDING SCHOOL APPROVAL), then makes a one-time code in the app (Account → Help a parent reset their password). The code is 12 random characters, shown once, stored only as a hash, works once, expires after 30 minutes and ends after 5 wrong tries. The parent types it and chooses a new password on their own phone; every other sign-in of that account ends. Remembering the phone, last name or section is no longer enough. Wrong numbers and wrong codes get the same answer. Officers still reset through a new invite code from the admin page.
+- **Lost or shared phone:** Account → Sign out on all phones ends every sign-in of that account.
 - A security expert's review has not been done. Before the school relies on the app long term, ask the division ICT office or a trusted IT volunteer to review it.

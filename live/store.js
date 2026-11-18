@@ -446,6 +446,22 @@
       throw e;
     }
   }
+  // Live only: the chairperson or the School Head makes a one-time password code for a parent they checked in person.
+  async function recoveryCode(mobile) {
+    if (!shared) throw Error('This works in the live app only.');
+    return await api('recovery-code', {
+      mobile
+    });
+  }
+  // Live only: end this account's sign-in on every phone.
+  async function logoutAll() {
+    if (!shared) throw Error('This works in the live app only.');
+    try {
+      session(await api('logout-all', {}));
+    } finally {
+      if (apiBase) keep.set('eces-live-token', '');
+    }
+  }
   async function logout() {
     if (shared) {
       try {
@@ -585,6 +601,8 @@
     join,
     login,
     logout,
+    logoutAll,
+    recoveryCode,
     resetPassword,
     known,
     sample,
