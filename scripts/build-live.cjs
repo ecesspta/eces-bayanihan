@@ -1,18 +1,25 @@
 'use strict';
-/* Builds the hosted app into live/. It is the same app, pointed at the Supabase function.
+/* Builds the hosted app at the top level of the site (the main address). It is the same app, pointed at the Supabase function.
+   The fictional practice version lives separately in demo/ and is never touched by this build.
    Usage: node scripts/build-live.cjs https://<project>.supabase.co/functions/v1/eces [anon-public-key]
    Only connection.js carries the address, so it can be changed later without rebuilding. */
 const fs = require('node:fs');
 const path = require('node:path');
 const root = path.resolve(__dirname, '..');
-const out = path.join(root, 'live');
+const out = root;
 const api = (process.argv[2] || process.env.ECES_API || '').replace(/\/$/, '');
 const key = process.argv[3] || process.env.ECES_KEY || '';
 if (api && !/^https:\/\/[a-z0-9-]+\.supabase\.co\/functions\/v1\/[a-z0-9-]+$/.test(api)) throw Error('The address should look like https://<project>.supabase.co/functions/v1/eces');
-fs.rmSync(out, {
-  recursive: true,
-  force: true
-});
+// Replace only the files this build makes. Never touch the practice version, the server code or the git folder.
+const keep = new Set(['.git', 'demo', 'officers-demo', 'supabase', 'scripts', 'backend', 'loading-preview.html', 'dist', 'phone', 'node_modules']);
+const made = new Set([...fs.readdirSync(path.join(root, 'dist')), 'icons', 'manifest.webmanifest', 'connection.js', 'admin.html', 'admin.js', 'index.html', 'sw.js']);
+for (const name of made) {
+  if (keep.has(name)) throw Error('The build would overwrite ' + name + ', which must be kept. Stopping.');
+  fs.rmSync(path.join(out, name), {
+    recursive: true,
+    force: true
+  });
+}
 fs.cpSync(path.join(root, 'dist'), out, {
   recursive: true
 });
@@ -137,4 +144,4 @@ const index = path.join(out, 'index.html');
 let html = fs.readFileSync(index, 'utf8');
 html = html.replace('<head>', '<head>\n    ' + cspTag + '\n    <script src="connection.js"></script>\n    <link rel="manifest" href="manifest.webmanifest" />\n    <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />');
 fs.writeFileSync(index, html);
-console.log('live/ built' + (api ? ' for ' + api : ' (no server address yet: edit live/connection.js or rebuild with the address)'));
+console.log('site built' + (api ? ' for ' + api : ' (no server address yet: edit connection.js or rebuild with the address)'));
