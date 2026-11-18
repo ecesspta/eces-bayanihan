@@ -2727,6 +2727,36 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
  "The secretary can reply to the sender for you.": "Puwedeng sumagot ang Secretary sa nagpadala para sa iyo.",
  "The chairperson and Vice-Chairperson read every suggestion and private concern first.": "Unang binabasa ng Chairperson at Vice-Chairperson ang bawat suhestiyon at private na concern.",
  "They pass on school matters and PTA disputes.": "Ipinapasa nila ang mga usaping pampaaralan at alitan sa PTA.",
+ "Ask for more details": "Humingi ng karagdagang detalye",
+ "Ask for More Details": "Humingi ng Karagdagang Detalye",
+ "The sender gets a notification and answers here in the app. They read your question as coming from the SPTA.": "Makakatanggap ng notification ang nagpadala at sasagot dito sa app. Mababasa nila ang tanong mo bilang mula sa SPTA.",
+ "Your question": "Ang tanong mo",
+ "Send question": "Ipadala ang tanong",
+ "Question sent.": "Naipadala na ang tanong.",
+ "Answer": "Sumagot",
+ "Answer the SPTA": "Sagutin ang SPTA",
+ "Your answer": "Ang sagot mo",
+ "Send answer": "Ipadala ang sagot",
+ "Answer sent. Thank you.": "Naipadala na ang sagot. Salamat po.",
+ "The SPTA asked": "Tanong ng SPTA",
+ "Answer from the sender": "Sagot ng nagpadala",
+ "Question to the sender": "Tanong sa nagpadala",
+ "Please answer so the SPTA can help.": "Pakisagot po para matulungan kayo ng SPTA.",
+ "Waiting for the sender to answer.": "Hinihintay ang sagot ng nagpadala.",
+ "Not a child-protection concern": "Hindi concern sa child protection",
+ "Not a Child-Protection Concern": "Hindi Concern sa Child Protection",
+ "Use this if, after checking, this is not a child-protection matter, for example a mistaken or false report. It goes back to the chairperson and Vice-Chairperson to handle as an ordinary concern.": "Gamitin ito kung, matapos suriin, hindi pala ito usapin ng child protection, halimbawa ay maling report. Babalik ito sa Chairperson at Vice-Chairperson para hawakan bilang ordinaryong concern.",
+ "What you found": "Ano ang nalaman mo",
+ "Return": "Ibalik",
+ "Returned to the chairperson and Vice-Chairperson.": "Naibalik na sa Chairperson at Vice-Chairperson.",
+ "Private case: more details asked": "Private na kaso: humingi ng karagdagang detalye",
+ "Private case: sender answered": "Private na kaso: sumagot ang nagpadala",
+ "Private case returned as not a child-protection concern": "Private na kasong ibinalik dahil hindi concern sa child protection",
+ "There is no question waiting for your answer.": "Walang tanong na naghihintay ng sagot mo.",
+ "You already asked. Wait for the sender to answer.": "Nakapagtanong ka na. Hintayin ang sagot ng nagpadala.",
+ "Only the sender can answer.": "Ang nagpadala lang ang puwedeng sumagot.",
+ "Only the person handling this can ask the sender.": "Ang humahawak lang nito ang puwedeng magtanong sa nagpadala.",
+ "The School Head or the secretary can return this.": "Ang School Head o ang Secretary ang puwedeng magbalik nito.",
  "Show password": "Ipakita ang password",
  "Hide password": "Itago ang password",
  "Back": "Bumalik",
@@ -2939,6 +2969,10 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
       [/^Open photo: (.+)$/, "Buksan ang photo: {1}"],
       [/^Sample (.+)$/, "Sample {1}"],
       [/^Added by (.+)\. It is public once you approve it\.$/, "Idinagdag ni {1}. Magiging public ito kapag in-approve mo."],
+      [/^(.+) · The SPTA would like more details about your (concern|suggestion)\. Open it in My Updates to answer\.$/, "{1} · Gusto po ng SPTA ng karagdagang detalye tungkol sa inyong {2}. Buksan ito sa My Updates para sumagot."],
+      [/^(.+) · The sender answered your question\.$/, "{1} · Sumagot na ang nagpadala sa tanong mo."],
+      [/^(.+) · A concern was returned to you as not a child-protection matter\. Read the note\.$/, "{1} · May concern na ibinalik sa iyo dahil hindi ito usapin ng child protection. Basahin ang note."],
+      [/^Returned as not a child-protection concern: (.+)$/, "Ibinalik dahil hindi concern sa child protection: {1}"],
       [/^Referred on (.+)\. This is being handled\.$/, "Naipasa noong {1}. Inaasikaso na ito."],
       [/^(.+) · URGENT · A possible child-protection concern is being handled\. It is shown to you for monitoring\. You may also act on it\.$/, "{1} · URGENT · May posibleng concern sa child protection na inaasikaso na. Ipinapakita ito sa iyo para bantayan. Puwede mo rin itong aksyunan."],
       [/^Your (concern|suggestion) is being handled\. If it is urgent, please go to your child’s adviser directly\.$/, "Inaasikaso na ang inyong {1}. Kung urgent ito, pumunta po agad sa adviser ng inyong anak."],
@@ -5244,7 +5278,8 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
           c.protection = {
             at: at(),
             by: a.id,
-            role: a.role
+            role: a.role,
+            wasForwarded: c.forwarded || null
           };
           c.track = 'protection';
           c.urgent = true;
@@ -5259,6 +5294,65 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
           db.accounts.filter(x => x.active && x.role === 'head').forEach(x => note(db, x.id, c.id + ' · URGENT · A possible child-protection concern is being handled. It is shown to you for monitoring. You may also act on it.'));
           tell(db, c);
           changed('Possible child-protection concern referred');
+          break;
+        }
+      case 'caseAsk':
+        {
+          // Whoever is handling a suggestion or concern can ask the sender for more details. The sender answers in the app.
+          const c = get(db.cases, id);
+          check(caseHandler(db, a, c), 'Only the person handling this can ask the sender.');
+          check(!['resolved', 'withdrawn'].includes(c.status), 'This is already closed.');
+          check(!c.awaiting, 'You already asked. Wait for the sender to answer.');
+          c.messages = c.messages || [];
+          c.messages.push({
+            from: 'officer',
+            role: a.role,
+            by: a.id,
+            text: words(v.question, 'Question', 3, 500),
+            at: at()
+          });
+          c.awaiting = true;
+          note(db, c.owner, c.id + ' · The SPTA would like more details about your ' + c.kind + '. Open it in My Updates to answer.');
+          changed('Private case: more details asked');
+          break;
+        }
+      case 'caseAnswer':
+        {
+          const c = get(db.cases, id);
+          check(c.owner === a.id, 'Only the sender can answer.');
+          check(c.awaiting, 'There is no question waiting for your answer.');
+          check(!['resolved', 'withdrawn'].includes(c.status), 'This is already closed.');
+          c.messages.push({
+            from: 'sender',
+            text: words(v.answer, 'Your answer', 3, 700),
+            at: at()
+          });
+          c.awaiting = false;
+          db.accounts.filter(x => x.active && x.id !== a.id && caseHandler(db, x, c)).forEach(x => note(db, x.id, c.id + ' · The sender answered your question.'));
+          changed('Private case: sender answered');
+          break;
+        }
+      case 'caseReturn':
+        {
+          // Not a child-protection matter after all (for example, a false or mistaken report): send it back to the chairperson and Vice-Chairperson.
+          const c = get(db.cases, id);
+          check(c.protection && (a.role === 'head' || holds(db, a, 'secretary')) && a.active, 'The School Head or the secretary can return this.');
+          check(!['resolved', 'withdrawn'].includes(c.status), 'This is already closed.');
+          const reason = words(v.reason, 'Reason', 6, 350);
+          c.forwarded = c.protection.wasForwarded || null;
+          c.track = c.forwarded ? 'school' : undefined;
+          delete c.protection;
+          delete c.urgent;
+          c.due = plusDays(today(), 3);
+          c.notes = c.notes || [];
+          c.notes.push({
+            at: at(),
+            by: a.id,
+            role: a.role,
+            text: 'Returned as not a child-protection concern: ' + reason
+          });
+          db.accounts.filter(x => x.active && ['chair', 'vice'].includes(x.role)).forEach(x => note(db, x.id, c.id + ' · A concern was returned to you as not a child-protection matter. Read the note.'));
+          changed('Private case returned as not a child-protection concern');
           break;
         }
       case 'caseNote':
@@ -7023,7 +7117,7 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
     if(!ui.dialog||!me()||isGuest())return null;
     const list=todo(), at=list.findIndex(x=>x[3]==='dlg:'+ui.dialog&&x[4]===ui.id);
     if(at>=0)return {kind:list[at][5],at,list};
-    const c=['reply','forward','caseNote','endorse','protect'].includes(ui.dialog)&&db().cases.find(x=>x.id===ui.id);
+    const c=['reply','forward','caseNote','endorse','protect','caseAsk','caseAnswer','caseReturn'].includes(ui.dialog)&&db().cases.find(x=>x.id===ui.id);
     const kind=c?(c.kind==='inspection'?'Records Request':c.kind==='concern'?'Private Concern':'Suggestion'):{head:'Project Proposal',screen:'Project Proposal',vote:'Project Proposal',proposalReply:'Project Proposal',resubmit:'Project Proposal',post:'Fund Posting',check:'Collection Handover',freeze:'Resolution',sign:'Resolution',fileResolution:'Resolution',reviseResolution:'Resolution',resolution:'Resolution',minute:'Minutes of the Meeting',roster:'Officer Access Request'}[ui.dialog];
     return kind?{kind,at:-1,list}:null;
   }
@@ -7085,13 +7179,14 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
     const to = desk ? mine && !noter ? 'SPTA' : E.deskName : E.recipients[c.assigned] || E.roles[c.assigned];
     const notes = (c.notes || []).map(x => '<div class="portal-note' + (x.followUp ? ' personal' : '') + '"><b>' + esc((x.followUp ? 'Follow-up · ' : x.toHead ? 'Note for the School Head · ' : 'Note · ') + (E.roles[x.role] || x.role)) + '</b>' + para(x.text) + '<small>' + esc(date(x.at.slice(0, 10))) + '</small></div>').join('');
     const body = para(c.body) + (c.hidden ? '<div class="entry-meta hidden-name">' + icon('lock', 'sm') + esc(mine ? 'You hid your name from the reviewer.' : 'Name hidden by the sender. Reply here in the app.') + '</div>' : (assigned || noter) && !mine ? fromLine(c) : '') + (mine ? tracker(c) : c.reply ? '<div class="portal-note personal"><b>' + (c.replyFor === 'head' ? 'Personal Reply Sent by the Secretary for the School Head' : 'Personal Reply Sent') + '</b>' + para(c.reply) + '</div>' : '') + (!mine || noter ? notes : '') + '<div class="entry-meta">Sent to the ' + esc(to) + (c.forwarded && !mine && !c.protection ? ' · Passed on to the School Head' + (c.forwarded.role && noter ? ' by the ' + esc(E.roles[c.forwarded.role] || '') : '') + ' ' + esc(date(c.forwarded.at.slice(0, 10))) : '') + (assigned && !gone ? ' · Next update by ' + esc(date(c.due)) : '') + (late ? ' · <b class="overdue">Overdue</b>' : '') + '</div>';
+    const thread = (c.messages || []).map(m => '<div class="portal-note' + (m.from === 'sender' ? '' : ' personal') + '"><b>' + esc(mine ? (m.from === 'sender' ? 'Your answer' : 'The SPTA asked') : (m.from === 'sender' ? 'Answer from the sender' : 'Question to the sender')) + '</b>' + para(m.text) + '<small>' + esc(date(m.at.slice(0, 10))) + '</small></div>').join('') + (c.awaiting && !gone ? '<div class="entry-meta">' + icon('info', 'sm') + esc(mine ? 'Please answer so the SPTA can help.' : 'Waiting for the sender to answer.') + '</div>' : '');
     const evidence = (c.photos || []).length ? '<div class="proj-photos case-photos" aria-label="Photo evidence">' + c.photos.map((ph, i) => '<button type="button" class="proj-photo" data-do="dlg:casePhoto" data-id="' + esc(c.id + '|' + i) + '" aria-label="' + esc('Open photo ' + (i + 1)) + '">' + photoImg({file: ph}, 'Photo evidence ' + (i + 1)) + '</button>').join('') + '</div>' : '';
     const desk2 = desk && ['chair', 'vice'].includes(me().role) && ['received', 'assigned'].includes(c.status) && !c.protection;
     const canForward = desk2 && !c.forwarded;
     const officerView = !mine && (assigned || noter || desk2 || c.protection && ['chair', 'vice'].includes(me().role));
     const track = !officerView ? '' : c.protection ? '<div class="portal-note urgent"><b>Possible child-protection concern</b>' + para('Referred on ' + date(c.protection.at.slice(0, 10)) + '. This is being handled.') + '</div>' : c.track === 'grievance' ? '<div class="entry-meta">' + icon('info', 'sm') + 'PTA dispute · Formal grievance route. The School Head sets up the proper committee. No informal sanctions.</div>' : c.track === 'school' ? '<div class="entry-meta">' + icon('info', 'sm') + 'School matter · The School Head leads the action.</div>' : c.endorsed ? '<div class="entry-meta">' + icon('users', 'sm') + (c.endorsed.to === S.me ? 'Endorsed to you by the ' + esc(E.roles[c.endorsed.role] || '') + ' · ' + esc(date(c.endorsed.at.slice(0, 10))) : 'SPTA matter · Endorsed to ' + esc(n(c.endorsed.to)) + ' · ' + esc(date(c.endorsed.at.slice(0, 10)))) + '</div>' : '';
-    const actions = (assigned && !gone ? btn(c.status === 'received' ? 'Mark reviewed or reply' : 'Update or reply', 'dlg:reply', c.id) : '') + (desk2 && !c.forwarded ? (c.endorsed ? btn('Take back', 'caseTakeBack', c.id) : btn('Endorse to an officer', 'dlg:endorse', c.id)) : '') + (canForward ? btn('Pass on to the School Head', 'dlg:forward', c.id, 'primary') : '') + (desk2 && !gone ? btn('Child-protection concern', 'dlg:protect', c.id, 'danger') : '') + (noter && !gone && desk ? btn(holds('secretary') && !assigned ? 'Record follow-up' : c.forwarded ? 'Add a note' : 'Add a private note', 'dlg:caseNote', c.id) : '') + (canWithdraw(c) ? btn('Withdraw', 'dlg:withdraw', c.id) : '');
-    return card(c.subject, track + body + evidence, c.id + ' · ' + (c.kind === 'inspection' ? 'Records inspection request' : c.kind === 'concern' ? 'Private concern' : 'Private suggestion'), c.status, actions);
+    const actions = (mine && c.awaiting && !gone ? btn('Answer', 'dlg:caseAnswer', c.id, 'primary') : '') + (assigned && !gone ? btn(c.status === 'received' ? 'Mark reviewed or reply' : 'Update or reply', 'dlg:reply', c.id) : '') + (assigned && !mine && !gone && !c.awaiting && c.status !== 'resolved' ? btn('Ask for more details', 'dlg:caseAsk', c.id) : '') + (c.protection && assigned && !mine && !gone && c.status !== 'resolved' ? btn('Not a child-protection concern', 'dlg:caseReturn', c.id) : '') + (desk2 && !c.forwarded ? (c.endorsed ? btn('Take back', 'caseTakeBack', c.id) : btn('Endorse to an officer', 'dlg:endorse', c.id)) : '') + (canForward ? btn('Pass on to the School Head', 'dlg:forward', c.id, 'primary') : '') + (desk2 && !gone ? btn('Child-protection concern', 'dlg:protect', c.id, 'danger') : '') + (noter && !gone && desk ? btn(holds('secretary') && !assigned ? 'Record follow-up' : c.forwarded ? 'Add a note' : 'Add a private note', 'dlg:caseNote', c.id) : '') + (canWithdraw(c) ? btn('Withdraw', 'dlg:withdraw', c.id) : '');
+    return card(c.subject, track + body + thread + evidence, c.id + ' · ' + (c.kind === 'inspection' ? 'Records inspection request' : c.kind === 'concern' ? 'Private concern' : 'Private suggestion'), c.status, actions);
   }
   function pulse() {
     const tally = db().trends || {};
@@ -7538,6 +7633,22 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
       if (!c) return ['Possible child-protection concern', empty('This is no longer here.')];
       return ['Possible child-protection concern', para(c.subject) + notice('Use this if a child may be hurt, abused, bullied or in danger. It will be handled right away. If a child is in danger now, also call the school directly.') + form('caseProtect', ck('confirm', 'Refer this now.', true), 'Refer now', id)];
     }
+    if (kind === 'caseAsk') {
+      const c = db().cases.find(x => x.id === id);
+      if (!c) return ['Ask for more details', empty('This is no longer here.')];
+      return ['Ask for more details', para(c.subject) + notice('The sender gets a notification and answers here in the app. They read your question as coming from the SPTA.') + form('caseAsk', area('question', 'Your question', '', 'required minlength="3" maxlength="500" placeholder="Example: When did this happen, and who was involved?"'), 'Send question', id)];
+    }
+    if (kind === 'caseAnswer') {
+      const c = db().cases.find(x => x.id === id && x.owner === S.me);
+      if (!c) return ['Answer', empty('This is no longer here.')];
+      const q = (c.messages || []).filter(m => m.from !== 'sender').slice(-1)[0];
+      return ['Answer the SPTA', para(c.subject) + (q ? '<div class="portal-note personal"><b>The SPTA asked</b>' + para(q.text) + '</div>' : '') + form('caseAnswer', area('answer', 'Your answer', '', 'required minlength="3" maxlength="700" rows="6"'), 'Send answer', id)];
+    }
+    if (kind === 'caseReturn') {
+      const c = db().cases.find(x => x.id === id);
+      if (!c) return ['Not a child-protection concern', empty('This is no longer here.')];
+      return ['Not a child-protection concern', para(c.subject) + notice('Use this if, after checking, this is not a child-protection matter, for example a mistaken or false report. It goes back to the chairperson and Vice-Chairperson to handle as an ordinary concern.') + form('caseReturn', area('reason', 'What you found', '', 'required minlength="6" maxlength="350"'), 'Return', id)];
+    }
     if (kind === 'caseNote') {
       const c = db().cases.find(x => x.id === id);
       if (!c) return ['Note', empty('This is no longer here.')];
@@ -7730,6 +7841,9 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
     caseReply: 'Saved. The sender was told the new status.',
     caseForward: 'Passed on. The School Head and the secretary can read it now.',
     caseEndorse: 'Endorsement saved.',
+    caseAsk: 'Question sent.',
+    caseAnswer: 'Answer sent. Thank you.',
+    caseReturn: 'Returned to the chairperson and Vice-Chairperson.',
     caseProtect: 'Referred. This is being handled.',
     caseNote: 'Note saved.',
     proposalReply: 'Personal reply sent.',

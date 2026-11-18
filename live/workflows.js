@@ -2156,7 +2156,8 @@
           c.protection = {
             at: at(),
             by: a.id,
-            role: a.role
+            role: a.role,
+            wasForwarded: c.forwarded || null
           };
           c.track = 'protection';
           c.urgent = true;
@@ -2171,6 +2172,65 @@
           db.accounts.filter(x => x.active && x.role === 'head').forEach(x => note(db, x.id, c.id + ' · URGENT · A possible child-protection concern is being handled. It is shown to you for monitoring. You may also act on it.'));
           tell(db, c);
           changed('Possible child-protection concern referred');
+          break;
+        }
+      case 'caseAsk':
+        {
+          // Whoever is handling a suggestion or concern can ask the sender for more details. The sender answers in the app.
+          const c = get(db.cases, id);
+          check(caseHandler(db, a, c), 'Only the person handling this can ask the sender.');
+          check(!['resolved', 'withdrawn'].includes(c.status), 'This is already closed.');
+          check(!c.awaiting, 'You already asked. Wait for the sender to answer.');
+          c.messages = c.messages || [];
+          c.messages.push({
+            from: 'officer',
+            role: a.role,
+            by: a.id,
+            text: words(v.question, 'Question', 3, 500),
+            at: at()
+          });
+          c.awaiting = true;
+          note(db, c.owner, c.id + ' · The SPTA would like more details about your ' + c.kind + '. Open it in My Updates to answer.');
+          changed('Private case: more details asked');
+          break;
+        }
+      case 'caseAnswer':
+        {
+          const c = get(db.cases, id);
+          check(c.owner === a.id, 'Only the sender can answer.');
+          check(c.awaiting, 'There is no question waiting for your answer.');
+          check(!['resolved', 'withdrawn'].includes(c.status), 'This is already closed.');
+          c.messages.push({
+            from: 'sender',
+            text: words(v.answer, 'Your answer', 3, 700),
+            at: at()
+          });
+          c.awaiting = false;
+          db.accounts.filter(x => x.active && x.id !== a.id && caseHandler(db, x, c)).forEach(x => note(db, x.id, c.id + ' · The sender answered your question.'));
+          changed('Private case: sender answered');
+          break;
+        }
+      case 'caseReturn':
+        {
+          // Not a child-protection matter after all (for example, a false or mistaken report): send it back to the chairperson and Vice-Chairperson.
+          const c = get(db.cases, id);
+          check(c.protection && (a.role === 'head' || holds(db, a, 'secretary')) && a.active, 'The School Head or the secretary can return this.');
+          check(!['resolved', 'withdrawn'].includes(c.status), 'This is already closed.');
+          const reason = words(v.reason, 'Reason', 6, 350);
+          c.forwarded = c.protection.wasForwarded || null;
+          c.track = c.forwarded ? 'school' : undefined;
+          delete c.protection;
+          delete c.urgent;
+          c.due = plusDays(today(), 3);
+          c.notes = c.notes || [];
+          c.notes.push({
+            at: at(),
+            by: a.id,
+            role: a.role,
+            text: 'Returned as not a child-protection concern: ' + reason
+          });
+          db.accounts.filter(x => x.active && ['chair', 'vice'].includes(x.role)).forEach(x => note(db, x.id, c.id + ' · A concern was returned to you as not a child-protection matter. Read the note.'));
+          changed('Private case returned as not a child-protection concern');
           break;
         }
       case 'caseNote':

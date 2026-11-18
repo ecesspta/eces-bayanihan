@@ -163,6 +163,12 @@ function visible(db, me) {
     forwarded: null,
     endorsed: undefined,
     protection: undefined,
+    // The sender reads the questions as coming from the SPTA, never from a named role.
+    messages: (c.messages || []).map(m => ({
+      from: m.from,
+      text: m.text,
+      at: m.at
+    })),
     track: undefined,
     replyFor: undefined
   } : c);
