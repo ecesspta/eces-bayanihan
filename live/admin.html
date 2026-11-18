@@ -63,6 +63,10 @@ details.sec>summary::after{content:"+";font-size:22px;line-height:1}details.sec[
 <label for="vappr">Date the School Head approved</label><input id="vappr" type="date"><label for="vnum">Resolution number (optional, for example 3)</label><input id="vnum" inputmode="numeric">
 <button id="voted">Add voted project</button>
 </div></details>
+<details class="sec"><summary>Child-protection privacy check</summary><div class="secbody">
+<p class="note">Checks whether any child-protection report could have been seen by people who should not see it, under the earlier rules. It shows only counts and case numbers, never what was written.</p>
+<button id="pcheck">Run privacy check</button><pre id="pcheckout" hidden></pre>
+</div></details>
 <details class="sec"><summary>Who is on the app</summary><div class="secbody">
 <p class="note">Everyone with an account, and whether they can sign in. It shows no passwords, invite codes or private messages. Mobile numbers are partly hidden.</p>
 <button id="people">Show all users</button><button id="peoplecsv" class="alt">Download list</button>

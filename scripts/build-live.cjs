@@ -128,6 +128,10 @@ details.sec>summary::after{content:"+";font-size:22px;line-height:1}details.sec[
 <label for="vappr">Date the School Head approved</label><input id="vappr" type="date"><label for="vnum">Resolution number (optional, for example 3)</label><input id="vnum" inputmode="numeric">
 <button id="voted">Add voted project</button>
 </div></details>
+<details class="sec"><summary>Child-protection privacy check</summary><div class="secbody">
+<p class="note">Checks whether any child-protection report could have been seen by people who should not see it, under the earlier rules. It shows only counts and case numbers, never what was written.</p>
+<button id="pcheck">Run privacy check</button><pre id="pcheckout" hidden></pre>
+</div></details>
 <details class="sec"><summary>Who is on the app</summary><div class="secbody">
 <p class="note">Everyone with an account, and whether they can sign in. It shows no passwords, invite codes or private messages. Mobile numbers are partly hidden.</p>
 <button id="people">Show all users</button><button id="peoplecsv" class="alt">Download list</button>
@@ -175,6 +179,7 @@ function drawPeople(){var q=document.getElementById('pfind').value.trim().toLowe
   var l2=document.createElement('div');l2.style.color=p.status==='active'?'#0b6b3a':p.status==='invited'||p.waiting?'#8a5a00':'#555';l2.textContent=(LABEL[p.status]||p.status)+(p.waiting?' · Waiting for officer approval':'')+' · Signed up '+day(p.joined)+' · Last sign-in '+day(p.last)+(p.phones?' · '+p.phones+' phone'+(p.phones===1?'':'s'):'');d.appendChild(l2);box.appendChild(d)})}
 function csv(){var rows=[['Name','Role','Grade and section','Mobile','Status','Waiting for officer approval','Signed up','Last sign-in','Phones']].concat(allPeople.map(function(p){return [p.name,ROLE[p.role]||p.role,p.seat,p.mobile,LABEL[p.status]||p.status,p.waiting?'yes':'',day(p.joined),day(p.last),p.phones]}));
  return rows.map(function(r){return r.map(function(c){c=String(c==null?'':c);return /[",\\n]/.test(c)?'"'+c.replace(/"/g,'""')+'"':c}).join(',')}).join('\\n')}
+document.getElementById('pcheck').onclick=function(){say('Working…');call('GET','/api/admin/privacy-check').then(function(d){var o=document.getElementById('pcheckout');o.hidden=false;o.textContent=d.summary.join('\n');say('Done. '+(d.issues?d.issues+' item(s) to review.':'Nothing to review.'))}).catch(function(e){if(e)say(e.message)})};
 document.getElementById('people').onclick=function(){say('Working…');call('GET','/api/admin/users').then(function(d){allPeople=d.people;var c=d.count,w=d.people.filter(function(p){return p.waiting}).length;
  document.getElementById('peoplesum').textContent=d.total+' accounts · '+(c.active||0)+' can sign in · '+(c.invited||0)+' invited, not joined · '+(c.vacant||0)+' vacant HPTA seats · '+w+' waiting for approval'+(c.deactivated?' · '+c.deactivated+' deactivated':'')+(c.sample?' · '+c.sample+' sample profiles':'');
  document.getElementById('peoplebox').hidden=false;drawPeople();say('Done.')}).catch(function(e){if(e)say(e.message)})};
