@@ -467,20 +467,20 @@
   const onDesk = c => c.kind !== 'inspection' && ['chair', 'vice'].includes(c.assigned);
   // Who may read a case. The sender always can. Records requests go to the secretary.
   // A suggestion or concern is read by the chairperson and Vice-Chairperson, and by the School Head and secretary only once it is passed on.
-  // A possible child-protection concern goes to the School Head alone; the secretary and the SPTA do not follow it up.
+  // A possible child-protection concern goes to the secretary, who alerts the child's adviser right away. The School Head monitors it and may act.
   // An SPTA matter may be endorsed to one officer, who then sees that case only.
   function canSeeCase(actor, c) {
     if (actor.id === c.owner || actor.role === c.assigned) return true;
     if (!onDesk(c)) return false;
     if (actor.id && c.endorsed?.to === actor.id) return true;
     if (['chair', 'vice'].includes(actor.role)) return true;
-    return !!c.forwarded && (actor.role === 'head' || actor.role === 'secretary' && !c.protection);
+    return !!c.forwarded && ['head', 'secretary'].includes(actor.role);
   }
   // Who may change the status or reply to the sender: the desk, the endorsed officer, and once passed on the School Head and the secretary for the School Head.
   function caseHandler(db, a, c) {
     if (!a?.active) return false;
     if (!onDesk(c)) return holds(db, a, c.assigned);
-    if (c.protection) return a.role === 'head';
+    if (c.protection) return a.role === 'head' || holds(db, a, 'secretary');
     if (c.endorsed?.to === a.id) return true;
     return ['chair', 'vice'].includes(a.role) || !!c.forwarded && (a.role === 'head' || holds(db, a, 'secretary'));
   }
@@ -2059,7 +2059,7 @@
             c.replyBy = a.role;
             c.replyAt = at();
             // The secretary answers for the School Head once a case is passed on.
-            c.replyFor = onDesk(c) && c.forwarded && !['chair', 'vice', 'head'].includes(a.role) && !(c.endorsed?.to === a.id) ? 'head' : undefined;
+            c.replyFor = onDesk(c) && c.forwarded && !c.protection && !['chair', 'vice', 'head'].includes(a.role) && !(c.endorsed?.to === a.id) ? 'head' : undefined;
           }
           c.history.push({
             status: next,
@@ -2146,9 +2146,9 @@
         }
       case 'caseProtect':
         {
-          // A possible child-protection concern leaves the SPTA queue at once and goes to the School Head only.
+          // A possible child-protection concern leaves the ordinary queue at once. The secretary alerts the adviser; the School Head monitors.
           const c = get(db.cases, id);
-          check(onDesk(c) && ['chair', 'vice'].includes(a.role) && a.active, 'The chairperson or Vice-Chairperson refers this to the School Head.');
+          check(onDesk(c) && ['chair', 'vice'].includes(a.role) && a.active, 'The chairperson or Vice-Chairperson refers this.');
           check(!c.protection, 'This was already referred.');
           check(!['resolved', 'withdrawn'].includes(c.status), 'This is already closed.');
           c.protection = {
@@ -2164,8 +2164,9 @@
             role: a.role
           };
           c.due = today();
-          db.accounts.filter(x => x.active && x.role === 'head').forEach(x => note(db, x.id, c.id + ' · URGENT · A possible child-protection concern was referred to you. Please act on it today under the school’s child protection procedure.'));
-          changed('Possible child-protection concern referred to the School Head');
+          db.accounts.filter(x => x.active && x.role === 'secretary').forEach(x => note(db, x.id, c.id + ' · URGENT · A possible child-protection concern was referred to you. Please alert the child’s adviser today.'));
+          db.accounts.filter(x => x.active && x.role === 'head').forEach(x => note(db, x.id, c.id + ' · URGENT · A possible child-protection concern was referred to the secretary, who will alert the adviser. It is shown to you for monitoring. You may also act on it.'));
+          changed('Possible child-protection concern referred to the secretary and the School Head');
           break;
         }
       case 'caseNote':
@@ -2189,7 +2190,7 @@
             } : {})
           });
           // Tell the other people who can read it that there is something new.
-          const to = c.protection ? ['head'] : ['chair', 'vice'];
+          const to = c.protection ? ['head', 'secretary'] : ['chair', 'vice'];
           if (c.forwarded && !c.protection) to.push('head', 'secretary');
           db.accounts.filter(x => x.active && (to.includes(x.role) || c.endorsed?.to === x.id) && x.id !== a.id).forEach(x => note(db, x.id, c.id + ' · A new note from the ' + (roles[a.role] || a.role) + '.'));
           changed('Private case note added');
