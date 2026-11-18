@@ -18,8 +18,8 @@ Do these in order. Each step takes a few minutes. Nothing here costs money on th
 
 ## 4. Build the app and set up the rehearsal data
 1. Send the server address and the public "anon" key (Settings → API) to the assistant, who builds the `live/` folder and pushes it.
-2. Open `https://sarahbarlis09.github.io/eces-bayanihan/live/admin.html`, type the admin key, press **Set up rehearsal data**. The fictional sample sign-ins download once. Keep them private.
-3. Open `https://sarahbarlis09.github.io/eces-bayanihan/live/` and sign in as the chairperson.
+2. Open `https://ecesspta.github.io/eces-bayanihan/live/admin.html`, type the admin key, press **Set up rehearsal data**. The fictional sample sign-ins download once. Keep them private.
+3. Open `https://ecesspta.github.io/eces-bayanihan/live/` and sign in as the chairperson.
 
 ## 5. Backups (do this every week, and the day before the General Assembly)
 Open `live/admin.html`, type the admin key, press **Download backup**. Keep the file private. The database also keeps its last 300 saved versions.

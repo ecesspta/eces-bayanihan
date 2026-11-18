@@ -3797,7 +3797,7 @@ const { anthropicTranslator } = require('../backend/translate.cjs');
 
 const env = k => Deno.env.get(k) || '';
 // Pages allowed to talk to this server. Add more in the ALLOWED_ORIGINS secret, comma separated.
-const origins = ['https://sarahbarlis09.github.io', ...env('ALLOWED_ORIGINS').split(',').map(x => x.trim()).filter(Boolean)];
+const origins = ['https://ecesspta.github.io', 'https://sarahbarlis09.github.io', ...env('ALLOWED_ORIGINS').split(',').map(x => x.trim()).filter(Boolean)];
 const sql = postgres(env('SUPABASE_DB_URL'), { max: 3, prepare: false, idle_timeout: 20 });
 const api = createApi(postgresStore(sql), {
   cookies: false,
