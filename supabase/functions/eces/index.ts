@@ -543,7 +543,7 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
   function canSeeCase(actor, c) {
     if (actor.id === c.owner) return true;
     // A child-protection referral: only the school's intake roles, plus the chairperson and Vice-Chairperson if they referred it themselves.
-    if (c.protection) return inIntake(actor, c) || !c.protection.direct && ['chair', 'vice'].includes(actor.role);
+    if (c.protection) return intakeOf(c).includes(actor.role) || !c.protection.direct && ['chair', 'vice'].includes(actor.role);
     if (actor.role === c.assigned) return true;
     if (!onDesk(c)) return false;
     if (actor.id && c.endorsed?.to === actor.id) return true;
@@ -555,30 +555,22 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
     if (!a?.active) return false;
     if (!onDesk(c)) return holds(db, a, c.assigned);
     // No stand-in here: a person covering for the secretary in the SPTA is not school personnel.
-    if (c.protection) return inIntake(a, c);
+    if (c.protection) return intakeOf(c).includes(a.role);
     if (c.endorsed?.to === a.id) return true;
     return ['chair', 'vice'].includes(a.role) || !!c.forwarded && (a.role === 'head' || holds(db, a, 'secretary'));
   }
   // The SPTA officers who coordinate a child-protection referral.
-  // Once a report is with the school, the chairperson and Vice-Chairperson see only its status. They no longer add notes or ask questions.
-  const caseCoordinator = () => false;
+  const caseCoordinator = (db, a, c) => !!a?.active && !!c.protection && !c.protection.direct && ['chair', 'vice'].includes(a.role);
   // Who receives child-protection reports for the school. The School Head always does, once their account is set up.
   // The secretary does only after the School Head designates her in the app (she is a teacher and the School Head's acting secretary).
   const intakeReady = x => !!x && x.active && !x.invite && !x.vacant;
-  // The designation belongs to one person, not to whoever later holds the secretary role.
-  const designatedSecretary = db => {
-    const id = db.settings?.intake?.secretary && db.settings.intake.secretaryId;
-    const x = id && db.accounts.find(a => a.id === id);
-    return x && x.role === 'secretary' && intakeReady(x) ? x.id : '';
-  };
   function intakeRoles(db) {
     const roles = [];
     if (db.accounts.some(x => x.role === 'head' && intakeReady(x))) roles.push('head');
-    if (designatedSecretary(db)) roles.push('secretary');
+    if (db.settings?.intake?.secretary && db.accounts.some(x => x.role === 'secretary' && intakeReady(x))) roles.push('secretary');
     return roles;
   }
   const intakeOf = c => c.protection?.to || ['head'];
-  const inIntake = (actor, c) => !!actor && (actor.role === 'head' && intakeOf(c).includes('head') || actor.role === 'secretary' && intakeOf(c).includes('secretary') && !!actor.id && actor.id === c.protection?.sec);
   // Who may add an internal note, and who may ask the sender for more details.
   const caseNoter = (db, a, c) => !!a?.active && onDesk(c) && (caseHandler(db, a, c) || caseCoordinator(db, a, c));
   const caseAsker = caseNoter;
@@ -1545,7 +1537,7 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
               at: at()
             };
             item.awaiting = false;
-            db.accounts.filter(x => x.active && inIntake(x, item)).forEach(x => note(db, x.id, item.id + ' · The parent asked to stop follow-ups on a child-protection report. The school keeps the report and decides what to do.'));
+            db.accounts.filter(x => x.active && intakeOf(item).includes(x.role)).forEach(x => note(db, x.id, item.id + ' · The parent asked to stop follow-ups on a child-protection report. The school keeps the report and decides what to do.'));
             changed('Sender stopped follow-ups on a child-protection referral');
             break;
           } else check(['received', 'assigned'].includes(item.status), 'This was already resolved and can no longer be withdrawn.');
@@ -2114,11 +2106,6 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
             };
           });
           check(new Set(photos.map(x => x.key)).size === photos.length, 'Choose two different photos.');
-          // A child-safety report is saved only if a school account can receive it privately. Otherwise nothing is saved.
-          if (v.safety === true) {
-            check(kind === 'concern', 'Choose “Private concern” for a child-safety report.');
-            check(intakeRoles(db).length, 'The school’s private child-safety reporting channel is temporarily unavailable. Your report has not been submitted. Please contact your child’s class adviser or the school administration directly. If a child is in immediate danger, seek immediate assistance.');
-          }
           id = newId(db, kind === 'concern' ? 'C' : kind === 'inspection' ? 'I' : 'S');
           const assigned = kind === 'inspection' ? 'secretary' : 'chair';
           // A signed-in parent may hide their name from the reviewer. The record keeps the account for the IT administrator only.
@@ -2127,7 +2114,7 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
             check(kind !== 'inspection', 'A records inspection request needs your name.');
             check(!a.noHide && !(device && db.blockedDevices?.includes(device)), 'Hidden-name sending is turned off for this account. Send it with your name.');
             // Counted for the account and for the device, so a second account on the same phone does not add more.
-            check(db.cases.filter(c => (c.owner === a.id || device && c.device === device) && c.hidden && !c.fromSchool && c.created.slice(0, 7) === today().slice(0, 7)).length < hiddenPerMonth, 'You can hide your name on ' + hiddenPerMonth + ' submissions a month. Send this one with your name.');
+            check(db.cases.filter(c => (c.owner === a.id || device && c.device === device) && c.hidden && c.created.slice(0, 7) === today().slice(0, 7)).length < hiddenPerMonth, 'You can hide your name on ' + hiddenPerMonth + ' submissions a month. Send this one with your name.');
           }
           throttle(db, a, device, context);
           db.cases.unshift({
@@ -2154,6 +2141,7 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
           // A possible bullying or child-safety concern goes straight to the school's intake, without waiting for the SPTA.
           // If no school account can receive it yet, nothing claims it was sent: the parent is told to contact the school directly.
           if (v.safety === true) {
+            check(kind === 'concern', 'Choose “Private concern” for a child-safety report.');
             const c = db.cases[0],
               to = intakeRoles(db);
             c.safety = true;
@@ -2164,8 +2152,7 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
                 role: 'sender',
                 direct: true,
                 wasForwarded: null,
-                to,
-                sec: designatedSecretary(db)
+                to
               };
               c.forwarded = {
                 at: at(),
@@ -2177,7 +2164,7 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
               // The parent chose this, so telling them it went to the school reveals nothing new.
               c.toSchool = true;
               c.due = today();
-              db.accounts.filter(x => x.active && inIntake(x, c)).forEach(x => note(db, x.id, c.id + ' · URGENT · A parent sent a possible child-safety concern to the school. Please acknowledge it and handle it under the school’s child protection procedure.'));
+              db.accounts.filter(x => x.active && to.includes(x.role)).forEach(x => note(db, x.id, c.id + ' · URGENT · A parent sent a possible child-safety concern to the school. Please acknowledge it and handle it under the school’s child protection procedure.'));
             }
           }
           tell(db, db.cases[0]);
@@ -2304,10 +2291,7 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
             by: a.id,
             role: a.role,
             wasForwarded: c.forwarded || null,
-            // Who had it endorsed to them before the referral, so the school knows who saw it.
-            wasEndorsed: c.endorsed?.to || null,
-            to,
-            sec: designatedSecretary(db)
+            to
           };
           c.track = 'protection';
           c.urgent = true;
@@ -2318,7 +2302,7 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
             role: a.role
           };
           c.due = today();
-          db.accounts.filter(x => x.active && inIntake(x, c)).forEach(x => note(db, x.id, c.id + ' · URGENT · A possible child-protection concern was referred to the school. Please acknowledge it and handle it under the school’s child protection procedure.'));
+          db.accounts.filter(x => x.active && to.includes(x.role)).forEach(x => note(db, x.id, c.id + ' · URGENT · A possible child-protection concern was referred to the school. Please acknowledge it and handle it under the school’s child protection procedure.'));
           tell(db, c);
           changed('Possible child-protection concern referred');
           break;
@@ -2362,69 +2346,30 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
         }
       case 'caseReturn':
         {
-          // The School Head decides it is not a child-protection matter. The report stays a restricted school record and is closed with a reason.
-          // Nothing from it goes to the SPTA. If the SPTA needs to act, the School Head writes a separate, limited referral with only what is needed.
+          // Not a child-protection matter after all (for example, a false or mistaken report): send it back to the chairperson and Vice-Chairperson.
           const c = get(db.cases, id);
+          // Deciding it is not a child-protection matter is an assessment, so only the School Head records it.
           check(c.protection && a.role === 'head' && caseHandler(db, a, c), 'Only the School Head can record that this is not a child-protection matter.');
           check(!['resolved', 'withdrawn'].includes(c.status), 'This is already closed.');
           const reason = words(v.reason, 'Reason', 6, 350);
-          const reply = String(v.reply ?? '').trim() ? words(v.reply, 'Message to the parent', 3, 600) : '';
-          c.protection.reclassified = {
-            at: at(),
-            by: a.id,
-            reason
-          };
-          c.status = 'resolved';
-          c.awaiting = false;
-          c.history.push({
-            status: 'resolved',
-            reply,
-            at: at(),
-            who: a.id
-          });
-          if (reply) {
-            c.reply = reply;
-            c.replyBy = a.role;
-            c.replyAt = at();
-          }
+          c.forwarded = c.protection.wasForwarded || null;
+          c.track = c.forwarded ? 'school' : undefined;
+          delete c.protection;
+          delete c.urgent;
+          delete c.safety;
+          delete c.toSchool;
+          delete c.schoolAck;
+          delete c.schoolHandling;
+          c.due = plusDays(today(), 3);
           c.notes = c.notes || [];
           c.notes.push({
             at: at(),
             by: a.id,
             role: a.role,
-            text: 'Not a child-protection concern: ' + reason
+            text: 'Returned as not a child-protection concern: ' + reason
           });
-          tell(db, c);
-          if (v.spta === true) {
-            const rid = newId(db, 'C');
-            db.cases.unshift({
-              id: rid,
-              kind: 'concern',
-              assigned: 'chair',
-              subject: words(v.subject, 'Subject for the SPTA', 3, 100),
-              body: words(v.details, 'What the SPTA needs to do', 6, 700),
-              category: c.category,
-              // The parent can follow it, but the SPTA does not see who they are.
-              owner: c.owner,
-              hidden: true,
-              photos: [],
-              created: today(),
-              sent: at(),
-              due: plusDays(today(), 5),
-              status: 'received',
-              reply: '',
-              forwarded: null,
-              fromSchool: {
-                at: at()
-              },
-              notes: [],
-              history: []
-            });
-            c.protection.referral = rid;
-            db.accounts.filter(x => x.active && ['chair', 'vice'].includes(x.role)).forEach(x => note(db, x.id, rid + ' · The school referred a matter to the SPTA for action.'));
-            tell(db, db.cases[0]);
-          }
-          changed('Child-protection report closed as not a child-protection matter');
+          db.accounts.filter(x => x.active && ['chair', 'vice'].includes(x.role)).forEach(x => note(db, x.id, c.id + ' · A concern was returned to you as not a child-protection matter. Read the note.'));
+          changed('Private case returned as not a child-protection concern');
           break;
         }
       case 'intakeSetting':
@@ -2434,11 +2379,8 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
           allows(a, ['head']);
           const on = v.secretary === true;
           check(!on || v.confirm === true, 'Confirm that the school has authorized the secretary.');
-          const sec = db.accounts.find(x => x.role === 'secretary' && intakeReady(x));
-          check(!on || sec, 'The secretary has not joined the app yet.');
           db.settings.intake = on ? {
             secretary: true,
-            secretaryId: sec.id,
             by: a.id,
             at: at(),
             reference: String(v.reference ?? '').trim() ? words(v.reference, 'Reference', 3, 120) : ''
@@ -2448,18 +2390,7 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
             at: at()
           };
           // Open referrals follow the new setting.
-          // Open referrals follow the new setting. Ending it removes the secretary's access to every referral, closed ones too.
-          for (const c of db.cases) {
-            if (!c.protection) continue;
-            if (on && !['resolved', 'withdrawn'].includes(c.status)) {
-              c.protection.to = [...new Set([...intakeOf(c), 'secretary'])];
-              c.protection.sec = sec.id;
-            }
-            if (!on) {
-              c.protection.to = intakeOf(c).filter(r => r !== 'secretary');
-              delete c.protection.sec;
-            }
-          }
+          for (const c of db.cases) if (c.protection && !['resolved', 'withdrawn'].includes(c.status)) c.protection.to = on ? [...new Set([...intakeOf(c), 'secretary'])] : intakeOf(c).filter(r => r !== 'secretary');
           db.accounts.filter(x => x.active && x.role === 'secretary').forEach(x => note(db, x.id, on ? 'The School Head designated you to receive, acknowledge, coordinate and monitor child-protection referrals for the school.' : 'The School Head ended your designation for child-protection referrals.'));
           changed(on ? 'Secretary designated for child-protection intake' : 'Secretary designation for child-protection intake ended');
           break;
@@ -3078,34 +3009,7 @@ function visible(db, me) {
   out.cases = db.cases.filter(c => E.canSeeCase(me, c) || covers && c.assigned === covers).map(c => ({
     ...c,
     device: undefined
-  })).map(c => c.protection && c.owner !== me.id && !E.caseHandler(db, me, c) ? {
-    // A report now with the school: the chairperson and Vice-Chairperson who referred it see its status only, never its contents or the school's notes.
-    id: c.id,
-    kind: c.kind,
-    assigned: c.assigned,
-    subject: c.subject,
-    category: c.category,
-    created: c.created,
-    status: c.status,
-    urgent: c.urgent,
-    schoolAck: c.schoolAck,
-    schoolHandling: c.schoolHandling,
-    track: c.track,
-    protection: {
-      at: c.protection.at,
-      direct: c.protection.direct,
-      ack: c.protection.ack ? {
-        at: c.protection.ack.at
-      } : undefined,
-      closed: c.status === 'resolved'
-    },
-    body: '',
-    photos: [],
-    notes: [],
-    messages: [],
-    history: [],
-    owner: ''
-  } : c).map(c => c.hidden && c.owner !== me.id ? {
+  })).map(c => c.hidden && c.owner !== me.id ? {
     ...c,
     owner: '',
     sender: undefined,
@@ -3506,34 +3410,6 @@ function createApi(store, config = {}) {
           });
           await logAdmin('Voted project recorded from paper', out.id);
           return send(201, out);
-        }
-        if (route === '/api/admin/privacy-check' && req.method === 'GET') {
-          // Counts and case numbers only, never contents: were child-protection reports exposed under the earlier rules?
-          const db = await store.load();
-          if (!db) throw new HttpError(409, 'Nothing set up yet.');
-          const cp = db.cases.filter(c => c.protection);
-          const ids = list => list.map(c => c.id).join(', ') || 'none';
-          const noList = cp.filter(c => !c.protection.to);
-          const secNoPerson = cp.filter(c => (c.protection.to || []).includes('secretary') && !c.protection.sec);
-          const secNow = E.intakeRoles(db).includes('secretary');
-          const flaggedInQueue = db.cases.filter(c => c.safety && !c.protection);
-          const handedBack = db.cases.filter(c => !c.protection && (c.notes || []).some(n => /^Returned as not a child-protection concern/.test(n.text || '')));
-          const endorsedThenReferred = cp.filter(c => c.protection.wasEndorsed);
-          const issues = flaggedInQueue.length + handedBack.length;
-          await logAdmin('Child-protection privacy check run');
-          return send(200, {
-            issues,
-            summary: [
-              'Child-protection reports: ' + cp.length + ' (sent by a parent straight to the school: ' + cp.filter(c => c.protection.direct).length + '; referred by the chairperson or Vice-Chairperson: ' + cp.filter(c => !c.protection.direct).length + ')',
-              'Secretary designated now: ' + (secNow ? 'yes, ' + (db.settings.intake.at || '').slice(0, 10) : 'no'),
-              'Older reports with no recipient list (now School Head only): ' + noList.length + ' · ' + ids(noList),
-              'Reports open to the secretary role but not tied to a person (now closed to her until re-designated): ' + secNoPerson.length + ' · ' + ids(secNoPerson),
-              'Child-safety reports saved in the ordinary SPTA queue under the earlier rule (the chairperson and Vice-Chairperson could read these): ' + flaggedInQueue.length + ' · ' + ids(flaggedInQueue),
-              'Reports handed back to the SPTA in full as "not a child-protection concern" under the earlier rule (the chairperson and Vice-Chairperson could read these): ' + handedBack.length + ' · ' + ids(handedBack),
-              'Referred reports that had been endorsed to an officer before referral (that officer saw the report before it went to the school): ' + endorsedThenReferred.length + ' · ' + ids(endorsedThenReferred),
-              issues ? 'Review each listed case with the School Head. Do not delete anything without the school’s decision.' : 'No reports were found in the ordinary SPTA queue that should have gone only to the school.'
-            ]
-          });
         }
         if (route === '/api/admin/export' && req.method === 'GET') {
           const everything = await store.load();

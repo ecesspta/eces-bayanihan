@@ -137,34 +137,7 @@ function visible(db, me) {
   out.cases = db.cases.filter(c => E.canSeeCase(me, c) || covers && c.assigned === covers).map(c => ({
     ...c,
     device: undefined
-  })).map(c => c.protection && c.owner !== me.id && !E.caseHandler(db, me, c) ? {
-    // A report now with the school: the chairperson and Vice-Chairperson who referred it see its status only, never its contents or the school's notes.
-    id: c.id,
-    kind: c.kind,
-    assigned: c.assigned,
-    subject: c.subject,
-    category: c.category,
-    created: c.created,
-    status: c.status,
-    urgent: c.urgent,
-    schoolAck: c.schoolAck,
-    schoolHandling: c.schoolHandling,
-    track: c.track,
-    protection: {
-      at: c.protection.at,
-      direct: c.protection.direct,
-      ack: c.protection.ack ? {
-        at: c.protection.ack.at
-      } : undefined,
-      closed: c.status === 'resolved'
-    },
-    body: '',
-    photos: [],
-    notes: [],
-    messages: [],
-    history: [],
-    owner: ''
-  } : c).map(c => c.hidden && c.owner !== me.id ? {
+  })).map(c => c.hidden && c.owner !== me.id ? {
     ...c,
     owner: '',
     sender: undefined,
@@ -565,34 +538,6 @@ function createApi(store, config = {}) {
           });
           await logAdmin('Voted project recorded from paper', out.id);
           return send(201, out);
-        }
-        if (route === '/api/admin/privacy-check' && req.method === 'GET') {
-          // Counts and case numbers only, never contents: were child-protection reports exposed under the earlier rules?
-          const db = await store.load();
-          if (!db) throw new HttpError(409, 'Nothing set up yet.');
-          const cp = db.cases.filter(c => c.protection);
-          const ids = list => list.map(c => c.id).join(', ') || 'none';
-          const noList = cp.filter(c => !c.protection.to);
-          const secNoPerson = cp.filter(c => (c.protection.to || []).includes('secretary') && !c.protection.sec);
-          const secNow = E.intakeRoles(db).includes('secretary');
-          const flaggedInQueue = db.cases.filter(c => c.safety && !c.protection);
-          const handedBack = db.cases.filter(c => !c.protection && (c.notes || []).some(n => /^Returned as not a child-protection concern/.test(n.text || '')));
-          const endorsedThenReferred = cp.filter(c => c.protection.wasEndorsed);
-          const issues = flaggedInQueue.length + handedBack.length;
-          await logAdmin('Child-protection privacy check run');
-          return send(200, {
-            issues,
-            summary: [
-              'Child-protection reports: ' + cp.length + ' (sent by a parent straight to the school: ' + cp.filter(c => c.protection.direct).length + '; referred by the chairperson or Vice-Chairperson: ' + cp.filter(c => !c.protection.direct).length + ')',
-              'Secretary designated now: ' + (secNow ? 'yes, ' + (db.settings.intake.at || '').slice(0, 10) : 'no'),
-              'Older reports with no recipient list (now School Head only): ' + noList.length + ' · ' + ids(noList),
-              'Reports open to the secretary role but not tied to a person (now closed to her until re-designated): ' + secNoPerson.length + ' · ' + ids(secNoPerson),
-              'Child-safety reports saved in the ordinary SPTA queue under the earlier rule (the chairperson and Vice-Chairperson could read these): ' + flaggedInQueue.length + ' · ' + ids(flaggedInQueue),
-              'Reports handed back to the SPTA in full as "not a child-protection concern" under the earlier rule (the chairperson and Vice-Chairperson could read these): ' + handedBack.length + ' · ' + ids(handedBack),
-              'Referred reports that had been endorsed to an officer before referral (that officer saw the report before it went to the school): ' + endorsedThenReferred.length + ' · ' + ids(endorsedThenReferred),
-              issues ? 'Review each listed case with the School Head. Do not delete anything without the school’s decision.' : 'No reports were found in the ordinary SPTA queue that should have gone only to the school.'
-            ]
-          });
         }
         if (route === '/api/admin/export' && req.method === 'GET') {
           const everything = await store.load();
