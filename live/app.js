@@ -1072,7 +1072,7 @@
     }
     if (kind === 'intake') {
       const on = !!db().settings.intake?.secretary;
-      return [on ? 'End the secretary’s designation' : 'Designate the secretary', para(on ? 'Only you will receive child-protection reports.' : 'The secretary will receive and follow up child-protection reports with you. The school still assesses each case.') + form('intakeSetting', hidden('secretary', on ? 'no' : 'yes') + (on ? '' : input('reference', 'School approval', '', 'text', 'required minlength="3" maxlength="120" placeholder="e.g. School Memo No. 12, s. 2026"')), on ? 'End designation' : 'Designate')];
+      return [on ? 'End the secretary’s designation' : 'Designate the secretary', para(on ? 'Only you will receive child-protection reports.' : 'The secretary will receive and follow up child-protection reports with you. The school still assesses each case.') + form('intakeSetting', hidden('secretary', on ? 'no' : 'yes') + (on ? '' : ck('confirm', 'The school has authorized the secretary to receive these reports.', true) + input('reference', 'Memo or reference (optional)', '', 'text', 'maxlength="120" placeholder="e.g. School Memo No. 12, s. 2026"')), on ? 'End designation' : 'Designate')];
     }
     if (kind === 'caseAck') {
       const c = db().cases.find(x => x.id === id);

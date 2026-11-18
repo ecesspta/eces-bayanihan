@@ -2375,14 +2375,15 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
       case 'intakeSetting':
         {
           // The School Head may designate the secretary, as authorized school personnel, to receive, acknowledge, coordinate and monitor
-          // child-protection referrals. It must cite the school's authorization or approved procedure. Assessment stays with the school.
+          // child-protection referrals. The School Head confirms the authorization; a memo reference is optional. Who and when are recorded.
           allows(a, ['head']);
           const on = v.secretary === true;
+          check(!on || v.confirm === true, 'Confirm that the school has authorized the secretary.');
           db.settings.intake = on ? {
             secretary: true,
             by: a.id,
             at: at(),
-            reference: words(v.reference, 'The school’s authorization or approved procedure', 3, 120)
+            reference: String(v.reference ?? '').trim() ? words(v.reference, 'Reference', 3, 120) : ''
           } : {
             secretary: false,
             by: a.id,
