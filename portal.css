@@ -1040,3 +1040,7 @@ img[data-photo].failed {visibility:visible}
 .portal-note.urgent b {display:flex;align-items:center;gap:6px}
 .portal-note.urgent .badge {margin:6px 0 2px}
 .badge.action_taken {background:#e7f0ff;color:#2f5fb3}
+.recovery-code {font-size:28px;font-weight:800;letter-spacing:.08em;text-align:center;margin:12px 0;font-family:ui-monospace,Menlo,Consolas,monospace;color:var(--navy,#0b2a5b)}
+.badge.cp_ack {background:#efe8ff;color:#5b3fa8}
+.tracker li span {hyphens:auto;-webkit-hyphens:auto}
+.tracker:has(li:nth-child(5)) li {font-size:10px}

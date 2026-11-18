@@ -8,7 +8,8 @@ const files = {
   '../dist/examples.js': 'dist/examples.js',
   '../dist/workflows.js': 'dist/workflows.js',
   '../backend/core.cjs': 'backend/core.cjs',
-  '../backend/postgres-store.cjs': 'backend/postgres-store.cjs'
+  '../backend/postgres-store.cjs': 'backend/postgres-store.cjs',
+  '../backend/translate.cjs': 'backend/translate.cjs'
 };
 const names = {
   './examples.js': '../dist/examples.js'

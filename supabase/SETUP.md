@@ -22,7 +22,7 @@ Do these in order. Each step takes a few minutes. Nothing here costs money on th
 3. Open `https://ecesspta.github.io/eces-bayanihan/` and sign in as the chairperson.
 
 ## 5. Backups (do this every week, and the day before the General Assembly)
-Open `admin.html`, type the admin key, press **Download backup**. Keep the file private. The database also keeps its last 300 saved versions.
+Follow `supabase/BACKUP.md`. The admin page's **Download record** button saves only the main record, without attachments, so it is not a full backup. The database also keeps its last 300 saved versions of the record.
 
 ## Before real families' details go in
 - The school's Data Protection Officer confirms the Privacy Notice wording (set `PRIVACY_DRAFT` to false after that).

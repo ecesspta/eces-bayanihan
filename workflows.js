@@ -42,6 +42,7 @@
     assigned: 'Reviewed',
     action_taken: 'Action taken',
     cp_referred: 'Referred to School',
+    cp_ack: 'Acknowledged',
     cp_handling: 'School Handling',
     cp_closed: 'Closed',
     resolved: 'Resolved',
@@ -390,6 +391,7 @@
       if (item.status === 'withdrawn') return 'You withdrew this ' + what + '. Nothing more will happen with it.';
       if (item.status === 'resolved') return 'Your ' + what + ' was marked resolved by the ' + who + '.';
       // A possible child-protection concern: the parent is told only that it is being handled, never how.
+      if (item.safety && !item.urgent && item.status !== 'resolved') return 'Thank you for reporting this concern. This app could not send it to the school yet. If a child is in immediate danger, contact their class adviser or the school administration directly now.';
       if (item.urgent) return 'Thank you for reporting this concern. Because it involves a child’s safety, please inform your child’s class adviser or the School Head immediately. The school’s designated child-protection personnel should assess and address the report. Your child’s safety and privacy are important to us.';
       if (item.status === 'assigned') return 'Your ' + what + ' was reviewed by the ' + who + '.';
       if (item.status === 'action_taken') return 'Action was taken on your ' + what + '. The ' + who + ' will confirm the outcome before closing it.';
@@ -478,7 +480,10 @@
   // acting secretary (authorized school personnel), own it. The chairperson and Vice-Chairperson only coordinate.
   // An SPTA matter may be endorsed to one officer, who then sees that case only.
   function canSeeCase(actor, c) {
-    if (actor.id === c.owner || actor.role === c.assigned) return true;
+    if (actor.id === c.owner) return true;
+    // A child-protection referral: only the school's intake roles, plus the chairperson and Vice-Chairperson if they referred it themselves.
+    if (c.protection) return intakeOf(c).includes(actor.role) || !c.protection.direct && ['chair', 'vice'].includes(actor.role);
+    if (actor.role === c.assigned) return true;
     if (!onDesk(c)) return false;
     if (actor.id && c.endorsed?.to === actor.id) return true;
     if (['chair', 'vice'].includes(actor.role)) return true;
@@ -488,12 +493,23 @@
   function caseHandler(db, a, c) {
     if (!a?.active) return false;
     if (!onDesk(c)) return holds(db, a, c.assigned);
-    if (c.protection) return a.role === 'head' || holds(db, a, 'secretary');
+    // No stand-in here: a person covering for the secretary in the SPTA is not school personnel.
+    if (c.protection) return intakeOf(c).includes(a.role);
     if (c.endorsed?.to === a.id) return true;
     return ['chair', 'vice'].includes(a.role) || !!c.forwarded && (a.role === 'head' || holds(db, a, 'secretary'));
   }
   // The SPTA officers who coordinate a child-protection referral.
-  const caseCoordinator = (db, a, c) => !!a?.active && !!c.protection && (['chair', 'vice'].includes(a.role) || holds(db, a, 'secretary'));
+  const caseCoordinator = (db, a, c) => !!a?.active && !!c.protection && !c.protection.direct && ['chair', 'vice'].includes(a.role);
+  // Who receives child-protection reports for the school. The School Head always does, once their account is set up.
+  // The secretary does only after the School Head designates her in the app (she is a teacher and the School Head's acting secretary).
+  const intakeReady = x => !!x && x.active && !x.invite && !x.vacant;
+  function intakeRoles(db) {
+    const roles = [];
+    if (db.accounts.some(x => x.role === 'head' && intakeReady(x))) roles.push('head');
+    if (db.settings?.intake?.secretary && db.accounts.some(x => x.role === 'secretary' && intakeReady(x))) roles.push('secretary');
+    return roles;
+  }
+  const intakeOf = c => c.protection?.to || ['head'];
   // Who may add an internal note, and who may ask the sender for more details.
   const caseNoter = (db, a, c) => !!a?.active && onDesk(c) && (caseHandler(db, a, c) || caseCoordinator(db, a, c));
   const caseAsker = caseNoter;
@@ -772,7 +788,7 @@
     delete a.inviteAt;
     a.consent = {
       at: at(),
-      version: '2026-11b'
+      version: '2026-11c'
     };
     seenOn(db, a.id, device);
     audit(db, a, 'Officer account set up', a.id);
@@ -1171,7 +1187,7 @@
           // Proof that the person agreed, and to which version of the notice.
           if (v.consent === true) user.consent = {
             at: at(),
-            version: '2026-11b'
+            version: '2026-11c'
           };
           if (device) user.devices = [device];
           db.accounts.push(user);
@@ -1321,9 +1337,19 @@
             p.published = true;
             p.status = 'screened';
             p.reason = '';
-            const closes = v.closes ? dateValue(v.closes) : '';
-            check(!closes || closes >= today(), 'Choose today or a later date for the vote to close.');
-            openVote(db, p, closes);
+            if (v.noVote === true) {
+              // Sarah, Nov 2026: some projects (for example replacing toilet bowls) need documentation and approval, but no vote or resolution.
+              // The chairperson ticks this; it goes straight to the School Head. There is no limit on the amount.
+              p.noVote = true;
+              p.status = 'awaiting_head';
+              p.noVoteBy = a.id;
+              p.noVoteAt = at();
+              db.accounts.filter(x => x.active && x.role === 'head').forEach(x => note(db, x.id, p.id + ' · “' + p.publicTitle + '” needs your approval. No officer vote or resolution is needed.'));
+            } else {
+              const closes = v.closes ? dateValue(v.closes) : '';
+              check(!closes || closes >= today(), 'Choose today or a later date for the vote to close.');
+              openVote(db, p, closes);
+            }
           } else {
             choice(v.decision, ['return', 'decline'], 'decision');
             p.status = v.decision === 'return' ? 'returned' : 'declined';
@@ -1453,6 +1479,16 @@
               b.withdrawn = true;
             }
             item.published = false;
+          } else if (item.protection) {
+            // Once the school has a child-protection report, the parent can stop the SPTA's follow-ups, but cannot take the report back from the school.
+            check(item.status !== 'resolved' && !item.senderStopped, 'This was already closed or stopped.');
+            item.senderStopped = {
+              at: at()
+            };
+            item.awaiting = false;
+            db.accounts.filter(x => x.active && intakeOf(item).includes(x.role)).forEach(x => note(db, x.id, item.id + ' · The parent asked to stop follow-ups on a child-protection report. The school keeps the report and decides what to do.'));
+            changed('Sender stopped follow-ups on a child-protection referral');
+            break;
           } else check(['received', 'assigned'].includes(item.status), 'This was already resolved and can no longer be withdrawn.');
           item.status = 'withdrawn';
           item.history.push({
@@ -1525,7 +1561,7 @@
           if (v.decision === 'approve' && db.projects.some(x => x.proposal === p.id)) {
             break;
           }
-          const vote = p.direct ? null : get(db.ballots, p.ballot);
+          const vote = p.direct || p.noVote ? null : get(db.ballots, p.ballot);
           if (vote) check(p.status === 'awaiting_head' && vote.status === 'closed' && vote.passed && vote.rev === p.rev, 'A closed passing vote on this version is required.');else check(p.status === 'awaiting_head', 'This proposal is not waiting for the School Head.');
           // Without a vote, the details come from the chairperson's proposal.
           const b = vote || {
@@ -1533,7 +1569,7 @@
             title: p.publicTitle,
             body: p.publicText,
             budget: p.budget,
-            meeting: 'Added by the chairperson',
+            meeting: p.noVote ? '' : 'Added by the chairperson',
             date: p.created,
             present: [],
             counts: null
@@ -1584,6 +1620,19 @@
                 icon: 'sprout'
               };
               db.projects.unshift(project);
+            }
+            if (p.noVote) {
+              // No resolution: the project carries its own approval record instead.
+              project.approval = {
+                chair: p.noVoteBy,
+                chairAt: p.noVoteAt,
+                head: a.id,
+                headAt: p.approved
+              };
+              project.noVote = true;
+              tell(db, p);
+              changed('School-Head approval recorded (no vote or resolution needed)');
+              break;
             }
             const res = {
               id: newId(db, 'R'),
@@ -2051,6 +2100,35 @@
             notes: [],
             history: []
           });
+          // A possible bullying or child-safety concern goes straight to the school's intake, without waiting for the SPTA.
+          // If no school account can receive it yet, nothing claims it was sent: the parent is told to contact the school directly.
+          if (v.safety === true) {
+            check(kind === 'concern', 'Choose “Private concern” for a child-safety report.');
+            const c = db.cases[0],
+              to = intakeRoles(db);
+            c.safety = true;
+            if (to.length) {
+              c.protection = {
+                at: at(),
+                by: a.id,
+                role: 'sender',
+                direct: true,
+                wasForwarded: null,
+                to
+              };
+              c.forwarded = {
+                at: at(),
+                by: a.id,
+                role: 'sender'
+              };
+              c.track = 'protection';
+              c.urgent = true;
+              // The parent chose this, so telling them it went to the school reveals nothing new.
+              c.toSchool = true;
+              c.due = today();
+              db.accounts.filter(x => x.active && to.includes(x.role)).forEach(x => note(db, x.id, c.id + ' · URGENT · A parent sent a possible child-safety concern to the school. Please acknowledge it and handle it under the school’s child protection procedure.'));
+            }
+          }
           tell(db, db.cases[0]);
           break;
         }
@@ -2063,6 +2141,8 @@
           // A child-protection case is closed by the school.
           check(next !== 'resolved' || !onDesk(c) || c.protection || ['chair', 'vice'].includes(a.role), 'Mark it “Action taken”. The chairperson or Vice-Chairperson verifies the outcome and closes it.');
           check(next !== 'action_taken' || onDesk(c) && !c.protection, 'Choose Reviewed or Resolved.');
+          check(!c.protection || c.protection.ack, 'Acknowledge the referral first.');
+          if (c.protection) c.schoolHandling = true;
           // A personal reply is optional. The automated response always tells the sender the new status.
           const reply = String(v.reply ?? '').trim() ? words(v.reply, 'Personal reply', 3, 600) : '';
           // Close the loop: a case is resolved only with a recorded outcome or a clear explanation for the sender.
@@ -2161,16 +2241,19 @@
         }
       case 'caseProtect':
         {
-          // A possible child-protection concern leaves the ordinary queue at once. The secretary alerts the adviser; the School Head monitors.
+          // A possible child-protection concern leaves the ordinary queue at once and goes to the school's intake.
           const c = get(db.cases, id);
           check(onDesk(c) && ['chair', 'vice'].includes(a.role) && a.active, 'The chairperson or Vice-Chairperson refers this.');
           check(!c.protection, 'This was already referred.');
           check(!['resolved', 'withdrawn'].includes(c.status), 'This is already closed.');
+          const to = intakeRoles(db);
+          check(to.length, 'No school account can receive this yet. Tell the parent to contact the class adviser or the school administration directly.');
           c.protection = {
             at: at(),
             by: a.id,
             role: a.role,
-            wasForwarded: c.forwarded || null
+            wasForwarded: c.forwarded || null,
+            to
           };
           c.track = 'protection';
           c.urgent = true;
@@ -2181,8 +2264,7 @@
             role: a.role
           };
           c.due = today();
-          db.accounts.filter(x => x.active && x.role === 'head').forEach(x => note(db, x.id, c.id + ' · URGENT · A possible child-protection concern was referred to the school. Please acknowledge it and handle it under the school’s child protection procedure.'));
-          db.accounts.filter(x => x.active && x.role === 'secretary').forEach(x => note(db, x.id, c.id + ' · URGENT · A possible child-protection concern was referred to the school. Please acknowledge it and handle it under the school’s child protection procedure.'));
+          db.accounts.filter(x => x.active && to.includes(x.role)).forEach(x => note(db, x.id, c.id + ' · URGENT · A possible child-protection concern was referred to the school. Please acknowledge it and handle it under the school’s child protection procedure.'));
           tell(db, c);
           changed('Possible child-protection concern referred');
           break;
@@ -2194,6 +2276,7 @@
           check(caseAsker(db, a, c), 'Only the person handling this can ask the sender.');
           check(!['resolved', 'withdrawn'].includes(c.status), 'This is already closed.');
           check(!c.awaiting, 'You already asked. Wait for the sender to answer.');
+          check(!c.senderStopped, 'The sender asked to stop follow-ups.');
           c.messages = c.messages || [];
           c.messages.push({
             from: 'officer',
@@ -2227,13 +2310,17 @@
         {
           // Not a child-protection matter after all (for example, a false or mistaken report): send it back to the chairperson and Vice-Chairperson.
           const c = get(db.cases, id);
-          check(c.protection && (a.role === 'head' || holds(db, a, 'secretary')) && a.active, 'Only the school can decide this is not a child-protection matter.');
+          // Deciding it is not a child-protection matter is an assessment, so only the School Head records it.
+          check(c.protection && a.role === 'head' && caseHandler(db, a, c), 'Only the School Head can record that this is not a child-protection matter.');
           check(!['resolved', 'withdrawn'].includes(c.status), 'This is already closed.');
           const reason = words(v.reason, 'Reason', 6, 350);
           c.forwarded = c.protection.wasForwarded || null;
           c.track = c.forwarded ? 'school' : undefined;
           delete c.protection;
           delete c.urgent;
+          delete c.safety;
+          delete c.toSchool;
+          delete c.schoolAck;
           delete c.schoolHandling;
           c.due = plusDays(today(), 3);
           c.notes = c.notes || [];
@@ -2247,18 +2334,41 @@
           changed('Private case returned as not a child-protection concern');
           break;
         }
+      case 'intakeSetting':
+        {
+          // The School Head may designate the secretary, as authorized school personnel, to receive, acknowledge, coordinate and monitor
+          // child-protection referrals. The School Head confirms the authorization; a memo reference is optional. Who and when are recorded.
+          allows(a, ['head']);
+          const on = v.secretary === true;
+          check(!on || v.confirm === true, 'Confirm that the school has authorized the secretary.');
+          db.settings.intake = on ? {
+            secretary: true,
+            by: a.id,
+            at: at(),
+            reference: String(v.reference ?? '').trim() ? words(v.reference, 'Reference', 3, 120) : ''
+          } : {
+            secretary: false,
+            by: a.id,
+            at: at()
+          };
+          // Open referrals follow the new setting.
+          for (const c of db.cases) if (c.protection && !['resolved', 'withdrawn'].includes(c.status)) c.protection.to = on ? [...new Set([...intakeOf(c), 'secretary'])] : intakeOf(c).filter(r => r !== 'secretary');
+          db.accounts.filter(x => x.active && x.role === 'secretary').forEach(x => note(db, x.id, on ? 'The School Head designated you to receive, acknowledge, coordinate and monitor child-protection referrals for the school.' : 'The School Head ended your designation for child-protection referrals.'));
+          changed(on ? 'Secretary designated for child-protection intake' : 'Secretary designation for child-protection intake ended');
+          break;
+        }
       case 'caseAcknowledge':
         {
           // The school confirms it has received the referral. The SPTA sees that it was acknowledged, nothing more.
           const c = get(db.cases, id);
-          check(c.protection && (a.role === 'head' || holds(db, a, 'secretary')) && a.active, 'The school acknowledges a child-protection referral.');
+          check(c.protection && caseHandler(db, a, c), 'The school acknowledges a child-protection referral.');
           check(!c.protection.ack, 'This was already acknowledged.');
           c.protection.ack = {
             at: at(),
             by: a.id
           };
-          c.schoolHandling = true;
-          db.accounts.filter(x => x.active && x.id !== a.id && (['chair', 'vice', 'head'].includes(x.role) || x.role === 'secretary')).forEach(x => note(db, x.id, c.id + ' · The school acknowledged the child-protection referral.'));
+          c.schoolAck = true;
+          db.accounts.filter(x => x.active && x.id !== a.id && canSeeCase(x, c)).forEach(x => note(db, x.id, c.id + ' · The school acknowledged the child-protection referral.'));
           changed('Child-protection referral acknowledged by the school');
           break;
         }
@@ -2499,16 +2609,21 @@
           check(items.length > 0 && items.length <= 60, 'Add 1 to 60 checked items.');
           const cents = items.reduce((n, x) => n + x.cents, 0);
           const project = v.project || '';
+          // Actual costs can come in above the budget. An expense that goes over needs a reason, and the chairperson sees it before posting.
+          let over = 0;
+          const overReason = String(v.overReason ?? '').trim();
           if (project && project.startsWith('AC-')) {
             const act = get(db.activities, project);
             check(direction === 'out' && act.status === 'scheduled', 'Choose an activity that is still on the calendar.');
             check(act.budget > 0, 'The treasurer has not set aside a budget for this activity yet.');
-            check(cents <= act.budget - projectSpend(db, act.id), 'This exceeds the remaining budget for this activity.');
+            over = Math.max(0, cents - Math.max(0, act.budget - projectSpend(db, act.id)));
           } else if (project) {
             const p = get(db.projects, project);
             check(direction === 'out' && p.status !== 'cancelled', 'Choose an active expense project.');
-            check(cents <= p.budget - projectSpend(db, p.id), 'This exceeds the remaining project allocation.');
+            over = Math.max(0, cents - Math.max(0, p.budget - projectSpend(db, p.id)));
           }
+          check(!over || overReason, 'This goes ' + peso(over) + ' over the budget. Explain why in “Why it is over budget”.');
+          const overWhy = over ? words(overReason, 'Why it is over budget', 6, 300) : '';
           if (collecting) check(direction === 'in' && !project && !v.adjustment, 'The collecting officer records collections handed over to the treasurer.');
           if (v.adjustment) {
             check(!project, 'Use the allocation on the original entry for a correction.');
@@ -2542,6 +2657,8 @@
             project: project || (v.adjustment ? get(db.batches, v.adjustment).project : ''),
             file,
             noPaper: noPaperReason,
+            over,
+            overWhy,
             owner: a.id,
             status: collecting ? 'for_treasurer' : 'pending',
             handover: collecting,
@@ -2594,10 +2711,10 @@
             check(v.publicSafe === true, 'Confirm the purpose is safe to publish.');
             if (d.direction === 'out' && d.project && d.project.startsWith('AC-')) {
               const act = get(db.activities, d.project);
-              check(act.status === 'scheduled' && d.cents <= act.budget - projectSpend(db, act.id), 'The activity budget no longer permits this expense.');
+              check(act.status === 'scheduled' && (d.overWhy || d.cents <= act.budget - projectSpend(db, act.id)), 'This now goes over the activity budget. Return it so the treasurer can add the reason.');
             } else if (d.direction === 'out' && d.project) {
               const p = get(db.projects, d.project);
-              check(p.status !== 'cancelled' && d.cents <= p.budget - projectSpend(db, p.id), 'The project allocation no longer permits this expense.');
+              check(p.status !== 'cancelled' && (d.overWhy || d.cents <= p.budget - projectSpend(db, p.id)), 'This now goes over the project budget. Return it so the treasurer can add the reason.');
             }
             if (d.direction === 'out') check(d.cents <= fundBalance(db), 'The verified cash balance is insufficient.');
             d.status = 'posted';
@@ -2696,6 +2813,7 @@
     caseNoter,
     caseAsker,
     caseCoordinator,
+    intakeRoles,
     onDesk,
     deskName,
     isChair,
