@@ -386,7 +386,7 @@
       if (item.status === 'withdrawn') return 'You withdrew this ' + what + '. Nothing more will happen with it.';
       if (item.status === 'resolved') return 'Your ' + what + ' was marked resolved by the ' + who + '.';
       // A possible child-protection concern: the parent is told only that it is being handled, never how.
-      if (item.urgent) return 'Your ' + what + ' is being handled. If it is urgent, please go to your child’s adviser directly.';
+      if (item.urgent) return 'Thank you for reporting this concern. Because it involves a child’s safety, please inform your child’s class adviser or the School Head immediately. The school’s designated child-protection personnel should assess and address the report. Your child’s safety and privacy are important to us.';
       if (item.status === 'assigned') return 'Your ' + what + ' was reviewed by the ' + who + '.';
       return 'Thank you. Your ' + what + ' was received privately by the ' + who + '.';
     }
