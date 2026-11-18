@@ -40,6 +40,9 @@
     signed: 'Signed',
     closed: 'Closed',
     assigned: 'Reviewed',
+    cp_referred: 'Referred to School',
+    cp_handling: 'School Handling',
+    cp_closed: 'Closed',
     resolved: 'Resolved',
     for_chair: 'For chair approval',
     for_head: 'For head notation',
@@ -2225,6 +2228,7 @@
           c.track = c.forwarded ? 'school' : undefined;
           delete c.protection;
           delete c.urgent;
+          delete c.schoolHandling;
           c.due = plusDays(today(), 3);
           c.notes = c.notes || [];
           c.notes.push({
@@ -2247,6 +2251,7 @@
             at: at(),
             by: a.id
           };
+          c.schoolHandling = true;
           db.accounts.filter(x => x.active && (['chair', 'vice'].includes(x.role) || x.role === 'secretary')).forEach(x => note(db, x.id, c.id + ' · The school acknowledged the child-protection referral.'));
           changed('Child-protection referral acknowledged by the school');
           break;

@@ -1032,3 +1032,10 @@ img[data-photo].failed {visibility:visible}
 .evidence {border:1px solid #cdd6e6;border-radius:10px;padding:8px 12px 12px;margin:10px 0}
 .evidence legend {font-weight:600;padding:0 6px}
 .case-photos {margin-top:8px}
+
+/* Child-protection referral status */
+.badge.cp_referred,.badge.await {background:#fff0e0;color:#a4510b}
+.badge.cp_handling {background:#e7f0ff;color:#2f5fb3}
+.badge.cp_closed {background:#e3f5e9;color:#21845e}
+.portal-note.urgent b {display:flex;align-items:center;gap:6px}
+.portal-note.urgent .badge {margin:6px 0 2px}

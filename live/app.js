@@ -44,6 +44,7 @@
     year: 'numeric',
     timeZone: 'Asia/Manila'
   }).format(new Date(d.length === 10 ? d + 'T04:00:00Z' : d)) : '';
+  const longDate = d => d ? new Intl.DateTimeFormat('en-US', {month: 'long', day: 'numeric', year: 'numeric', timeZone: 'Asia/Manila'}).format(new Date(d)) : '';
   const n = name => db().accounts.find(x => x.id === name)?.name || E.roles[name] || name;
   const badge = s => '<span class="badge ' + esc(color[s] || s) + '">' + esc(labels[s] || s) + '</span>';
   const badgeText = s => '<span class="badge">' + esc(s) + '</span>';
@@ -197,8 +198,8 @@
   function tracker(item) {
     let steps, at, stop = '';
     if (item.kind) {
-      steps = ['Received', 'Reviewed', 'Resolved'];
-      at = {received: 0, assigned: 1, resolved: 2}[item.status] ?? 0;
+      steps = item.urgent ? ['Received', 'Referred to School', 'School Handling', 'Closed'] : ['Received', 'Reviewed', 'Resolved'];
+      at = item.urgent ? (item.status === 'resolved' ? 3 : item.schoolHandling ? 2 : 1) : {received: 0, assigned: 1, resolved: 2}[item.status] ?? 0;
       if (item.status === 'withdrawn') stop = labels.withdrawn;
     } else {
       steps = item.direct ? ['Added by chairperson', 'School Head', 'Approved'] : ['Received', 'Reviewed', 'Officer vote', 'School Head', 'Approved'];
@@ -582,9 +583,10 @@
     const canForward = desk2 && !c.forwarded;
     const officerView = !mine && (assigned || noter || desk2);
     const asker = !mine && E.caseAsker(db(), me(), c);
-    const track = !officerView ? '' : c.protection ? '<div class="portal-note urgent"><b>Possible child-protection concern</b>' + para('Referred to the school on ' + date(c.protection.at.slice(0, 10)) + '. ' + (c.protection.ack ? 'Acknowledged by the school on ' + date(c.protection.ack.at.slice(0, 10)) + '.' : 'Waiting for the school to acknowledge.')) + (me().role === 'head' ? '' : para('The school assesses and handles this case. The SPTA only coordinates: ask the parent only what they already know, and do not interview pupils, contact other families or try to verify the report.')) + '</div>' : c.track === 'grievance' ? '<div class="entry-meta">' + icon('info', 'sm') + 'PTA dispute · Formal grievance route. The School Head sets up the proper committee. No informal sanctions.</div>' : c.track === 'school' ? '<div class="entry-meta">' + icon('info', 'sm') + 'School matter · The School Head leads the action.</div>' : c.endorsed ? '<div class="entry-meta">' + icon('users', 'sm') + (c.endorsed.to === S.me ? 'Endorsed to you by the ' + esc(E.roles[c.endorsed.role] || '') + ' · ' + esc(date(c.endorsed.at.slice(0, 10))) : 'SPTA matter · Endorsed to ' + esc(n(c.endorsed.to)) + ' · ' + esc(date(c.endorsed.at.slice(0, 10)))) + '</div>' : '';
+    const track = !officerView ? '' : c.protection ? '<div class="portal-note urgent"><b>' + icon('shield', 'sm') + 'Possible Child Protection Concern</b>' + para('Referred to the school on ' + longDate(c.protection.at) + '.') + (c.protection.ack ? badgeText('Acknowledged by the school · ' + date(c.protection.ack.at.slice(0, 10))) : '<span class="badge await">Awaiting School Acknowledgment</span>') + para('The school is responsible for assessing and addressing this concern.') + para('The SPTA may request additional information from the reporting parent to assist with the referral. All investigations, interviews, and appropriate interventions will be handled by authorized school personnel.') + '</div>' : c.track === 'grievance' ? '<div class="entry-meta">' + icon('info', 'sm') + 'PTA dispute · Formal grievance route. The School Head sets up the proper committee. No informal sanctions.</div>' : c.track === 'school' ? '<div class="entry-meta">' + icon('info', 'sm') + 'School matter · The School Head leads the action.</div>' : c.endorsed ? '<div class="entry-meta">' + icon('users', 'sm') + (c.endorsed.to === S.me ? 'Endorsed to you by the ' + esc(E.roles[c.endorsed.role] || '') + ' · ' + esc(date(c.endorsed.at.slice(0, 10))) : 'SPTA matter · Endorsed to ' + esc(n(c.endorsed.to)) + ' · ' + esc(date(c.endorsed.at.slice(0, 10)))) + '</div>' : '';
     const actions = (mine && c.awaiting && !gone ? btn('Answer', 'dlg:caseAnswer', c.id, 'primary') : '') + (assigned && !gone ? btn(c.status === 'received' ? 'Mark reviewed or reply' : 'Update or reply', 'dlg:reply', c.id) : '') + (c.protection && me().role === 'head' && !c.protection.ack && !gone ? btn('Acknowledge referral', 'dlg:caseAck', c.id, 'primary') : '') + (asker && !gone && !c.awaiting && c.status !== 'resolved' ? btn('Ask for more details', 'dlg:caseAsk', c.id) : '') + (c.protection && assigned && !mine && !gone && c.status !== 'resolved' ? btn('Not a child-protection concern', 'dlg:caseReturn', c.id) : '') + (desk2 && !c.forwarded ? (c.endorsed ? btn('Take back', 'caseTakeBack', c.id) : btn('Endorse to an officer', 'dlg:endorse', c.id)) : '') + (canForward ? btn('Pass on to the School Head', 'dlg:forward', c.id, 'primary') : '') + (desk2 && !gone ? btn('Child-protection concern', 'dlg:protect', c.id, 'danger') : '') + (noter && !gone && desk ? btn(!assigned && (holds('secretary') || c.protection) ? 'Record follow-up' : c.forwarded ? 'Add a note' : 'Add a private note', 'dlg:caseNote', c.id) : '') + (canWithdraw(c) ? btn('Withdraw', 'dlg:withdraw', c.id) : '');
-    return card(c.subject, track + body + thread + evidence, c.id + ' · ' + (c.kind === 'inspection' ? 'Records inspection request' : c.kind === 'concern' ? 'Private concern' : 'Private suggestion'), c.status, actions);
+    const shown = (c.urgent || c.protection) && !gone ? (c.status === 'resolved' ? 'cp_closed' : c.schoolHandling || c.protection?.ack ? 'cp_handling' : 'cp_referred') : c.status;
+    return card(c.subject, track + body + thread + evidence, c.id + ' · ' + (c.kind === 'inspection' ? 'Records inspection request' : c.kind === 'concern' ? 'Private concern' : 'Private suggestion'), shown, actions);
   }
   function pulse() {
     const tally = db().trends || {};
