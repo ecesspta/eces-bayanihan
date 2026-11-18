@@ -1132,6 +1132,7 @@ img[data-photo].failed {visibility:visible}
 .badge.cp_closed {background:#e3f5e9;color:#21845e}
 .portal-note.urgent b {display:flex;align-items:center;gap:6px}
 .portal-note.urgent .badge {margin:6px 0 2px}
+.badge.action_taken {background:#e7f0ff;color:#2f5fb3}
 
 </style>
   </head>
@@ -2797,6 +2798,41 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
  "All investigations, interviews, and appropriate interventions will be handled by authorized school personnel.": "Ang lahat ng imbestigasyon, interview at angkop na interbensyon ay hahawakan ng awtorisadong personnel ng paaralan.",
  "Referred to School": "Nai-refer sa Paaralan",
  "School Handling": "Hawak ng Paaralan",
+ "Action taken": "May aksyon na",
+ "Action Taken": "May Aksyon Na",
+ "When the action is done, choose “Action taken” and write what was done. The chairperson or Vice-Chairperson then verifies it and closes it.": "Kapag tapos na ang aksyon, piliin ang “May aksyon na” at isulat ang ginawa. Ive-verify ito ng Chairperson o Vice-Chairperson at isasara.",
+ "When the action is done, choose “Action taken” and write what was done.": "Kapag tapos na ang aksyon, piliin ang “May aksyon na” at isulat ang ginawa.",
+ "The chairperson or Vice-Chairperson then verifies it and closes it.": "Ive-verify ito ng Chairperson o Vice-Chairperson at isasara.",
+ "Personal reply (needed for Action taken)": "Personal na sagot (kailangan para sa May aksyon na)",
+ "Verify outcome": "I-verify ang resulta",
+ "Verify Outcome": "I-verify ang Resulta",
+ "Nothing is waiting to be verified.": "Walang naghihintay na i-verify.",
+ "What was done": "Ang ginawa",
+ "What Was Done": "Ang Ginawa",
+ "Outcome": "Resulta",
+ "Verified · Close it": "Na-verify · Isara na",
+ "Needs more action": "Kailangan pa ng aksyon",
+ "Note (needed if more action is needed)": "Note (kailangan kung kailangan pa ng aksyon)",
+ "To verify · Action taken": "I-verify · May aksyon na",
+ "Mark it “Action taken”. The chairperson or Vice-Chairperson verifies the outcome and closes it.": "I-mark itong “May aksyon na”. Ive-verify ng Chairperson o Vice-Chairperson ang resulta at isasara ito.",
+ "Choose Reviewed or Resolved.": "Piliin ang Reviewed o Resolved.",
+ "Write what was done, or explain why no action is needed.": "Isulat ang ginawa, o ipaliwanag kung bakit walang kailangang aksyon.",
+ "The chairperson or Vice-Chairperson verifies the outcome.": "Ang Chairperson o Vice-Chairperson ang nagve-verify ng resulta.",
+ "Say what more is needed.": "Sabihin kung ano pa ang kailangan.",
+ "Private case verified and closed": "Na-verify at naisara ang private na kaso",
+ "Private case sent back for more action": "Ibinalik ang private na kaso para sa karagdagang aksyon",
+ "Only the school can decide this is not a child-protection matter.": "Ang paaralan lang ang puwedeng magpasya na hindi ito usapin ng child protection.",
+ "The school acknowledges a child-protection referral.": "Ang paaralan ang nag-a-acknowledge ng referral sa child protection.",
+ "As the School Head’s acting secretary, you also handle possible child-protection concerns for the school: acknowledge each one, then handle it under the school’s child protection procedure.": "Bilang acting secretary ng School Head, ikaw rin ang humahawak ng mga posibleng concern sa child protection para sa paaralan: i-acknowledge ang bawat isa, saka hawakan ayon sa child protection procedure ng paaralan.",
+ "When the action on an ordinary concern is done, mark it “Action taken”; the chairperson or Vice-Chairperson verifies it and closes it.": "Kapag tapos na ang aksyon sa ordinaryong concern, i-mark itong “May aksyon na”; ive-verify ito ng Chairperson o Vice-Chairperson at isasara.",
+ "Possible child-protection concerns are referred to the school right away: you or the secretary, as your acting secretary, acknowledge each one and handle it under the school’s child protection procedure.": "Agad na nire-refer sa paaralan ang mga posibleng concern sa child protection: ikaw o ang Secretary, bilang acting secretary mo, ang mag-a-acknowledge at hahawak dito ayon sa child protection procedure ng paaralan.",
+ "On other matters the secretary can reply to the sender for you.": "Sa ibang usapin, puwedeng sumagot ang Secretary sa nagpadala para sa iyo.",
+ "When the action is done, mark it “Action taken”; the chairperson or Vice-Chairperson verifies it and closes it.": "Kapag tapos na ang aksyon, i-mark itong “May aksyon na”; ive-verify ito ng Chairperson o Vice-Chairperson at isasara.",
+ "When someone marks one “Action taken”, verify the outcome before closing it.": "Kapag may nag-mark ng “May aksyon na”, i-verify ang resulta bago ito isara.",
+ "Please act on them, reply to the sender here in the app, and mark each one “Action taken” with what was done.": "Pakiaksyunan, sagutin ang nagpadala dito sa app, at i-mark ang bawat isa na “May aksyon na” kasama ang ginawa.",
+ "The chairperson or Vice-Chairperson endorsed these to you.": "Ini-endorse ito sa iyo ng Chairperson o Vice-Chairperson.",
+ "Personal Reply from the SPTA": "Personal na Sagot mula sa SPTA",
+ "Personal Reply Sent": "Naipadalang Personal na Sagot",
  "Show password": "Ipakita ang password",
  "Hide password": "Itago ang password",
  "Back": "Bumalik",
@@ -3009,6 +3045,11 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
       [/^Open photo: (.+)$/, "Buksan ang photo: {1}"],
       [/^Sample (.+)$/, "Sample {1}"],
       [/^Added by (.+)\. It is public once you approve it\.$/, "Idinagdag ni {1}. Magiging public ito kapag in-approve mo."],
+      [/^Action was taken on your (concern|suggestion)\. The SPTA will confirm the outcome before closing it\.$/, "May aksyon na sa inyong {1}. Kukumpirmahin ng SPTA ang resulta bago ito isara."],
+      [/^(.+) · Action was taken on your (concern|suggestion)\. The SPTA will confirm the outcome before closing it\.$/, "{1} · May aksyon na sa inyong {2}. Kukumpirmahin ng SPTA ang resulta bago ito isara."],
+      [/^(.+) · The (.+) asked for more action before closing\.$/, "{1} · Humingi ang {2} ng karagdagang aksyon bago isara."],
+      [/^Verified: (.+)$/, "Na-verify: {1}"],
+      [/^More action needed: (.+)$/, "Kailangan pa ng aksyon: {1}"],
       [/^Referred to the school on (.+)\.$/, "Nai-refer sa paaralan noong {1}."],
       [/^Acknowledged by the school · (.+)$/, "Na-acknowledge ng paaralan · {1}"],
       [/^Referred to the school on (.+)\. Acknowledged by the school on (.+)\.$/, "Nai-refer sa paaralan noong {1}. Na-acknowledge ng paaralan noong {2}."],
@@ -3210,6 +3251,7 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
     signed: 'Signed',
     closed: 'Closed',
     assigned: 'Reviewed',
+    action_taken: 'Action taken',
     cp_referred: 'Referred to School',
     cp_handling: 'School Handling',
     cp_closed: 'Closed',
@@ -3561,6 +3603,7 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
       // A possible child-protection concern: the parent is told only that it is being handled, never how.
       if (item.urgent) return 'Thank you for reporting this concern. Because it involves a child’s safety, please inform your child’s class adviser or the School Head immediately. The school’s designated child-protection personnel should assess and address the report. Your child’s safety and privacy are important to us.';
       if (item.status === 'assigned') return 'Your ' + what + ' was reviewed by the ' + who + '.';
+      if (item.status === 'action_taken') return 'Action was taken on your ' + what + '. The ' + who + ' will confirm the outcome before closing it.';
       return 'Thank you. Your ' + what + ' was received privately by the ' + who + '.';
     }
     if (item.direct && item.status === 'awaiting_head') return 'Added by the chairperson. It is now with the School Head for approval.';
@@ -3642,8 +3685,8 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
   const onDesk = c => c.kind !== 'inspection' && ['chair', 'vice'].includes(c.assigned);
   // Who may read a case. The sender always can. Records requests go to the secretary.
   // A suggestion or concern is read by the chairperson and Vice-Chairperson, and by the School Head and secretary only once it is passed on.
-  // A possible child-protection concern is the school's to handle: the School Head owns it. The SPTA (chairperson, Vice-Chairperson, secretary)
-  // only coordinates: it may ask the parent what they already know, add follow-up notes and check that the school acknowledged the referral.
+  // A possible child-protection concern is the school's to handle: the School Head and the secretary, who is a teacher and the School Head's
+  // acting secretary (authorized school personnel), own it. The chairperson and Vice-Chairperson only coordinate.
   // An SPTA matter may be endorsed to one officer, who then sees that case only.
   function canSeeCase(actor, c) {
     if (actor.id === c.owner || actor.role === c.assigned) return true;
@@ -3656,7 +3699,7 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
   function caseHandler(db, a, c) {
     if (!a?.active) return false;
     if (!onDesk(c)) return holds(db, a, c.assigned);
-    if (c.protection) return a.role === 'head';
+    if (c.protection) return a.role === 'head' || holds(db, a, 'secretary');
     if (c.endorsed?.to === a.id) return true;
     return ['chair', 'vice'].includes(a.role) || !!c.forwarded && (a.role === 'head' || holds(db, a, 'secretary'));
   }
@@ -5226,11 +5269,15 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
         {
           const c = get(db.cases, id);
           check(caseHandler(db, a, c), 'Only the assigned reviewer may update this case.');
-          const next = choice(v.status, ['assigned', 'resolved'], 'status');
+          const next = choice(v.status, ['assigned', 'action_taken', 'resolved'], 'status');
+          // Verify before closing: on an ordinary suggestion or concern, whoever acted marks it "Action taken" and the chairperson or Vice-Chairperson checks it and closes it.
+          // A child-protection case is closed by the school.
+          check(next !== 'resolved' || !onDesk(c) || c.protection || ['chair', 'vice'].includes(a.role), 'Mark it “Action taken”. The chairperson or Vice-Chairperson verifies the outcome and closes it.');
+          check(next !== 'action_taken' || onDesk(c) && !c.protection, 'Choose Reviewed or Resolved.');
           // A personal reply is optional. The automated response always tells the sender the new status.
           const reply = String(v.reply ?? '').trim() ? words(v.reply, 'Personal reply', 3, 600) : '';
           // Close the loop: a case is resolved only with a recorded outcome or a clear explanation for the sender.
-          check(next !== 'resolved' || reply || c.reply && c.status === 'resolved', 'Write what was done, or explain why no action is needed, before marking it resolved.');
+          check(!['resolved', 'action_taken'].includes(next) || reply || c.reply && ['resolved', 'action_taken'].includes(c.status), 'Write what was done, or explain why no action is needed.');
           const moved = c.status !== next;
           c.status = next;
           if (reply) {
@@ -5346,7 +5393,7 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
           };
           c.due = today();
           db.accounts.filter(x => x.active && x.role === 'head').forEach(x => note(db, x.id, c.id + ' · URGENT · A possible child-protection concern was referred to the school. Please acknowledge it and handle it under the school’s child protection procedure.'));
-          db.accounts.filter(x => x.active && x.role === 'secretary').forEach(x => note(db, x.id, c.id + ' · A possible child-protection concern was referred to the School Head. Please follow up that the school acknowledged it.'));
+          db.accounts.filter(x => x.active && x.role === 'secretary').forEach(x => note(db, x.id, c.id + ' · URGENT · A possible child-protection concern was referred to the school. Please acknowledge it and handle it under the school’s child protection procedure.'));
           tell(db, c);
           changed('Possible child-protection concern referred');
           break;
@@ -5391,7 +5438,7 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
         {
           // Not a child-protection matter after all (for example, a false or mistaken report): send it back to the chairperson and Vice-Chairperson.
           const c = get(db.cases, id);
-          check(c.protection && a.role === 'head' && a.active, 'Only the School Head can decide this is not a child-protection matter.');
+          check(c.protection && (a.role === 'head' || holds(db, a, 'secretary')) && a.active, 'Only the school can decide this is not a child-protection matter.');
           check(!['resolved', 'withdrawn'].includes(c.status), 'This is already closed.');
           const reason = words(v.reason, 'Reason', 6, 350);
           c.forwarded = c.protection.wasForwarded || null;
@@ -5415,15 +5462,43 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
         {
           // The school confirms it has received the referral. The SPTA sees that it was acknowledged, nothing more.
           const c = get(db.cases, id);
-          check(c.protection && a.role === 'head' && a.active, 'The School Head acknowledges a child-protection referral.');
+          check(c.protection && (a.role === 'head' || holds(db, a, 'secretary')) && a.active, 'The school acknowledges a child-protection referral.');
           check(!c.protection.ack, 'This was already acknowledged.');
           c.protection.ack = {
             at: at(),
             by: a.id
           };
           c.schoolHandling = true;
-          db.accounts.filter(x => x.active && (['chair', 'vice'].includes(x.role) || x.role === 'secretary')).forEach(x => note(db, x.id, c.id + ' · The school acknowledged the child-protection referral.'));
+          db.accounts.filter(x => x.active && x.id !== a.id && (['chair', 'vice', 'head'].includes(x.role) || x.role === 'secretary')).forEach(x => note(db, x.id, c.id + ' · The school acknowledged the child-protection referral.'));
           changed('Child-protection referral acknowledged by the school');
+          break;
+        }
+      case 'caseVerify':
+        {
+          // The chairperson or Vice-Chairperson checks the action taken: close it, or send it back for more action.
+          const c = get(db.cases, id);
+          check(onDesk(c) && !c.protection && ['chair', 'vice'].includes(a.role) && a.active, 'The chairperson or Vice-Chairperson verifies the outcome.');
+          check(c.status === 'action_taken', 'Nothing is waiting to be verified.');
+          const ok = choice(v.decision, ['close', 'more'], 'decision') === 'close';
+          const text = String(v.note ?? '').trim() ? words(v.note, 'Note', 3, 500) : '';
+          check(ok || text, 'Say what more is needed.');
+          c.status = ok ? 'resolved' : 'assigned';
+          c.history.push({
+            status: c.status,
+            reply: '',
+            at: at(),
+            who: a.id
+          });
+          c.notes = c.notes || [];
+          if (text) c.notes.push({
+            at: at(),
+            by: a.id,
+            role: a.role,
+            text: (ok ? 'Verified: ' : 'More action needed: ') + text
+          });
+          if (ok) tell(db, c);
+          else db.accounts.filter(x => x.active && x.id !== a.id && caseHandler(db, x, c) && !['chair', 'vice'].includes(x.role)).forEach(x => note(db, x.id, c.id + ' · The ' + (roles[a.role] || a.role) + ' asked for more action before closing.'));
+          changed(ok ? 'Private case verified and closed' : 'Private case sent back for more action');
           break;
         }
       case 'caseNote':
@@ -6874,8 +6949,8 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
   function tracker(item) {
     let steps, at, stop = '';
     if (item.kind) {
-      steps = item.urgent ? ['Received', 'Referred to School', 'School Handling', 'Closed'] : ['Received', 'Reviewed', 'Resolved'];
-      at = item.urgent ? (item.status === 'resolved' ? 3 : item.schoolHandling ? 2 : 1) : {received: 0, assigned: 1, resolved: 2}[item.status] ?? 0;
+      steps = item.urgent ? ['Received', 'Referred to School', 'School Handling', 'Closed'] : item.kind === 'inspection' ? ['Received', 'Reviewed', 'Resolved'] : ['Received', 'Reviewed', 'Action Taken', 'Resolved'];
+      at = item.urgent ? (item.status === 'resolved' ? 3 : item.schoolHandling ? 2 : 1) : item.kind === 'inspection' ? {received: 0, assigned: 1, resolved: 2}[item.status] ?? 0 : {received: 0, assigned: 1, action_taken: 2, resolved: 3}[item.status] ?? 0;
       if (item.status === 'withdrawn') stop = labels.withdrawn;
     } else {
       steps = item.direct ? ['Added by chairperson', 'School Head', 'Approved'] : ['Received', 'Reviewed', 'Officer vote', 'School Head', 'Approved'];
@@ -7172,9 +7247,10 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
       db().resolutions.filter(r=>r.state==='draft').forEach(r=>list.push(['file','To review and publish · Version '+r.version,r.title,'dlg:freeze',r.id,'Resolution']));
       db().resolutions.filter(r=>r.state==='signing'&&E.signaturesPending(r).length===0).forEach(r=>list.push(['check','Fully signed · Ready to file',r.title,'dlg:fileResolution',r.id,'Resolution']));
       ownCases().filter(c=>c.kind==='inspection'&&c.assigned==='secretary'&&!['resolved','withdrawn'].includes(c.status)).forEach(c=>list.push(['search','To answer',c.subject,'dlg:reply',c.id,'Records Request']));
-      passedOn().filter(c=>c.protection&&!c.protection.ack&&!['resolved','withdrawn'].includes(c.status)).forEach(c=>list.unshift(['alert','Follow up · Not yet acknowledged by the school',c.subject,'dlg:caseNote',c.id,c.kind==='concern'?'Private Concern':'Suggestion']));
+      passedOn().filter(c=>c.protection&&!['resolved','withdrawn'].includes(c.status)).forEach(c=>list.unshift(c.protection.ack?['alert','Child-protection referral · open',c.subject,'dlg:reply',c.id,c.kind==='concern'?'Private Concern':'Suggestion']:['alert','URGENT · Acknowledge child-protection referral',c.subject,'dlg:caseAck',c.id,c.kind==='concern'?'Private Concern':'Suggestion']));
       passedOn().filter(c=>!c.protection&&!['resolved','withdrawn'].includes(c.status)).forEach(c=>list.push(['message','Passed to the School Head · reply or follow up',c.subject,'dlg:reply',c.id,c.kind==='concern'?'Private Concern':'Suggestion']));
     }
+    if(['chair','vice'].includes(role))ownCases().filter(c=>c.status==='action_taken'&&E.onDesk(c)&&!c.protection).forEach(c=>list.push(['check','To verify · Action taken',c.subject,'dlg:caseVerify',c.id,c.kind==='concern'?'Private Concern':'Suggestion']));
     ownCases().filter(c=>c.endorsed?.to===S.me&&!['resolved','withdrawn'].includes(c.status)).forEach(c=>list.push(['message','Endorsed to you',c.subject,'dlg:reply',c.id,c.kind==='concern'?'Private Concern':'Suggestion']));
     if(holds('treasurer'))db().batches.filter(d=>d.status==='for_treasurer'&&d.owner!==S.me).forEach(d=>list.push(['clipboard','To approve · '+cash(d.cents),d.purpose,'dlg:check',d.id,'Collection Handover']));
     if(holds('treasurer')||holds('collector'))db().batches.filter(d=>d.status==='returned'&&d.owner===S.me).forEach(d=>list.push(['alert','Returned for correction · '+cash(d.cents),d.purpose,'dlg:finance',d.id,'Fund Record']));
@@ -7191,7 +7267,7 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
     if(!ui.dialog||!me()||isGuest())return null;
     const list=todo(), at=list.findIndex(x=>x[3]==='dlg:'+ui.dialog&&x[4]===ui.id);
     if(at>=0)return {kind:list[at][5],at,list};
-    const c=['reply','forward','caseNote','endorse','protect','caseAsk','caseAnswer','caseReturn','caseAck'].includes(ui.dialog)&&db().cases.find(x=>x.id===ui.id);
+    const c=['reply','forward','caseNote','endorse','protect','caseAsk','caseAnswer','caseReturn','caseAck','caseVerify'].includes(ui.dialog)&&db().cases.find(x=>x.id===ui.id);
     const kind=c?(c.kind==='inspection'?'Records Request':c.kind==='concern'?'Private Concern':'Suggestion'):{head:'Project Proposal',screen:'Project Proposal',vote:'Project Proposal',proposalReply:'Project Proposal',resubmit:'Project Proposal',post:'Fund Posting',check:'Collection Handover',freeze:'Resolution',sign:'Resolution',fileResolution:'Resolution',reviseResolution:'Resolution',resolution:'Resolution',minute:'Minutes of the Meeting',roster:'Officer Access Request'}[ui.dialog];
     return kind?{kind,at:-1,list}:null;
   }
@@ -7260,7 +7336,7 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
     const officerView = !mine && (assigned || noter || desk2);
     const asker = !mine && E.caseAsker(db(), me(), c);
     const track = !officerView ? '' : c.protection ? '<div class="portal-note urgent"><b>' + icon('shield', 'sm') + 'Possible Child Protection Concern</b>' + para('Referred to the school on ' + longDate(c.protection.at) + '.') + (c.protection.ack ? badgeText('Acknowledged by the school · ' + date(c.protection.ack.at.slice(0, 10))) : '<span class="badge await">Awaiting School Acknowledgment</span>') + para('The school is responsible for assessing and addressing this concern.') + para('The SPTA may request additional information from the reporting parent to assist with the referral. All investigations, interviews, and appropriate interventions will be handled by authorized school personnel.') + '</div>' : c.track === 'grievance' ? '<div class="entry-meta">' + icon('info', 'sm') + 'PTA dispute · Formal grievance route. The School Head sets up the proper committee. No informal sanctions.</div>' : c.track === 'school' ? '<div class="entry-meta">' + icon('info', 'sm') + 'School matter · The School Head leads the action.</div>' : c.endorsed ? '<div class="entry-meta">' + icon('users', 'sm') + (c.endorsed.to === S.me ? 'Endorsed to you by the ' + esc(E.roles[c.endorsed.role] || '') + ' · ' + esc(date(c.endorsed.at.slice(0, 10))) : 'SPTA matter · Endorsed to ' + esc(n(c.endorsed.to)) + ' · ' + esc(date(c.endorsed.at.slice(0, 10)))) + '</div>' : '';
-    const actions = (mine && c.awaiting && !gone ? btn('Answer', 'dlg:caseAnswer', c.id, 'primary') : '') + (assigned && !gone ? btn(c.status === 'received' ? 'Mark reviewed or reply' : 'Update or reply', 'dlg:reply', c.id) : '') + (c.protection && me().role === 'head' && !c.protection.ack && !gone ? btn('Acknowledge referral', 'dlg:caseAck', c.id, 'primary') : '') + (asker && !gone && !c.awaiting && c.status !== 'resolved' ? btn('Ask for more details', 'dlg:caseAsk', c.id) : '') + (c.protection && assigned && !mine && !gone && c.status !== 'resolved' ? btn('Not a child-protection concern', 'dlg:caseReturn', c.id) : '') + (desk2 && !c.forwarded ? (c.endorsed ? btn('Take back', 'caseTakeBack', c.id) : btn('Endorse to an officer', 'dlg:endorse', c.id)) : '') + (canForward ? btn('Pass on to the School Head', 'dlg:forward', c.id, 'primary') : '') + (desk2 && !gone ? btn('Child-protection concern', 'dlg:protect', c.id, 'danger') : '') + (noter && !gone && desk ? btn(!assigned && (holds('secretary') || c.protection) ? 'Record follow-up' : c.forwarded ? 'Add a note' : 'Add a private note', 'dlg:caseNote', c.id) : '') + (canWithdraw(c) ? btn('Withdraw', 'dlg:withdraw', c.id) : '');
+    const actions = (mine && c.awaiting && !gone ? btn('Answer', 'dlg:caseAnswer', c.id, 'primary') : '') + (c.status === 'action_taken' && desk && !c.protection && ['chair', 'vice'].includes(me().role) ? btn('Verify outcome', 'dlg:caseVerify', c.id, 'primary') : '') + (assigned && !gone ? btn(c.status === 'received' ? 'Mark reviewed or reply' : 'Update or reply', 'dlg:reply', c.id) : '') + (c.protection && assigned && !c.protection.ack && !gone ? btn('Acknowledge referral', 'dlg:caseAck', c.id, 'primary') : '') + (asker && !gone && !c.awaiting && c.status !== 'resolved' ? btn('Ask for more details', 'dlg:caseAsk', c.id) : '') + (c.protection && assigned && !mine && !gone && c.status !== 'resolved' ? btn('Not a child-protection concern', 'dlg:caseReturn', c.id) : '') + (desk2 && !c.forwarded ? (c.endorsed ? btn('Take back', 'caseTakeBack', c.id) : btn('Endorse to an officer', 'dlg:endorse', c.id)) : '') + (canForward ? btn('Pass on to the School Head', 'dlg:forward', c.id, 'primary') : '') + (desk2 && !gone ? btn('Child-protection concern', 'dlg:protect', c.id, 'danger') : '') + (noter && !gone && desk ? btn(!assigned && (holds('secretary') || c.protection) ? 'Record follow-up' : c.forwarded ? 'Add a note' : 'Add a private note', 'dlg:caseNote', c.id) : '') + (canWithdraw(c) ? btn('Withdraw', 'dlg:withdraw', c.id) : '');
     const shown = (c.urgent || c.protection) && !gone ? (c.status === 'resolved' ? 'cp_closed' : c.schoolHandling || c.protection?.ack ? 'cp_handling' : 'cp_referred') : c.status;
     return card(c.subject, track + body + thread + evidence, c.id + ' · ' + (c.kind === 'inspection' ? 'Records inspection request' : c.kind === 'concern' ? 'Private concern' : 'Private suggestion'), shown, actions);
   }
@@ -7474,7 +7550,7 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
     const settings = me().role === 'head' ? section('Follow-up settings', ['ack', 'reminders'].map(k => '<div class="list-line"><span>' + esc(k === 'ack' ? 'In-app submission acknowledgements' : 'Flag overdue feedback first') + '</span>' + btn(db().settings[k] ? 'Turn off' : 'Turn on', 'setting', k) + '</div>').join('')) : '';
     const passed = !['chair', 'vice'].includes(me().role);
     const endorsedOnly = passed && !lead() && !holds('secretary');
-    const intro = endorsedOnly ? para('The chairperson or Vice-Chairperson endorsed these to you. Please act on them, reply to the sender here in the app, and mark each one resolved with what was done.') : me().role === 'head' ? para('The chairperson and Vice-Chairperson read every suggestion and private concern first. They pass on school matters and PTA disputes. Possible child-protection concerns are referred to you right away: acknowledge each one, then handle it under the school’s child protection procedure. The secretary can reply to the sender for you on other matters.') : holds('secretary') && passed ? para('These were passed on to the School Head. You can reply to the sender for the School Head and record follow-ups. For a possible child-protection concern, the school handles the case. Your part is to follow up that the school acknowledged it.') : passed ? para('The chairperson and Vice-Chairperson read every suggestion and private concern first. They pass on the ones worth your attention, with a note when they need more from you.') : para('Only you and the ' + (me().role === 'chair' ? 'Vice-Chairperson' : 'chairperson') + ' can read what parents send. For each one: if a child may be in danger, refer it as a child-protection concern right away. Handle an SPTA matter yourselves or endorse it to an officer. Pass a school matter or a PTA dispute on to the School Head. Close each one with a reply that says what was done.');
+    const intro = endorsedOnly ? para('The chairperson or Vice-Chairperson endorsed these to you. Please act on them, reply to the sender here in the app, and mark each one “Action taken” with what was done. The chairperson or Vice-Chairperson then verifies it and closes it.') : me().role === 'head' ? para('The chairperson and Vice-Chairperson read every suggestion and private concern first. They pass on school matters and PTA disputes. Possible child-protection concerns are referred to the school right away: you or the secretary, as your acting secretary, acknowledge each one and handle it under the school’s child protection procedure. On other matters the secretary can reply to the sender for you. When the action is done, mark it “Action taken”; the chairperson or Vice-Chairperson verifies it and closes it.') : holds('secretary') && passed ? para('These were passed on to the School Head. You can reply to the sender for the School Head and record follow-ups. As the School Head’s acting secretary, you also handle possible child-protection concerns for the school: acknowledge each one, then handle it under the school’s child protection procedure. When the action on an ordinary concern is done, mark it “Action taken”; the chairperson or Vice-Chairperson verifies it and closes it.') : passed ? para('The chairperson and Vice-Chairperson read every suggestion and private concern first. They pass on the ones worth your attention, with a note when they need more from you.') : para('Only you and the ' + (me().role === 'chair' ? 'Vice-Chairperson' : 'chairperson') + ' can read what parents send. For each one: if a child may be in danger, refer it as a child-protection concern right away. Handle an SPTA matter yourselves or endorse it to an officer. Pass a school matter or a PTA dispute on to the School Head. When someone marks one “Action taken”, verify the outcome before closing it.');
     return intro + section(kind === 'suggestion' ? (passed ? 'Suggestions passed on' : 'Suggestions sent to you') : kind === 'concern' ? (passed ? 'Concerns passed on' : 'Concerns sent to you') : endorsedOnly ? 'Endorsed to you' : passed ? 'Passed on to the School Head' : 'Sent to you', mine.map(caseCard).join('') || empty(kind ? 'Nothing here yet.' : passed ? 'Nothing has been passed on yet.' : 'No private cases sent to you.')) + others + (kind ? '' : settings);
   }
   // Change history: who acted, in which role, on what, what was decided and why. Only the School Head, chairperson and Vice-Chairperson see it.
@@ -7690,7 +7766,8 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
     }
     if (kind === 'reply') {
       const c = db().cases.find(x => x.id === id);
-      return ['Update status or reply', para(c.subject) + notice('The sender receives an automated response for each status. To mark it resolved, write what was done, or explain why no action is needed.' + (c.forwarded && !lead() && !c.endorsed ? ' The sender reads your reply as coming from the SPTA, for the School Head.' : '')) + form('caseReply', select('status', 'Status', [['assigned', 'Reviewed'], ['resolved', 'Resolved']], c.status === 'resolved' ? 'resolved' : 'assigned') + area('reply', 'Personal reply (needed to resolve)', '', 'maxlength="600"') + input('due', 'Next update by', c.due, 'date') + (c.hidden ? ck('block', 'This was a false or abusive report. Stop this sender from hiding their name again. Their name stays hidden.') : ''), 'Save', id)];
+      const verifyFirst = !!c && E.onDesk(c) && !c.protection && !['chair', 'vice'].includes(me().role);
+      return ['Update status or reply', para(c.subject) + notice('The sender receives an automated response for each status. ' + (verifyFirst ? 'When the action is done, choose “Action taken” and write what was done. The chairperson or Vice-Chairperson then verifies it and closes it.' : 'To mark it resolved, write what was done, or explain why no action is needed.') + (c.forwarded && !lead() && !c.endorsed && !c.protection ? ' The sender reads your reply as coming from the SPTA, for the School Head.' : '')) + form('caseReply', select('status', 'Status', verifyFirst ? [['assigned', 'Reviewed'], ['action_taken', 'Action taken']] : [['assigned', 'Reviewed'], ['resolved', 'Resolved']], verifyFirst ? (c.status === 'action_taken' ? 'action_taken' : 'assigned') : c.status === 'resolved' ? 'resolved' : 'assigned') + area('reply', verifyFirst ? 'Personal reply (needed for Action taken)' : 'Personal reply (needed to resolve)', '', 'maxlength="600"') + input('due', 'Next update by', c.due, 'date') + (c.hidden ? ck('block', 'This was a false or abusive report. Stop this sender from hiding their name again. Their name stays hidden.') : ''), 'Save', id)];
     }
     if (kind === 'forward') {
       const c = db().cases.find(x => x.id === id);
@@ -7719,6 +7796,11 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
       if (!c) return ['Answer', empty('This is no longer here.')];
       const q = (c.messages || []).filter(m => m.from !== 'sender').slice(-1)[0];
       return ['Answer the SPTA', para(c.subject) + (q ? '<div class="portal-note personal"><b>The SPTA asked</b>' + para(q.text) + '</div>' : '') + form('caseAnswer', area('answer', 'Your answer', '', 'required minlength="3" maxlength="700" rows="6"'), 'Send answer', id)];
+    }
+    if (kind === 'caseVerify') {
+      const c = db().cases.find(x => x.id === id);
+      if (!c || c.status !== 'action_taken') return ['Verify outcome', empty('Nothing is waiting to be verified.')];
+      return ['Verify outcome', '<h3>' + esc(titleCase(c.subject)) + '</h3>' + para(c.body) + (c.reply ? '<div class="portal-note personal"><b>What was done</b>' + para(c.reply) + '</div>' : '') + form('caseVerify', select('decision', 'Outcome', [['close', 'Verified · Close it'], ['more', 'Needs more action']], 'close') + area('note', 'Note (needed if more action is needed)', '', 'maxlength="500"'), 'Save', id)];
     }
     if (kind === 'caseAck') {
       const c = db().cases.find(x => x.id === id);
@@ -7923,6 +8005,7 @@ globalThis.ECESSamplePhotoSizes = {"sample-photo-1": 44647, "sample-photo-2": 47
     caseForward: 'Passed on. The School Head and the secretary can read it now.',
     caseEndorse: 'Endorsement saved.',
     caseAsk: 'Question sent.',
+    caseVerify: 'Saved.',
     caseAcknowledge: 'Referral acknowledged.',
     caseAnswer: 'Answer sent. Thank you.',
     caseReturn: 'Returned to the chairperson and Vice-Chairperson.',

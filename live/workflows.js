@@ -40,6 +40,7 @@
     signed: 'Signed',
     closed: 'Closed',
     assigned: 'Reviewed',
+    action_taken: 'Action taken',
     cp_referred: 'Referred to School',
     cp_handling: 'School Handling',
     cp_closed: 'Closed',
@@ -391,6 +392,7 @@
       // A possible child-protection concern: the parent is told only that it is being handled, never how.
       if (item.urgent) return 'Thank you for reporting this concern. Because it involves a child’s safety, please inform your child’s class adviser or the School Head immediately. The school’s designated child-protection personnel should assess and address the report. Your child’s safety and privacy are important to us.';
       if (item.status === 'assigned') return 'Your ' + what + ' was reviewed by the ' + who + '.';
+      if (item.status === 'action_taken') return 'Action was taken on your ' + what + '. The ' + who + ' will confirm the outcome before closing it.';
       return 'Thank you. Your ' + what + ' was received privately by the ' + who + '.';
     }
     if (item.direct && item.status === 'awaiting_head') return 'Added by the chairperson. It is now with the School Head for approval.';
@@ -472,8 +474,8 @@
   const onDesk = c => c.kind !== 'inspection' && ['chair', 'vice'].includes(c.assigned);
   // Who may read a case. The sender always can. Records requests go to the secretary.
   // A suggestion or concern is read by the chairperson and Vice-Chairperson, and by the School Head and secretary only once it is passed on.
-  // A possible child-protection concern is the school's to handle: the School Head owns it. The SPTA (chairperson, Vice-Chairperson, secretary)
-  // only coordinates: it may ask the parent what they already know, add follow-up notes and check that the school acknowledged the referral.
+  // A possible child-protection concern is the school's to handle: the School Head and the secretary, who is a teacher and the School Head's
+  // acting secretary (authorized school personnel), own it. The chairperson and Vice-Chairperson only coordinate.
   // An SPTA matter may be endorsed to one officer, who then sees that case only.
   function canSeeCase(actor, c) {
     if (actor.id === c.owner || actor.role === c.assigned) return true;
@@ -486,7 +488,7 @@
   function caseHandler(db, a, c) {
     if (!a?.active) return false;
     if (!onDesk(c)) return holds(db, a, c.assigned);
-    if (c.protection) return a.role === 'head';
+    if (c.protection) return a.role === 'head' || holds(db, a, 'secretary');
     if (c.endorsed?.to === a.id) return true;
     return ['chair', 'vice'].includes(a.role) || !!c.forwarded && (a.role === 'head' || holds(db, a, 'secretary'));
   }
@@ -2056,11 +2058,15 @@
         {
           const c = get(db.cases, id);
           check(caseHandler(db, a, c), 'Only the assigned reviewer may update this case.');
-          const next = choice(v.status, ['assigned', 'resolved'], 'status');
+          const next = choice(v.status, ['assigned', 'action_taken', 'resolved'], 'status');
+          // Verify before closing: on an ordinary suggestion or concern, whoever acted marks it "Action taken" and the chairperson or Vice-Chairperson checks it and closes it.
+          // A child-protection case is closed by the school.
+          check(next !== 'resolved' || !onDesk(c) || c.protection || ['chair', 'vice'].includes(a.role), 'Mark it “Action taken”. The chairperson or Vice-Chairperson verifies the outcome and closes it.');
+          check(next !== 'action_taken' || onDesk(c) && !c.protection, 'Choose Reviewed or Resolved.');
           // A personal reply is optional. The automated response always tells the sender the new status.
           const reply = String(v.reply ?? '').trim() ? words(v.reply, 'Personal reply', 3, 600) : '';
           // Close the loop: a case is resolved only with a recorded outcome or a clear explanation for the sender.
-          check(next !== 'resolved' || reply || c.reply && c.status === 'resolved', 'Write what was done, or explain why no action is needed, before marking it resolved.');
+          check(!['resolved', 'action_taken'].includes(next) || reply || c.reply && ['resolved', 'action_taken'].includes(c.status), 'Write what was done, or explain why no action is needed.');
           const moved = c.status !== next;
           c.status = next;
           if (reply) {
@@ -2176,7 +2182,7 @@
           };
           c.due = today();
           db.accounts.filter(x => x.active && x.role === 'head').forEach(x => note(db, x.id, c.id + ' · URGENT · A possible child-protection concern was referred to the school. Please acknowledge it and handle it under the school’s child protection procedure.'));
-          db.accounts.filter(x => x.active && x.role === 'secretary').forEach(x => note(db, x.id, c.id + ' · A possible child-protection concern was referred to the School Head. Please follow up that the school acknowledged it.'));
+          db.accounts.filter(x => x.active && x.role === 'secretary').forEach(x => note(db, x.id, c.id + ' · URGENT · A possible child-protection concern was referred to the school. Please acknowledge it and handle it under the school’s child protection procedure.'));
           tell(db, c);
           changed('Possible child-protection concern referred');
           break;
@@ -2221,7 +2227,7 @@
         {
           // Not a child-protection matter after all (for example, a false or mistaken report): send it back to the chairperson and Vice-Chairperson.
           const c = get(db.cases, id);
-          check(c.protection && a.role === 'head' && a.active, 'Only the School Head can decide this is not a child-protection matter.');
+          check(c.protection && (a.role === 'head' || holds(db, a, 'secretary')) && a.active, 'Only the school can decide this is not a child-protection matter.');
           check(!['resolved', 'withdrawn'].includes(c.status), 'This is already closed.');
           const reason = words(v.reason, 'Reason', 6, 350);
           c.forwarded = c.protection.wasForwarded || null;
@@ -2245,15 +2251,43 @@
         {
           // The school confirms it has received the referral. The SPTA sees that it was acknowledged, nothing more.
           const c = get(db.cases, id);
-          check(c.protection && a.role === 'head' && a.active, 'The School Head acknowledges a child-protection referral.');
+          check(c.protection && (a.role === 'head' || holds(db, a, 'secretary')) && a.active, 'The school acknowledges a child-protection referral.');
           check(!c.protection.ack, 'This was already acknowledged.');
           c.protection.ack = {
             at: at(),
             by: a.id
           };
           c.schoolHandling = true;
-          db.accounts.filter(x => x.active && (['chair', 'vice'].includes(x.role) || x.role === 'secretary')).forEach(x => note(db, x.id, c.id + ' · The school acknowledged the child-protection referral.'));
+          db.accounts.filter(x => x.active && x.id !== a.id && (['chair', 'vice', 'head'].includes(x.role) || x.role === 'secretary')).forEach(x => note(db, x.id, c.id + ' · The school acknowledged the child-protection referral.'));
           changed('Child-protection referral acknowledged by the school');
+          break;
+        }
+      case 'caseVerify':
+        {
+          // The chairperson or Vice-Chairperson checks the action taken: close it, or send it back for more action.
+          const c = get(db.cases, id);
+          check(onDesk(c) && !c.protection && ['chair', 'vice'].includes(a.role) && a.active, 'The chairperson or Vice-Chairperson verifies the outcome.');
+          check(c.status === 'action_taken', 'Nothing is waiting to be verified.');
+          const ok = choice(v.decision, ['close', 'more'], 'decision') === 'close';
+          const text = String(v.note ?? '').trim() ? words(v.note, 'Note', 3, 500) : '';
+          check(ok || text, 'Say what more is needed.');
+          c.status = ok ? 'resolved' : 'assigned';
+          c.history.push({
+            status: c.status,
+            reply: '',
+            at: at(),
+            who: a.id
+          });
+          c.notes = c.notes || [];
+          if (text) c.notes.push({
+            at: at(),
+            by: a.id,
+            role: a.role,
+            text: (ok ? 'Verified: ' : 'More action needed: ') + text
+          });
+          if (ok) tell(db, c);
+          else db.accounts.filter(x => x.active && x.id !== a.id && caseHandler(db, x, c) && !['chair', 'vice'].includes(x.role)).forEach(x => note(db, x.id, c.id + ' · The ' + (roles[a.role] || a.role) + ' asked for more action before closing.'));
+          changed(ok ? 'Private case verified and closed' : 'Private case sent back for more action');
           break;
         }
       case 'caseNote':

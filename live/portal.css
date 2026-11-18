@@ -1039,3 +1039,4 @@ img[data-photo].failed {visibility:visible}
 .badge.cp_closed {background:#e3f5e9;color:#21845e}
 .portal-note.urgent b {display:flex;align-items:center;gap:6px}
 .portal-note.urgent .badge {margin:6px 0 2px}
+.badge.action_taken {background:#e7f0ff;color:#2f5fb3}
