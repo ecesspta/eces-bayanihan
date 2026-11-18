@@ -479,7 +479,7 @@
   function approvals() {
     const role=me().role, chair=canChair(), list=[];
     if(role==='head')db().proposals.filter(p=>p.status==='awaiting_head').forEach(p=>list.push(['check','For your approval · '+cash(p.budget),proposalName(p),'dlg:head',p.id,'Project Proposal']));
-    if(role==='head')passedOn().filter(c=>c.protection&&!['resolved','withdrawn'].includes(c.status)).forEach(c=>list.unshift(['alert','To monitor · Possible child-protection concern',c.subject,'dlg:reply',c.id,c.kind==='concern'?'Private Concern':'Suggestion']));
+    if(role==='head')passedOn().filter(c=>c.protection&&!['resolved','withdrawn'].includes(c.status)).forEach(c=>list.unshift(c.protection.ack?['alert','Child-protection referral · open',c.subject,'dlg:reply',c.id,c.kind==='concern'?'Private Concern':'Suggestion']:['alert','URGENT · Acknowledge child-protection referral',c.subject,'dlg:caseAck',c.id,c.kind==='concern'?'Private Concern':'Suggestion']));
     if(role==='head')passedOn().filter(c=>c.status==='received'&&!c.protection).forEach(c=>list.push(['message','Passed on by the chairperson',c.subject,'dlg:reply',c.id,c.kind==='concern'?'Private Concern':'Suggestion']));
     if(chair||role==='vice')db().batches.filter(canPost).forEach(d=>list.push(['clipboard','To publish · Money '+d.direction+' · '+cash(d.cents),d.purpose,'dlg:post',d.id,'Fund Posting']));
     db().minutes.filter(m=>chair&&m.state==='for_chair'||role==='head'&&m.state==='for_head').forEach(m=>list.push(['file',(m.state==='for_chair'?'To approve':'To note and file')+' · Meeting of '+date(m.date),m.title,'dlg:minute',m.id,'Minutes of the Meeting']));
@@ -495,7 +495,7 @@
       db().resolutions.filter(r=>r.state==='draft').forEach(r=>list.push(['file','To review and publish · Version '+r.version,r.title,'dlg:freeze',r.id,'Resolution']));
       db().resolutions.filter(r=>r.state==='signing'&&E.signaturesPending(r).length===0).forEach(r=>list.push(['check','Fully signed · Ready to file',r.title,'dlg:fileResolution',r.id,'Resolution']));
       ownCases().filter(c=>c.kind==='inspection'&&c.assigned==='secretary'&&!['resolved','withdrawn'].includes(c.status)).forEach(c=>list.push(['search','To answer',c.subject,'dlg:reply',c.id,'Records Request']));
-      passedOn().filter(c=>c.protection&&!['resolved','withdrawn'].includes(c.status)).forEach(c=>list.unshift(['alert','URGENT · Alert the child’s adviser',c.subject,'dlg:reply',c.id,c.kind==='concern'?'Private Concern':'Suggestion']));
+      passedOn().filter(c=>c.protection&&!c.protection.ack&&!['resolved','withdrawn'].includes(c.status)).forEach(c=>list.unshift(['alert','Follow up · Not yet acknowledged by the school',c.subject,'dlg:caseNote',c.id,c.kind==='concern'?'Private Concern':'Suggestion']));
       passedOn().filter(c=>!c.protection&&!['resolved','withdrawn'].includes(c.status)).forEach(c=>list.push(['message','Passed to the School Head · reply or follow up',c.subject,'dlg:reply',c.id,c.kind==='concern'?'Private Concern':'Suggestion']));
     }
     ownCases().filter(c=>c.endorsed?.to===S.me&&!['resolved','withdrawn'].includes(c.status)).forEach(c=>list.push(['message','Endorsed to you',c.subject,'dlg:reply',c.id,c.kind==='concern'?'Private Concern':'Suggestion']));
@@ -514,7 +514,7 @@
     if(!ui.dialog||!me()||isGuest())return null;
     const list=todo(), at=list.findIndex(x=>x[3]==='dlg:'+ui.dialog&&x[4]===ui.id);
     if(at>=0)return {kind:list[at][5],at,list};
-    const c=['reply','forward','caseNote','endorse','protect','caseAsk','caseAnswer','caseReturn'].includes(ui.dialog)&&db().cases.find(x=>x.id===ui.id);
+    const c=['reply','forward','caseNote','endorse','protect','caseAsk','caseAnswer','caseReturn','caseAck'].includes(ui.dialog)&&db().cases.find(x=>x.id===ui.id);
     const kind=c?(c.kind==='inspection'?'Records Request':c.kind==='concern'?'Private Concern':'Suggestion'):{head:'Project Proposal',screen:'Project Proposal',vote:'Project Proposal',proposalReply:'Project Proposal',resubmit:'Project Proposal',post:'Fund Posting',check:'Collection Handover',freeze:'Resolution',sign:'Resolution',fileResolution:'Resolution',reviseResolution:'Resolution',resolution:'Resolution',minute:'Minutes of the Meeting',roster:'Officer Access Request'}[ui.dialog];
     return kind?{kind,at:-1,list}:null;
   }
@@ -580,9 +580,10 @@
     const evidence = (c.photos || []).length ? '<div class="proj-photos case-photos" aria-label="Photo evidence">' + c.photos.map((ph, i) => '<button type="button" class="proj-photo" data-do="dlg:casePhoto" data-id="' + esc(c.id + '|' + i) + '" aria-label="' + esc('Open photo ' + (i + 1)) + '">' + photoImg({file: ph}, 'Photo evidence ' + (i + 1)) + '</button>').join('') + '</div>' : '';
     const desk2 = desk && ['chair', 'vice'].includes(me().role) && ['received', 'assigned'].includes(c.status) && !c.protection;
     const canForward = desk2 && !c.forwarded;
-    const officerView = !mine && (assigned || noter || desk2 || c.protection && ['chair', 'vice'].includes(me().role));
-    const track = !officerView ? '' : c.protection ? '<div class="portal-note urgent"><b>Possible child-protection concern</b>' + para('Referred on ' + date(c.protection.at.slice(0, 10)) + '. This is being handled.') + '</div>' : c.track === 'grievance' ? '<div class="entry-meta">' + icon('info', 'sm') + 'PTA dispute · Formal grievance route. The School Head sets up the proper committee. No informal sanctions.</div>' : c.track === 'school' ? '<div class="entry-meta">' + icon('info', 'sm') + 'School matter · The School Head leads the action.</div>' : c.endorsed ? '<div class="entry-meta">' + icon('users', 'sm') + (c.endorsed.to === S.me ? 'Endorsed to you by the ' + esc(E.roles[c.endorsed.role] || '') + ' · ' + esc(date(c.endorsed.at.slice(0, 10))) : 'SPTA matter · Endorsed to ' + esc(n(c.endorsed.to)) + ' · ' + esc(date(c.endorsed.at.slice(0, 10)))) + '</div>' : '';
-    const actions = (mine && c.awaiting && !gone ? btn('Answer', 'dlg:caseAnswer', c.id, 'primary') : '') + (assigned && !gone ? btn(c.status === 'received' ? 'Mark reviewed or reply' : 'Update or reply', 'dlg:reply', c.id) : '') + (assigned && !mine && !gone && !c.awaiting && c.status !== 'resolved' ? btn('Ask for more details', 'dlg:caseAsk', c.id) : '') + (c.protection && assigned && !mine && !gone && c.status !== 'resolved' ? btn('Not a child-protection concern', 'dlg:caseReturn', c.id) : '') + (desk2 && !c.forwarded ? (c.endorsed ? btn('Take back', 'caseTakeBack', c.id) : btn('Endorse to an officer', 'dlg:endorse', c.id)) : '') + (canForward ? btn('Pass on to the School Head', 'dlg:forward', c.id, 'primary') : '') + (desk2 && !gone ? btn('Child-protection concern', 'dlg:protect', c.id, 'danger') : '') + (noter && !gone && desk ? btn(holds('secretary') && !assigned ? 'Record follow-up' : c.forwarded ? 'Add a note' : 'Add a private note', 'dlg:caseNote', c.id) : '') + (canWithdraw(c) ? btn('Withdraw', 'dlg:withdraw', c.id) : '');
+    const officerView = !mine && (assigned || noter || desk2);
+    const asker = !mine && E.caseAsker(db(), me(), c);
+    const track = !officerView ? '' : c.protection ? '<div class="portal-note urgent"><b>Possible child-protection concern</b>' + para('Referred to the school on ' + date(c.protection.at.slice(0, 10)) + '. ' + (c.protection.ack ? 'Acknowledged by the school on ' + date(c.protection.ack.at.slice(0, 10)) + '.' : 'Waiting for the school to acknowledge.')) + (me().role === 'head' ? '' : para('The school assesses and handles this case. The SPTA only coordinates: ask the parent only what they already know, and do not interview pupils, contact other families or try to verify the report.')) + '</div>' : c.track === 'grievance' ? '<div class="entry-meta">' + icon('info', 'sm') + 'PTA dispute · Formal grievance route. The School Head sets up the proper committee. No informal sanctions.</div>' : c.track === 'school' ? '<div class="entry-meta">' + icon('info', 'sm') + 'School matter · The School Head leads the action.</div>' : c.endorsed ? '<div class="entry-meta">' + icon('users', 'sm') + (c.endorsed.to === S.me ? 'Endorsed to you by the ' + esc(E.roles[c.endorsed.role] || '') + ' · ' + esc(date(c.endorsed.at.slice(0, 10))) : 'SPTA matter · Endorsed to ' + esc(n(c.endorsed.to)) + ' · ' + esc(date(c.endorsed.at.slice(0, 10)))) + '</div>' : '';
+    const actions = (mine && c.awaiting && !gone ? btn('Answer', 'dlg:caseAnswer', c.id, 'primary') : '') + (assigned && !gone ? btn(c.status === 'received' ? 'Mark reviewed or reply' : 'Update or reply', 'dlg:reply', c.id) : '') + (c.protection && me().role === 'head' && !c.protection.ack && !gone ? btn('Acknowledge referral', 'dlg:caseAck', c.id, 'primary') : '') + (asker && !gone && !c.awaiting && c.status !== 'resolved' ? btn('Ask for more details', 'dlg:caseAsk', c.id) : '') + (c.protection && assigned && !mine && !gone && c.status !== 'resolved' ? btn('Not a child-protection concern', 'dlg:caseReturn', c.id) : '') + (desk2 && !c.forwarded ? (c.endorsed ? btn('Take back', 'caseTakeBack', c.id) : btn('Endorse to an officer', 'dlg:endorse', c.id)) : '') + (canForward ? btn('Pass on to the School Head', 'dlg:forward', c.id, 'primary') : '') + (desk2 && !gone ? btn('Child-protection concern', 'dlg:protect', c.id, 'danger') : '') + (noter && !gone && desk ? btn(!assigned && (holds('secretary') || c.protection) ? 'Record follow-up' : c.forwarded ? 'Add a note' : 'Add a private note', 'dlg:caseNote', c.id) : '') + (canWithdraw(c) ? btn('Withdraw', 'dlg:withdraw', c.id) : '');
     return card(c.subject, track + body + thread + evidence, c.id + ' · ' + (c.kind === 'inspection' ? 'Records inspection request' : c.kind === 'concern' ? 'Private concern' : 'Private suggestion'), c.status, actions);
   }
   function pulse() {
@@ -795,7 +796,7 @@
     const settings = me().role === 'head' ? section('Follow-up settings', ['ack', 'reminders'].map(k => '<div class="list-line"><span>' + esc(k === 'ack' ? 'In-app submission acknowledgements' : 'Flag overdue feedback first') + '</span>' + btn(db().settings[k] ? 'Turn off' : 'Turn on', 'setting', k) + '</div>').join('')) : '';
     const passed = !['chair', 'vice'].includes(me().role);
     const endorsedOnly = passed && !lead() && !holds('secretary');
-    const intro = endorsedOnly ? para('The chairperson or Vice-Chairperson endorsed these to you. Please act on them, reply to the sender here in the app, and mark each one resolved with what was done.') : me().role === 'head' ? para('The chairperson and Vice-Chairperson read every suggestion and private concern first. They pass on school matters and PTA disputes. Possible child-protection concerns are shown to you for monitoring, and you may act on them. The secretary can reply to the sender for you.') : holds('secretary') && passed ? para('These were passed on to the School Head. You can reply to the sender for the School Head and record follow-ups. For a possible child-protection concern, alert the child’s adviser right away. If the concern is about the adviser, go to the guidance teacher or the School Head instead. Record what you did and close it with a reply.') : passed ? para('The chairperson and Vice-Chairperson read every suggestion and private concern first. They pass on the ones worth your attention, with a note when they need more from you.') : para('Only you and the ' + (me().role === 'chair' ? 'Vice-Chairperson' : 'chairperson') + ' can read what parents send. For each one: if a child may be in danger, refer it as a child-protection concern right away. Handle an SPTA matter yourselves or endorse it to an officer. Pass a school matter or a PTA dispute on to the School Head. Close each one with a reply that says what was done.');
+    const intro = endorsedOnly ? para('The chairperson or Vice-Chairperson endorsed these to you. Please act on them, reply to the sender here in the app, and mark each one resolved with what was done.') : me().role === 'head' ? para('The chairperson and Vice-Chairperson read every suggestion and private concern first. They pass on school matters and PTA disputes. Possible child-protection concerns are referred to you right away: acknowledge each one, then handle it under the school’s child protection procedure. The secretary can reply to the sender for you on other matters.') : holds('secretary') && passed ? para('These were passed on to the School Head. You can reply to the sender for the School Head and record follow-ups. For a possible child-protection concern, the school handles the case. Your part is to follow up that the school acknowledged it.') : passed ? para('The chairperson and Vice-Chairperson read every suggestion and private concern first. They pass on the ones worth your attention, with a note when they need more from you.') : para('Only you and the ' + (me().role === 'chair' ? 'Vice-Chairperson' : 'chairperson') + ' can read what parents send. For each one: if a child may be in danger, refer it as a child-protection concern right away. Handle an SPTA matter yourselves or endorse it to an officer. Pass a school matter or a PTA dispute on to the School Head. Close each one with a reply that says what was done.');
     return intro + section(kind === 'suggestion' ? (passed ? 'Suggestions passed on' : 'Suggestions sent to you') : kind === 'concern' ? (passed ? 'Concerns passed on' : 'Concerns sent to you') : endorsedOnly ? 'Endorsed to you' : passed ? 'Passed on to the School Head' : 'Sent to you', mine.map(caseCard).join('') || empty(kind ? 'Nothing here yet.' : passed ? 'Nothing has been passed on yet.' : 'No private cases sent to you.')) + others + (kind ? '' : settings);
   }
   // Change history: who acted, in which role, on what, what was decided and why. Only the School Head, chairperson and Vice-Chairperson see it.
@@ -1028,12 +1029,12 @@
     if (kind === 'protect') {
       const c = db().cases.find(x => x.id === id);
       if (!c) return ['Possible child-protection concern', empty('This is no longer here.')];
-      return ['Possible child-protection concern', para(c.subject) + notice('Use this if a child may be hurt, abused, bullied or in danger. It will be handled right away. If a child is in danger now, also call the school directly.') + form('caseProtect', ck('confirm', 'Refer this now.', true), 'Refer now', id)];
+      return ['Possible child-protection concern', para(c.subject) + notice('Use this if a child may be hurt, abused, bullied or in danger. Refer it now; do not wait for the parent to answer a question. The school assesses and handles it. If a child is in danger now, also call the school directly.') + form('caseProtect', ck('confirm', 'Refer this now.', true), 'Refer now', id)];
     }
     if (kind === 'caseAsk') {
       const c = db().cases.find(x => x.id === id);
       if (!c) return ['Ask for more details', empty('This is no longer here.')];
-      return ['Ask for more details', para(c.subject) + notice('The sender gets a notification and answers here in the app. They read your question as coming from the SPTA.') + form('caseAsk', area('question', 'Your question', '', 'required minlength="3" maxlength="500" placeholder="Example: When did this happen, and who was involved?"'), 'Send question', id)];
+      return ['Ask for more details', para(c.subject) + notice('The sender gets a notification and answers here in the app. They read your question as coming from the SPTA.') + (c.protection && me().role !== 'head' ? notice('Ask only what the parent already knows: when and where it happened, and whether the child is safe right now. Do not ask the parent to find out more. The school handles the rest.') : !c.protection && ['chair', 'vice'].includes(me().role) ? notice('If a child may be in danger, refer it as a child-protection concern now. Do not wait for the answer. You can still ask after referring.') : '') + form('caseAsk', area('question', 'Your question', '', 'required minlength="3" maxlength="500" placeholder="Example: When and where did this happen? Is your child safe right now?"'), 'Send question', id)];
     }
     if (kind === 'caseAnswer') {
       const c = db().cases.find(x => x.id === id && x.owner === S.me);
@@ -1041,10 +1042,15 @@
       const q = (c.messages || []).filter(m => m.from !== 'sender').slice(-1)[0];
       return ['Answer the SPTA', para(c.subject) + (q ? '<div class="portal-note personal"><b>The SPTA asked</b>' + para(q.text) + '</div>' : '') + form('caseAnswer', area('answer', 'Your answer', '', 'required minlength="3" maxlength="700" rows="6"'), 'Send answer', id)];
     }
+    if (kind === 'caseAck') {
+      const c = db().cases.find(x => x.id === id);
+      if (!c || !c.protection) return ['Acknowledge referral', empty('This is no longer here.')];
+      return ['Acknowledge referral', '<h3>' + esc(titleCase(c.subject)) + '</h3>' + para(c.body) + fromLine(c) + notice('Acknowledging tells the SPTA officers that the school received this referral. They see only that it was acknowledged. Handle the case under the school’s child protection procedure.') + form('caseAcknowledge', ck('confirm', 'The school received this referral.', true), 'Acknowledge', id)];
+    }
     if (kind === 'caseReturn') {
       const c = db().cases.find(x => x.id === id);
       if (!c) return ['Not a child-protection concern', empty('This is no longer here.')];
-      return ['Not a child-protection concern', para(c.subject) + notice('Use this if, after checking, this is not a child-protection matter, for example a mistaken or false report. It goes back to the chairperson and Vice-Chairperson to handle as an ordinary concern.') + form('caseReturn', area('reason', 'What you found', '', 'required minlength="6" maxlength="350"'), 'Return', id)];
+      return ['Not a child-protection concern', para(c.subject) + notice('Use this if the school’s assessment finds this is not a child-protection matter, for example a mistaken or false report. It goes back to the chairperson and Vice-Chairperson to handle as an ordinary concern.') + form('caseReturn', area('reason', 'What you found', '', 'required minlength="6" maxlength="350"'), 'Return', id)];
     }
     if (kind === 'caseNote') {
       const c = db().cases.find(x => x.id === id);
@@ -1239,9 +1245,10 @@
     caseForward: 'Passed on. The School Head and the secretary can read it now.',
     caseEndorse: 'Endorsement saved.',
     caseAsk: 'Question sent.',
+    caseAcknowledge: 'Referral acknowledged.',
     caseAnswer: 'Answer sent. Thank you.',
     caseReturn: 'Returned to the chairperson and Vice-Chairperson.',
-    caseProtect: 'Referred. This is being handled.',
+    caseProtect: 'Referred to the school.',
     caseNote: 'Note saved.',
     proposalReply: 'Personal reply sent.',
     chairProposal: 'Sent to the School Head for approval.',

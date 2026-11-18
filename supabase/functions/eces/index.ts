@@ -530,7 +530,8 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
   const onDesk = c => c.kind !== 'inspection' && ['chair', 'vice'].includes(c.assigned);
   // Who may read a case. The sender always can. Records requests go to the secretary.
   // A suggestion or concern is read by the chairperson and Vice-Chairperson, and by the School Head and secretary only once it is passed on.
-  // A possible child-protection concern goes to the secretary, who alerts the child's adviser right away. The School Head monitors it and may act.
+  // A possible child-protection concern is the school's to handle: the School Head owns it. The SPTA (chairperson, Vice-Chairperson, secretary)
+  // only coordinates: it may ask the parent what they already know, add follow-up notes and check that the school acknowledged the referral.
   // An SPTA matter may be endorsed to one officer, who then sees that case only.
   function canSeeCase(actor, c) {
     if (actor.id === c.owner || actor.role === c.assigned) return true;
@@ -543,12 +544,15 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
   function caseHandler(db, a, c) {
     if (!a?.active) return false;
     if (!onDesk(c)) return holds(db, a, c.assigned);
-    if (c.protection) return a.role === 'head' || holds(db, a, 'secretary');
+    if (c.protection) return a.role === 'head';
     if (c.endorsed?.to === a.id) return true;
     return ['chair', 'vice'].includes(a.role) || !!c.forwarded && (a.role === 'head' || holds(db, a, 'secretary'));
   }
-  // Who may add an internal note.
-  const caseNoter = (db, a, c) => !!a?.active && onDesk(c) && caseHandler(db, a, c);
+  // The SPTA officers who coordinate a child-protection referral.
+  const caseCoordinator = (db, a, c) => !!a?.active && !!c.protection && (['chair', 'vice'].includes(a.role) || holds(db, a, 'secretary'));
+  // Who may add an internal note, and who may ask the sender for more details.
+  const caseNoter = (db, a, c) => !!a?.active && onDesk(c) && (caseHandler(db, a, c) || caseCoordinator(db, a, c));
+  const caseAsker = caseNoter;
   function publicProposal(p) {
     return Boolean(p.published && p.publicTitle);
   }
@@ -2229,8 +2233,8 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
             role: a.role
           };
           c.due = today();
-          db.accounts.filter(x => x.active && x.role === 'secretary').forEach(x => note(db, x.id, c.id + ' · URGENT · A possible child-protection concern was referred to you. Please alert the child’s adviser today.'));
-          db.accounts.filter(x => x.active && x.role === 'head').forEach(x => note(db, x.id, c.id + ' · URGENT · A possible child-protection concern is being handled. It is shown to you for monitoring. You may also act on it.'));
+          db.accounts.filter(x => x.active && x.role === 'head').forEach(x => note(db, x.id, c.id + ' · URGENT · A possible child-protection concern was referred to the school. Please acknowledge it and handle it under the school’s child protection procedure.'));
+          db.accounts.filter(x => x.active && x.role === 'secretary').forEach(x => note(db, x.id, c.id + ' · A possible child-protection concern was referred to the School Head. Please follow up that the school acknowledged it.'));
           tell(db, c);
           changed('Possible child-protection concern referred');
           break;
@@ -2239,7 +2243,7 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
         {
           // Whoever is handling a suggestion or concern can ask the sender for more details. The sender answers in the app.
           const c = get(db.cases, id);
-          check(caseHandler(db, a, c), 'Only the person handling this can ask the sender.');
+          check(caseAsker(db, a, c), 'Only the person handling this can ask the sender.');
           check(!['resolved', 'withdrawn'].includes(c.status), 'This is already closed.');
           check(!c.awaiting, 'You already asked. Wait for the sender to answer.');
           c.messages = c.messages || [];
@@ -2267,7 +2271,7 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
             at: at()
           });
           c.awaiting = false;
-          db.accounts.filter(x => x.active && x.id !== a.id && caseHandler(db, x, c)).forEach(x => note(db, x.id, c.id + ' · The sender answered your question.'));
+          db.accounts.filter(x => x.active && x.id !== a.id && caseAsker(db, x, c)).forEach(x => note(db, x.id, c.id + ' · The sender answered your question.'));
           changed('Private case: sender answered');
           break;
         }
@@ -2275,7 +2279,7 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
         {
           // Not a child-protection matter after all (for example, a false or mistaken report): send it back to the chairperson and Vice-Chairperson.
           const c = get(db.cases, id);
-          check(c.protection && (a.role === 'head' || holds(db, a, 'secretary')) && a.active, 'The School Head or the secretary can return this.');
+          check(c.protection && a.role === 'head' && a.active, 'Only the School Head can decide this is not a child-protection matter.');
           check(!['resolved', 'withdrawn'].includes(c.status), 'This is already closed.');
           const reason = words(v.reason, 'Reason', 6, 350);
           c.forwarded = c.protection.wasForwarded || null;
@@ -2292,6 +2296,20 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
           });
           db.accounts.filter(x => x.active && ['chair', 'vice'].includes(x.role)).forEach(x => note(db, x.id, c.id + ' · A concern was returned to you as not a child-protection matter. Read the note.'));
           changed('Private case returned as not a child-protection concern');
+          break;
+        }
+      case 'caseAcknowledge':
+        {
+          // The school confirms it has received the referral. The SPTA sees that it was acknowledged, nothing more.
+          const c = get(db.cases, id);
+          check(c.protection && a.role === 'head' && a.active, 'The School Head acknowledges a child-protection referral.');
+          check(!c.protection.ack, 'This was already acknowledged.');
+          c.protection.ack = {
+            at: at(),
+            by: a.id
+          };
+          db.accounts.filter(x => x.active && (['chair', 'vice'].includes(x.role) || x.role === 'secretary')).forEach(x => note(db, x.id, c.id + ' · The school acknowledged the child-protection referral.'));
+          changed('Child-protection referral acknowledged by the school');
           break;
         }
       case 'caseNote':
@@ -2315,7 +2333,7 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
             } : {})
           });
           // Tell the other people who can read it that there is something new.
-          const to = c.protection ? ['head', 'secretary'] : ['chair', 'vice'];
+          const to = c.protection ? ['head', 'secretary', 'chair', 'vice'] : ['chair', 'vice'];
           if (c.forwarded && !c.protection) to.push('head', 'secretary');
           db.accounts.filter(x => x.active && (to.includes(x.role) || c.endorsed?.to === x.id) && x.id !== a.id).forEach(x => note(db, x.id, c.id + ' · A new note from the ' + (roles[a.role] || a.role) + '.'));
           changed('Private case note added');
@@ -2698,6 +2716,8 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
     canSeeCase,
     caseHandler,
     caseNoter,
+    caseAsker,
+    caseCoordinator,
     onDesk,
     deskName,
     isChair,
