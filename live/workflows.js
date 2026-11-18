@@ -385,6 +385,8 @@
         who = onDesk(item) ? 'SPTA' : recipients[item.assigned] || roles[item.assigned] || 'reviewer';
       if (item.status === 'withdrawn') return 'You withdrew this ' + what + '. Nothing more will happen with it.';
       if (item.status === 'resolved') return 'Your ' + what + ' was marked resolved by the ' + who + '.';
+      // A possible child-protection concern: the parent is told only that it is being handled, never how.
+      if (item.urgent) return 'Your ' + what + ' is being handled. If it is urgent, please go to your child’s adviser directly.';
       if (item.status === 'assigned') return 'Your ' + what + ' was reviewed by the ' + who + '.';
       return 'Thank you. Your ' + what + ' was received privately by the ' + who + '.';
     }
@@ -2157,6 +2159,7 @@
             role: a.role
           };
           c.track = 'protection';
+          c.urgent = true;
           c.endorsed = null;
           c.forwarded = c.forwarded || {
             at: at(),
@@ -2166,6 +2169,7 @@
           c.due = today();
           db.accounts.filter(x => x.active && x.role === 'secretary').forEach(x => note(db, x.id, c.id + ' · URGENT · A possible child-protection concern was referred to you. Please alert the child’s adviser today.'));
           db.accounts.filter(x => x.active && x.role === 'head').forEach(x => note(db, x.id, c.id + ' · URGENT · A possible child-protection concern was referred to the secretary, who will alert the adviser. It is shown to you for monitoring. You may also act on it.'));
+          tell(db, c);
           changed('Possible child-protection concern referred to the secretary and the School Head');
           break;
         }
