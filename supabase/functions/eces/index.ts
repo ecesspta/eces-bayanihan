@@ -528,18 +528,25 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
   const onDesk = c => c.kind !== 'inspection' && ['chair', 'vice'].includes(c.assigned);
   // Who may read a case. The sender always can. Records requests go to the secretary.
   // A suggestion or concern is read by the chairperson and Vice-Chairperson, and by the School Head and secretary only once it is passed on.
+  // A possible child-protection concern goes to the School Head alone; the secretary and the SPTA do not follow it up.
+  // An SPTA matter may be endorsed to one officer, who then sees that case only.
   function canSeeCase(actor, c) {
     if (actor.id === c.owner || actor.role === c.assigned) return true;
-    return onDesk(c) && (['chair', 'vice'].includes(actor.role) || !!c.forwarded && ['head', 'secretary'].includes(actor.role));
+    if (!onDesk(c)) return false;
+    if (actor.id && c.endorsed?.to === actor.id) return true;
+    if (['chair', 'vice'].includes(actor.role)) return true;
+    return !!c.forwarded && (actor.role === 'head' || actor.role === 'secretary' && !c.protection);
   }
-  // Who may change the status or reply to the sender: the desk, and the School Head once it has been passed on.
+  // Who may change the status or reply to the sender: the desk, the endorsed officer, and once passed on the School Head and the secretary for the School Head.
   function caseHandler(db, a, c) {
     if (!a?.active) return false;
     if (!onDesk(c)) return holds(db, a, c.assigned);
-    return ['chair', 'vice'].includes(a.role) || !!c.forwarded && a.role === 'head';
+    if (c.protection) return a.role === 'head';
+    if (c.endorsed?.to === a.id) return true;
+    return ['chair', 'vice'].includes(a.role) || !!c.forwarded && (a.role === 'head' || holds(db, a, 'secretary'));
   }
-  // Who may add an internal note. The secretary joins once it has been passed on, to follow up with the School Head.
-  const caseNoter = (db, a, c) => !!a?.active && onDesk(c) && (caseHandler(db, a, c) || !!c.forwarded && holds(db, a, 'secretary'));
+  // Who may add an internal note.
+  const caseNoter = (db, a, c) => !!a?.active && onDesk(c) && caseHandler(db, a, c);
   function publicProposal(p) {
     return Boolean(p.published && p.publicTitle);
   }
@@ -1172,7 +1179,7 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
       return t;
     }
     function changed(event) {
-      audit(db, a, event, id, /Private case|Hidden-name|Personal reply/.test(event) ? {
+      audit(db, a, event, id, /Private case|Hidden-name|Personal reply|child-protection/.test(event) ? {
         action,
         private: true
       } : trace());
@@ -2104,12 +2111,16 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
           const next = choice(v.status, ['assigned', 'resolved'], 'status');
           // A personal reply is optional. The automated response always tells the sender the new status.
           const reply = String(v.reply ?? '').trim() ? words(v.reply, 'Personal reply', 3, 600) : '';
+          // Close the loop: a case is resolved only with a recorded outcome or a clear explanation for the sender.
+          check(next !== 'resolved' || reply || c.reply && c.status === 'resolved', 'Write what was done, or explain why no action is needed, before marking it resolved.');
           const moved = c.status !== next;
           c.status = next;
           if (reply) {
             c.reply = reply;
             c.replyBy = a.role;
             c.replyAt = at();
+            // The secretary answers for the School Head once a case is passed on.
+            c.replyFor = onDesk(c) && c.forwarded && !['chair', 'vice', 'head'].includes(a.role) && !(c.endorsed?.to === a.id) ? 'head' : undefined;
           }
           c.history.push({
             status: next,
@@ -2136,6 +2147,7 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
           const c = get(db.cases, id);
           check(onDesk(c) && ['chair', 'vice'].includes(a.role) && a.active, 'The chairperson or Vice-Chairperson passes this on to the School Head.');
           check(!c.forwarded, 'This was already passed on to the School Head.');
+          const track = v.track === undefined || v.track === '' ? 'school' : choice(v.track, ['school', 'grievance'], 'kind of matter');
           check(['received', 'assigned'].includes(c.status), 'Only an open suggestion or concern can be passed on.');
           const text = String(v.note ?? '').trim() ? words(v.note, 'Note for the School Head', 3, 500) : '';
           c.forwarded = {
@@ -2143,6 +2155,8 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
             by: a.id,
             role: a.role
           };
+          c.track = track;
+          if (c.endorsed) c.endorsed = null;
           c.notes = c.notes || [];
           if (text) c.notes.push({
             at: at(),
@@ -2152,8 +2166,67 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
             toHead: true
           });
           // The School Head and the secretary see it from now on.
-          db.accounts.filter(x => x.active && ['head', 'secretary'].includes(x.role)).forEach(x => note(db, x.id, c.id + ' · A ' + c.kind + ' was passed on to the School Head by the ' + (roles[a.role] || a.role) + '.' + (text ? ' A note is attached.' : '')));
+          db.accounts.filter(x => x.active && ['head', 'secretary'].includes(x.role)).forEach(x => note(db, x.id, c.id + ' · A ' + c.kind + (track === 'grievance' ? ' about a dispute between PTA members' : '') + ' was passed on to the School Head by the ' + (roles[a.role] || a.role) + '.' + (text ? ' A note is attached.' : '')));
           changed('Private case passed on to the School Head');
+          break;
+        }
+      case 'caseEndorse':
+        {
+          // An SPTA matter: the chairperson or Vice-Chairperson asks one officer, often a section president, to handle it.
+          const c = get(db.cases, id);
+          check(onDesk(c) && ['chair', 'vice'].includes(a.role) && a.active, 'The chairperson or Vice-Chairperson endorses a suggestion or concern.');
+          check(!c.forwarded && !c.protection, 'This was already passed on to the School Head.');
+          check(['received', 'assigned'].includes(c.status), 'Only an open suggestion or concern can be endorsed.');
+          if (v.back === true) {
+            check(c.endorsed, 'This is not endorsed to anyone.');
+            c.endorsed = null;
+            changed('Private case taken back from the endorsed officer');
+            break;
+          }
+          const to = account(db, v.to);
+          check(to && to.active && boardRoles.includes(to.role) && !['chair', 'vice'].includes(to.role), 'Choose an active SPTA officer.');
+          check(to.id !== c.owner, 'You cannot endorse this to the person who sent it.');
+          const text = String(v.note ?? '').trim() ? words(v.note, 'What you need done', 3, 500) : '';
+          c.endorsed = {
+            to: to.id,
+            at: at(),
+            by: a.id,
+            role: a.role
+          };
+          c.track = 'spta';
+          c.notes = c.notes || [];
+          if (text) c.notes.push({
+            at: at(),
+            by: a.id,
+            role: a.role,
+            text
+          });
+          note(db, to.id, c.id + ' · The ' + (roles[a.role] || a.role) + ' endorsed a ' + c.kind + ' to you. Open Assigned feedback to act on it.');
+          changed('Private case endorsed to an officer');
+          break;
+        }
+      case 'caseProtect':
+        {
+          // A possible child-protection concern leaves the SPTA queue at once and goes to the School Head only.
+          const c = get(db.cases, id);
+          check(onDesk(c) && ['chair', 'vice'].includes(a.role) && a.active, 'The chairperson or Vice-Chairperson refers this to the School Head.');
+          check(!c.protection, 'This was already referred.');
+          check(!['resolved', 'withdrawn'].includes(c.status), 'This is already closed.');
+          c.protection = {
+            at: at(),
+            by: a.id,
+            role: a.role
+          };
+          c.track = 'protection';
+          c.endorsed = null;
+          c.forwarded = c.forwarded || {
+            at: at(),
+            by: a.id,
+            role: a.role
+          };
+          c.due = today();
+          db.accounts.filter(x => x.active && x.role === 'head').forEach(x => note(db, x.id, c.id + ' · URGENT · A possible child-protection concern was referred to you. Please act on it today under the school’s child protection procedure.'));
+          changed('Possible child-protection concern referred to the School Head');
           break;
         }
       case 'caseNote':
@@ -2177,9 +2250,9 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
             } : {})
           });
           // Tell the other people who can read it that there is something new.
-          const to = ['chair', 'vice'];
-          if (c.forwarded) to.push('head', 'secretary');
-          db.accounts.filter(x => x.active && to.includes(x.role) && x.id !== a.id).forEach(x => note(db, x.id, c.id + ' · A new note from the ' + (roles[a.role] || a.role) + '.'));
+          const to = c.protection ? ['head'] : ['chair', 'vice'];
+          if (c.forwarded && !c.protection) to.push('head', 'secretary');
+          db.accounts.filter(x => x.active && (to.includes(x.role) || c.endorsed?.to === x.id) && x.id !== a.id).forEach(x => note(db, x.id, c.id + ' · A new note from the ' + (roles[a.role] || a.role) + '.'));
           changed('Private case note added');
           break;
         }
@@ -2731,6 +2804,13 @@ function visible(db, me) {
     history: c.history.map(h => ({
       ...h
     }))
+  } : c).map(c => c.endorsed?.to === me.id && c.owner !== me.id && !E.leaders.includes(me.role) ? {
+    // An officer handling an endorsed case sees the sender's grade and section, not their name.
+    ...c,
+    owner: '',
+    sender: c.sender ? {
+      homeroom: c.sender.homeroom
+    } : undefined
   } : c).map(c => c.owner === me.id && !E.canSeeCase({
     id: '',
     role: me.role
@@ -2740,7 +2820,11 @@ function visible(db, me) {
     notes: undefined,
     replyBy: c.kind !== 'inspection' && E.onDesk(c) ? undefined : c.replyBy,
     // The sender is not told which officers read it, or that it moved.
-    forwarded: null
+    forwarded: null,
+    endorsed: undefined,
+    protection: undefined,
+    track: undefined,
+    replyFor: undefined
   } : c);
   out.trends = {};
   if (lead) for (const c of db.cases) out.trends[c.category] = (out.trends[c.category] || 0) + 1;

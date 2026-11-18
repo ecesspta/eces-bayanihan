@@ -144,6 +144,13 @@ function visible(db, me) {
     history: c.history.map(h => ({
       ...h
     }))
+  } : c).map(c => c.endorsed?.to === me.id && c.owner !== me.id && !E.leaders.includes(me.role) ? {
+    // An officer handling an endorsed case sees the sender's grade and section, not their name.
+    ...c,
+    owner: '',
+    sender: c.sender ? {
+      homeroom: c.sender.homeroom
+    } : undefined
   } : c).map(c => c.owner === me.id && !E.canSeeCase({
     id: '',
     role: me.role
@@ -153,7 +160,11 @@ function visible(db, me) {
     notes: undefined,
     replyBy: c.kind !== 'inspection' && E.onDesk(c) ? undefined : c.replyBy,
     // The sender is not told which officers read it, or that it moved.
-    forwarded: null
+    forwarded: null,
+    endorsed: undefined,
+    protection: undefined,
+    track: undefined,
+    replyFor: undefined
   } : c);
   out.trends = {};
   if (lead) for (const c of db.cases) out.trends[c.category] = (out.trends[c.category] || 0) + 1;
