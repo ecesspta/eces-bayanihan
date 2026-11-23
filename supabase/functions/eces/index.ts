@@ -2114,8 +2114,20 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
           p.publicText = (kind === 'raise' ? 'The allocation for this approved project would rise from ' + peso(proj.budget) + ' to ' + peso(cents) + '. ' : 'This approved project would change its purpose to “' + newTitle + '”: ' + newText + ' The allocation would be ' + peso(cents) + ' (now ' + peso(proj.budget) + '). ') + 'Reason: ' + why;
           p.publicText = p.publicText.slice(0, 700);
           db.proposals.unshift(p);
-          openVote(db, p, closes);
           id = p.id;
+          if (proj.noVote) {
+            // The chairperson decided this project needs no officers' vote or resolution, so a change to it goes straight to the School Head too.
+            Object.assign(p, {
+              noVote: true,
+              noVoteBy: a.id,
+              noVoteAt: at(),
+              status: 'awaiting_head'
+            });
+            tell(db, p);
+            changed('Change to an approved project sent to the School Head (no vote or resolution needed)');
+            break;
+          }
+          openVote(db, p, closes);
           changed('Change to an approved project sent for a new officer vote');
           break;
         }

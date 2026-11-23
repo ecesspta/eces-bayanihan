@@ -3,6 +3,10 @@
 (function (root) {
   root.ECESFil = {
     exact: {
+ "This project needs no officers’ vote or resolution. A wording fix or a lower amount is recorded and shown to families right away. A higher amount, or a different purpose, goes to the School Head for approval.": "Hindi kailangan ng proyektong ito ang boto ng mga officer o resolution. Ang pagwawasto ng salita o mas mababang halaga ay itatala at ipapakita agad sa mga pamilya. Ang mas mataas na halaga o ibang layunin ay mapupunta sa School Head para aprubahan.",
+ "Raise the amount · School Head approval needed": "Taasan ang halaga · kailangan ang approval ng School Head",
+ "Change what the money is for · School Head approval needed": "Baguhin kung saan gagamitin ang pera · kailangan ang approval ng School Head",
+ "Change recorded. A higher amount or a new purpose now waits for the officers’ vote or the School Head.": "Naitala ang pagbabago. Ang mas mataas na halaga o bagong layunin ay naghihintay na ngayon ng boto ng mga officer o ng School Head.",
  "+ Money in since then": "+ Perang pumasok mula noon",
  "− Money out since then": "− Perang lumabas mula noon",
  "The starting balance is the money the SPTA already had when it began using this app.": "Ang panimulang balanse ay ang perang hawak na ng SPTA nang magsimula itong gumamit ng app na ito.",
