@@ -3372,10 +3372,12 @@ function createApi(store, config = {}) {
       return credentials;
     });
   }
+  // A receipt posted to the funds log never changes under its key, and anyone may open it.
+  const isPublicReceipt = (db, key) => db.ledger.some(x => x.receipt?.key === key) || db.batches.some(b => b.chairRecord && b.status === 'posted' && b.file?.key === key && db.ledger.some(x => x.batch === b.id));
   async function canReadFile(db, me, key, tx) {
     if (db.projects.some(p => (p.photos || []).some(x => x.file.key === key && (x.status || 'approved') === 'approved'))) return true;
     // Project receipts the Chairperson posted are public, so families can check each line of the funds log.
-    if (db.ledger.some(x => x.receipt?.key === key) || db.batches.some(b => b.chairRecord && b.status === 'posted' && b.file?.key === key && db.ledger.some(x => x.batch === b.id))) return true;
+    if (isPublicReceipt(db, key)) return true;
     if (!me) return false;
     // A profile picture is seen only by the person it belongs to.
     if (key === 'avatar-' + me.id) return true;
@@ -3667,7 +3669,7 @@ function createApi(store, config = {}) {
           out.headers['Content-Security-Policy'] = "sandbox; default-src 'none'";
           out.headers['Content-Type'] = f.mime;
           // An approved project photo never changes under its key, so the phone may keep it. Everything else is private and not stored.
-          const publicPhoto = db.projects.some(p => (p.photos || []).some(x => x.file.key === key && (x.status || 'approved') === 'approved'));
+          const publicPhoto = db.projects.some(p => (p.photos || []).some(x => x.file.key === key && (x.status || 'approved') === 'approved')) || isPublicReceipt(db, key);
           out.headers['Cache-Control'] = publicPhoto ? 'private, max-age=31536000, immutable' : 'private, no-store';
           out.body = Buffer.from(f.data);
           return out;

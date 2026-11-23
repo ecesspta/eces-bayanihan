@@ -1056,3 +1056,5 @@ img[data-photo].failed {visibility:visible}
 .balance-math div {display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:5px 0}
 .balance-math b {font-size:16px;white-space:nowrap}
 .balance-math + .balance-carry {margin-top:8px}
+
+.attachment-loading {padding:48px 8px;text-align:center;color:var(--muted,#5f6b7a)}

@@ -3,6 +3,7 @@
 (function (root) {
   root.ECESFil = {
     exact: {
+ "Loading receipt…": "Nilo-load ang resibo…",
  "Choose Proceed, Do not proceed or Abstain.": "Piliin ang Ituloy, Huwag ituloy o Abstain.",
  "Proposal sent to the SPTA. You can follow it under My updates.": "Naipadala ang proposal sa SPTA. Masusubaybayan mo ito sa My updates.",
  "Revised proposal sent. You can follow it under My updates.": "Naipadala ang binagong proposal. Masusubaybayan mo ito sa My updates.",

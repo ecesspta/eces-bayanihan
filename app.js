@@ -1175,6 +1175,7 @@
     if (kind === 'attachment') {
       const f = ui.attachment,
         url = f?.url || '';
+      if (f?.loading) return [f.title || 'Supporting original', '<p class="attachment-loading" role="status">Loading receipt…</p>'];
       return [f?.title || 'Supporting original', para(f?.title ? '' : f?.name || '') + (f?.type === 'application/pdf' ? '<object class="attachment-pdf" data="' + esc(url) + '" type="application/pdf"><p>Use the file link below to open this PDF.</p></object>' : '<img class="attachment-image" alt="Uploaded supporting document" src="' + esc(url) + '">') + '<a class="btn light" href="' + esc(url) + '" target="_blank" rel="noopener noreferrer">Open file in a new tab</a>'];
     }
     if (kind === 'withdrawFinance' || kind === 'withdrawMinutes' || kind === 'withdrawRequest') {
@@ -1201,7 +1202,7 @@
     return ['Account', empty('This action is unavailable.')];
   }
   function cleanAttachment() {
-    if (ui.attachment?.url?.startsWith('blob:')) URL.revokeObjectURL(ui.attachment.url);
+    if (!ui.attachment?.keep && ui.attachment?.url?.startsWith('blob:')) URL.revokeObjectURL(ui.attachment.url);
     ui.attachment = null;
   }
   function openDialog(kind, id) {
@@ -1367,21 +1368,42 @@
     return id;
   }
   // A project receipt, opened by anyone from the funds log or the project's Details.
+  // Receipts already opened on this phone, by file key. A posted receipt never changes, so it is kept for the visit.
+  const receiptUrls = new Map();
   async function receiptFile(id) {
     const line = db().ledger.find(x => x.id === id);
     if (!line?.receipt) throw Error('This receipt is not available.');
-    const url = await S.fileURL(line.receipt);
+    const meta = line.receipt, ready = receiptUrls.get(meta.key);
     cleanAttachment();
+    // Open the window at once; the picture fills in when it arrives.
     ui.attachment = {
-      ...line.receipt,
-      url,
-      title: 'Receipt'
+      ...meta,
+      url: ready || '',
+      title: 'Receipt',
+      loading: !ready,
+      keep: true
     };
     if (ui.dialog) ui.back = {
       kind: ui.dialog,
       id: ui.id
     };
     openDialog('attachment', id);
+    if (ready) return;
+    try {
+      const url = await S.fileURL(meta, true);
+      receiptUrls.set(meta.key, url);
+      if (ui.dialog === 'attachment' && ui.attachment?.key === meta.key) {
+        ui.attachment = {
+          ...ui.attachment,
+          url,
+          loading: false
+        };
+        render();
+      }
+    } catch (e) {
+      if (ui.dialog === 'attachment' && ui.attachment?.key === meta.key) closeDialog();
+      throw e;
+    }
   }
   async function attachment(type, id) {
     const item = type === 'evidence' ? db().batches.find(x => x.id === id) : db().minutes.find(x => x.id === id);
