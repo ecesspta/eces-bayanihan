@@ -124,6 +124,8 @@
     voteDays = 30,
     coverRoles = ['secretary', 'treasurer', 'collector'];
   // The school year is taken to start in June.
+  // Project changes that involve money. Families see only these; wording fixes and reopenings are for officers.
+  const moneyChanges = ['lower', 'raise', 'restore', 'purpose'];
   // The Privacy Notice version a person agrees to when they register.
   const PRIVACY_VERSION = '2026-11c';
   const voteCloses = b => b.closes || plusDays(b.date, voteDays);
@@ -2972,6 +2974,7 @@
     canAnnounce,
     hasDelegation,
     projectSpend,
+    moneyChanges,
     peso,
     correctionNote,
     amendOpen,

@@ -229,14 +229,15 @@
   // Each card shows the few things people look for first; the rest opens under Details.
   // What changed on an approved project, in plain words.
   function changeLog(p) {
-    const lines = (p.history || []).map(h => {
+    // Families see only changes that involve money. Officers and the School Head see every change.
+    const lines = (p.history || []).filter(h => officerLike() || E.moneyChanges.includes(h.kind)).map(h => {
       const when = date(h.at.slice(0, 10));
       if (h.kind === 'wording') return 'Wording corrected on ' + when + '.' + (h.reason ? ' ' + h.reason : '');
       if (h.kind === 'lower') return 'Allocation lowered from ' + cash(h.from) + ' to ' + cash(h.to) + ' on ' + when + '. ' + h.reason;
-      if (h.kind === 'raise') return 'Allocation raised from ' + cash(h.from) + ' to ' + cash(h.to) + ' on ' + when + ', after a new officer vote and the School Head’s approval. ' + h.reason;
+      if (h.kind === 'raise') return 'Allocation raised from ' + cash(h.from) + ' to ' + cash(h.to) + ' on ' + when + (p.noVote ? ', after the School Head’s approval. ' : ', after a new officer vote and the School Head’s approval. ') + h.reason;
       if (h.kind === 'restore') return 'Allocation put back from ' + cash(h.from) + ' to ' + cash(h.to) + ' on ' + when + ', an amount the officers had already approved. ' + h.reason;
       if (h.kind === 'reopen') return 'Reopened on ' + when + ' after it was marked completed. ' + h.reason;
-      return 'Purpose changed from “' + h.before + '” on ' + when + ', after a new officer vote and the School Head’s approval. Allocation ' + cash(h.to) + '. ' + h.reason;
+      return 'Purpose changed from “' + h.before + '” on ' + when + (p.noVote ? ', after the School Head’s approval.' : ', after a new officer vote and the School Head’s approval.') + ' Allocation ' + cash(h.to) + '. ' + h.reason;
     });
     return lines.length ? '<div class="change-log"><b>Changes</b>' + lines.map(x => '<p>' + esc(x) + '</p>').join('') + '</div>' : '';
   }

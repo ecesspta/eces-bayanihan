@@ -185,6 +185,8 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
     voteDays = 30,
     coverRoles = ['secretary', 'treasurer', 'collector'];
   // The school year is taken to start in June.
+  // Project changes that involve money. Families see only these; wording fixes and reopenings are for officers.
+  const moneyChanges = ['lower', 'raise', 'restore', 'purpose'];
   // The Privacy Notice version a person agrees to when they register.
   const PRIVACY_VERSION = '2026-11c';
   const voteCloses = b => b.closes || plusDays(b.date, voteDays);
@@ -3033,6 +3035,7 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
     canAnnounce,
     hasDelegation,
     projectSpend,
+    moneyChanges,
     peso,
     correctionNote,
     amendOpen,
@@ -3164,10 +3167,16 @@ function visible(db, me) {
     created: p.created
   });
   // Photos waiting for the Chairperson's approval, or returned, are seen only by the School Head, Chairperson and Vice-Chairperson.
-  out.projects = db.projects.map(p => p.photos ? {
+  // Families see only the money changes on a project; wording fixes and reopenings stay with the officers and the School Head.
+  out.projects = db.projects.map(p => ({
     ...p,
-    photos: lead ? p.photos : p.photos.filter(x => (x.status || 'approved') === 'approved')
-  } : p);
+    ...(p.photos ? {
+      photos: lead ? p.photos : p.photos.filter(x => (x.status || 'approved') === 'approved')
+    } : {}),
+    ...(p.history && !(board || lead) ? {
+      history: p.history.filter(h => E.moneyChanges.includes(h.kind))
+    } : {})
+  }));
   // A project receipt the Chairperson posted is public. Older lines find it from their posted record.
   const receiptOf = x => x.receipt || db.batches.find(b => b.id === x.batch && b.chairRecord && b.status === 'posted' && b.file)?.file;
   out.ledger = db.ledger.map(x => ({

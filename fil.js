@@ -1994,6 +1994,8 @@
       [/^A change to this project is waiting for a new officer vote or the School Head’s decision\. The allocation stays (₱[\d,\.]+) until then\.$/, "May pagbabago sa proyektong ito na naghihintay ng bagong boto ng mga officer o ng desisyon ng School Head. Mananatiling {1} ang allocation hanggang doon."],
       [/^Wording corrected on (.+?)\. (.+)$/, "Naitama ang pananalita noong {1}. {2}"],
       [/^Allocation lowered from (₱[\d,\.]+) to (₱[\d,\.]+) on (.+?)\. (.+)$/, "Ibinaba ang allocation mula {1} patungong {2} noong {3}. {4}"],
+      [/^Allocation raised from (₱[\d,\.]+) to (₱[\d,\.]+) on (.+?), after the School Head’s approval\. (.+)$/, "Itinaas ang allocation mula {1} patungong {2} noong {3}, matapos ang approval ng School Head. {4}"],
+      [/^Purpose changed from “(.+)” on (.+?), after the School Head’s approval\. Allocation (₱[\d,\.]+)\. (.+)$/, "Binago ang purpose mula sa “{1}” noong {2}, matapos ang approval ng School Head. Allocation {3}. {4}"],
       [/^Allocation raised from (₱[\d,\.]+) to (₱[\d,\.]+) on (.+?), after a new officer vote and the School Head’s approval\. (.+)$/, "Itinaas ang allocation mula {1} patungong {2} noong {3}, matapos ang bagong boto ng mga officer at approval ng School Head. {4}"],
       [/^Purpose changed from “(.+)” on (.+?), after a new officer vote and the School Head’s approval\. Allocation (₱[\d,\.]+)\. (.+)$/, "Binago ang purpose mula sa “{1}” noong {2}, matapos ang bagong boto ng mga officer at approval ng School Head. Allocation {3}. {4}"],
       [/^(\d+) days ago$/, "{1} araw na ang nakalipas"],
