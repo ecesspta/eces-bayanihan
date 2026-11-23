@@ -178,17 +178,15 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
     return s.toLowerCase();
   }
   // Sarah's rules: two accounts a phone, a month to vote unless the date is changed,
-  // four direct chairperson proposals a school year, and the chairperson may stand in for three officers.
+  // and the chairperson may stand in for three officers.
   // Anti-spam: one phone may send only a few proposals, suggestions and concerns, however many accounts it uses.
   const submissionsPerDay = 2, submissionsPerWeek = 3, photosPerCase = 2;
   const hiddenPerMonth = 2,
     accountsPerDevice = 2,
     voteDays = 30,
-    directPerYear = 4,
     coverRoles = ['secretary', 'treasurer', 'collector'];
   // The school year is taken to start in June.
   const schoolYear = d => Number(d.slice(0, 4)) - (Number(d.slice(5, 7)) >= 6 ? 0 : 1);
-  const directUsed = db => db.proposals.filter(x => x.direct && !x.noVote && x.status !== 'withdrawn' && schoolYear(x.created) === schoolYear(today())).length;
   const voteCloses = b => b.closes || plusDays(b.date, voteDays);
   // Notes each device an account signs in from, newest last. The first entry is where the account was created.
   function seenOn(db, id, device) {
@@ -1545,6 +1543,8 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
             p.status = 'screened';
             p.reason = '';
             if (v.noVote === true) {
+              // The chairperson judges whether a project needs the officers' vote and a resolution. Nobody else can decide that.
+              check(isChair(db, a), 'Only the chairperson decides that a project needs no officers’ vote or resolution.');
               // Sarah, Nov 2026: some projects (for example replacing toilet bowls) need documentation and approval, but no vote or resolution.
               // The chairperson ticks this; it goes straight to the School Head. There is no limit on the amount.
               p.noVote = true;
@@ -1577,8 +1577,6 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
           // Sarah's rule: the chairperson may add a proposal that skips screening and the officers' vote
           // and goes straight to the School Head. It is marked as such everywhere, including the resolution.
           financeReview(db, a);
-          // A project that needs no officers' vote or resolution (a repair, for example) does not use up one of the direct proposals.
-          if (v.noVote !== true) check(directUsed(db) < directPerYear, 'The chairperson can add up to ' + directPerYear + ' direct proposals each school year. Send this one through the officers’ vote.');
           const p = {
             id: newId(db, 'P'),
             title: words(v.title, 'Title', 4, 100),
@@ -2891,8 +2889,6 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
     accountsPerDevice,
     voteDays,
     voteCloses,
-    directPerYear,
-    directUsed,
     coverRoles,
     covering,
     holds,

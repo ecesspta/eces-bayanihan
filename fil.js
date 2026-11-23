@@ -3,6 +3,7 @@
 (function (root) {
   root.ECESFil = {
     exact: {
+ "Use this for a project the officers have already agreed on, or one that you decide needs no vote or resolution.": "Gamitin ito para sa proyektong napagkasunduan na ng mga officer, o proyektong ikaw ang nagpasyang hindi nangangailangan ng botohan o resolution.",
  "School Head already approved": "Aprubado na ng School Head",
  "Record the School Head’s approval": "I-record ang approval ng School Head",
  "Use this when the School Head has already approved this project, for example at a meeting or by message.": "Gamitin ito kapag naaprubahan na ng School Head ang proyektong ito, halimbawa sa meeting o sa mensahe.",
