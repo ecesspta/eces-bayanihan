@@ -359,6 +359,10 @@
   });
   // Re-draw the photo as a JPEG of at most 1600 pixels. This also drops any location or camera details stored inside the original.
   // If the browser cannot re-draw it, the original is used as it is.
+  // Every picture that enters the app is prepared the same way: at most 1600 pixels on its longest side, saved as a JPEG.
+  // PDFs and other files go up unchanged.
+  const isPicture = file => /^image\//i.test(file?.type || '') || /\.(jpe?g|png|webp|heic|heif|gif|bmp)$/i.test(file?.name || '');
+  const prepareUpload = file => file?.size && isPicture(file) ? shrinkImage(file) : file;
   async function shrinkImage(file) {
     const draw = async () => {
       let bmp;
@@ -1859,11 +1863,11 @@
         delete payload.evidence2;
         if (shots.some(x => !/^image\/(jpeg|png|webp)$/.test(x.type))) throw Error('Photos must be JPG, PNG or WEBP.');
         payload.photos = [];
-        for (const shot of shots) payload.photos.push(await within(S.fileMeta(await shrinkImage(shot)), 45000, 'Saving the photo took too long. Check your connection and try again.'));
+        for (const shot of shots) payload.photos.push(await within(S.fileMeta(await prepareUpload(shot)), 45000, 'Saving the photo took too long. Check your connection and try again.'));
       }
       let file = data.get('attachment');
-      if (file?.size && (action === 'projectPhoto' || action === 'projectReceipt' && file.type !== 'application/pdf')) file = await shrinkImage(file);
-      if (file?.size) payload.file = await within(S.fileMeta(file), 30000, 'Saving the file took too long. Check your connection and try again.');else if (action === 'financeSubmit' && ui.scan?.stage === 'done') payload.file = ui.scan.meta ||= await S.fileMeta(ui.scan.file);
+      if (file?.size) file = await prepareUpload(file);
+      if (file?.size) payload.file = await within(S.fileMeta(file), 30000, 'Saving the file took too long. Check your connection and try again.');else if (action === 'financeSubmit' && ui.scan?.stage === 'done') payload.file = ui.scan.meta ||= await S.fileMeta(await prepareUpload(ui.scan.file));
       if (['submitProposal', 'caseSubmit', 'resubmit'].includes(action)) ui.tab = 'updates';
       if (action === 'headDecision' && payload.decision === 'approve' || action === 'headApproved') ui.tab = 'projects';
       await change(action, payload, token);
