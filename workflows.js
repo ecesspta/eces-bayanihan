@@ -1970,7 +1970,8 @@
           check(['approved', 'in_progress'].includes(proj.status), 'Only a project that has not ended can be changed.');
           check(!amendOpen(db, proj.id), 'A change to this project is already waiting for a vote or decision.');
           const kind = choice(v.kind, ['wording', 'lower', 'raise', 'purpose'], 'kind of change');
-          const why = words(v.reason, 'Reason for the change', 8, 350);
+          // A wording fix needs no reason. Every other change tells families why.
+          const why = kind === 'wording' ? '' : words(v.reason, 'Reason for the change', 8, 350);
           proj.history = proj.history || [];
           if (kind === 'wording') {
             check(v.sameMeaning === true, 'Confirm that this wording change does not change what the money is for.');
