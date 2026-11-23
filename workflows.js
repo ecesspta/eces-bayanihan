@@ -1150,7 +1150,7 @@
     }
     // Records the School Head's approval of a proposal: the project, and a draft resolution unless the project needs no vote or resolution.
     // The School Head approves in the app. The chairperson may instead record that the School Head already approved (byChair).
-    function approveProposal(p, w, byChair) {
+    function approveProposal(p, w, byChair, addedNow) {
       const vote = p.direct || p.noVote ? null : get(db.ballots, p.ballot);
       if (vote) check(p.status === 'awaiting_head' && vote.status === 'closed' && vote.passed && vote.rev === p.rev, 'A closed passing vote on this version is required.');else check(p.status === 'awaiting_head', 'This proposal is not waiting for the School Head.');
       // Without a vote, the details come from the chairperson's proposal.
@@ -1168,7 +1168,8 @@
       const approvedOn = byChair && w.date ? dateValue(w.date) : '';
       if (approvedOn) {
         check(approvedOn <= today(), 'The School Head approval cannot be in the future.');
-        check(approvedOn >= p.created, 'The School Head approval cannot be before the proposal was added.');
+        // A project the chairperson adds now may have been approved by the School Head days earlier.
+        if (!addedNow) check(approvedOn >= p.created, 'The School Head approval cannot be before the proposal was added.');
       }
       if (p.fundraising) {
         p.ga = words(w.ga, 'General Assembly agreement reference', 3, 150);
@@ -1549,7 +1550,7 @@
           if (v.headApproved === true) approveProposal(p, {
             ...v,
             decision: 'approve'
-          }, true);
+          }, true, true);
           break;
         }
       case 'resubmit':

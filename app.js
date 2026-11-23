@@ -1682,7 +1682,7 @@
     ui.busy = true;
     const submitButton = f.querySelector('[type="submit"]');
     submitButton.disabled = true;
-    const idleLabel = submitButton.textContent;
+    const idleLabel = submitButton.innerHTML;
     if (f.dataset.form === 'projectPhoto') submitButton.textContent = 'Publishing…';
     const action = f.dataset.form,
       data = new FormData(f),
@@ -1791,7 +1791,8 @@
     } finally {
       ui.busy = false;
       submitButton.disabled = false;
-      submitButton.textContent = idleLabel;
+      submitButton.innerHTML = idleLabel;
+      updateConditions(f);
     }
   });
   document.addEventListener('keydown', e => {
