@@ -732,8 +732,10 @@
         direction + ' · ' + esc(date(entry.date)) + (project ? ' · ' + esc(project) : '') + '</div>' + (entry.receipt ? '<button type="button" class="receipt-link" data-do="receipt" data-id="' + esc(entry.id) + '">' + icon('file', 'sm') + '<span>View receipt</span></button>' : '') + (explain ? '<p class="correction-note">' + esc(explain) + '</p>' : '') + '</li>';
     }).join('');
     const summary = '<section class="balance-card" aria-label="SPTA Cash Balance"><h2>SPTA Cash Balance</h2><strong>' + cash(fund.balance) +
-      '</strong>' + (db().opening > 0 ? '<small class="balance-carry">Includes ' + cash(db().opening) + ' carried over from earlier this school year, as of ' + esc(date(db().openingAsOf)) + '.</small>' : '') + '<div class="balance-flows"><div>Money In<b>' + cash(total('in')) + '</b></div><div>Money Out<b>' +
-      cash(total('out')) + '</b></div></div></section>';
+      '</strong>' + (db().opening > 0
+      // Show the math, so families see the app started with money the SPTA already had.
+      ? '<div class="balance-math"><div><span>Starting balance · ' + esc(date(db().openingAsOf)) + '</span><b>' + cash(db().opening) + '</b></div><div><span>+ Money in since then</span><b>' + cash(total('in')) + '</b></div><div><span>− Money out since then</span><b>' + cash(total('out')) + '</b></div></div><small class="balance-carry">The starting balance is the money the SPTA already had when it began using this app.</small>'
+      : '<div class="balance-flows"><div>Money In<b>' + cash(total('in')) + '</b></div><div>Money Out<b>' + cash(total('out')) + '</b></div></div>') + '</section>';
     const allocations = '<div class="fund-split"><div><span>Set Aside for Projects and Activities</span><b>' + cash(fund.committed) +
       '</b></div><div class="' + (fund.available > 0 ? 'ok' : 'short') + '"><span>Available for New Proposals</span><b>' + cash(fund.available) + '</b></div></div>';
     return '<div class="funds-page">' + summary + '<p class="balance-note">SPTA officers manage these voluntary contributions and fundraising proceeds. They are not the school’s funds.</p>' +

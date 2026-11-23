@@ -1050,3 +1050,9 @@ img[data-photo].failed {visibility:visible}
 
 /* Approved Transactions scrolls inside its card, so a long log does not make the page long. */
 .movement-list {max-height:340px;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+
+/* Cash balance broken down: starting balance, money in, money out. */
+.balance-math {margin-top:14px;padding-top:10px;border-top:1px solid #64768c;font-size:14px}
+.balance-math div {display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:5px 0}
+.balance-math b {font-size:16px;white-space:nowrap}
+.balance-math + .balance-carry {margin-top:8px}

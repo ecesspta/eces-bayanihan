@@ -3,6 +3,9 @@
 (function (root) {
   root.ECESFil = {
     exact: {
+ "+ Money in since then": "+ Perang pumasok mula noon",
+ "− Money out since then": "− Perang lumabas mula noon",
+ "The starting balance is the money the SPTA already had when it began using this app.": "Ang panimulang balanse ay ang perang hawak na ng SPTA nang magsimula itong gumamit ng app na ito.",
  "View receipt": "Tingnan ang resibo",
  "Receipt": "Resibo",
  "This receipt is not available.": "Hindi available ang resibong ito.",
@@ -1860,6 +1863,7 @@
       [/^East Central Elementary School SPTA · (.+)$/, "SPTA ng East Central Elementary School · {1}"],
       [/^(\d+) parent supporters$/, "{1} magulang ang sumusuporta"],
       [/^(\d+)% done$/, "{1}% tapos na"],
+      [/^Starting balance · (.+)$/, "Panimulang balanse · {1}"],
       [/^Added by the (.+)\. It is public once you approve it\.$/, "Idinagdag ng {1}. Magiging pampubliko ito kapag inaprubahan mo."],
       [/^SPTA matter · Endorsed to the (.+) · (.+)$/, "Usapin ng SPTA · Na-endorse sa {1} · {2}"],
       [/^Receipts \((\d+)\)$/, "Mga resibo ({1})"],
