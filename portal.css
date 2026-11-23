@@ -1044,3 +1044,6 @@ img[data-photo].failed {visibility:visible}
 .badge.cp_ack {background:#efe8ff;color:#5b3fa8}
 .tracker li span {hyphens:auto;-webkit-hyphens:auto}
 .tracker:has(li:nth-child(5)) li {font-size:10px}
+
+.receipt-link {display:inline-flex;align-items:center;gap:4px;margin-top:6px;padding:0;border:0;background:none;color:var(--blue,#1d4ed8);font:inherit;font-size:.85rem;font-weight:600;cursor:pointer;text-decoration:underline;text-underline-offset:2px}
+.receipt-link svg {width:14px;height:14px}

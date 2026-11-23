@@ -408,10 +408,8 @@
     const rows = db().ledger.filter(x => x.project === p.id);
     const chairCan = me().role === 'chair' && !p.past && ['approved', 'in_progress', 'completed'].includes(p.status);
     if (!rows.length && !chairCan) return '';
-    const open = canChair() || holds('treasurer');
     const lines = rows.map(x => {
-      const b = db().batches.find(d => d.id === x.batch);
-      return '<div class="list-line"><span>' + esc(date(x.date)) + (x.direction === 'in' ? ' · correction' : '') + '</span><b>' + (x.direction === 'in' ? '−' : '') + cash(x.cents) + '</b>' + (open && b?.file ? btn('Open', 'evidence', b.id) : '') + '</div>';
+      return '<div class="list-line"><span>' + esc(date(x.date)) + (x.direction === 'in' ? ' · correction' : '') + '</span><b>' + (x.direction === 'in' ? '−' : '') + cash(x.cents) + '</b>' + (x.receipt ? btn('View receipt', 'receipt', x.id) : '') + '</div>';
     }).join('');
     return '<details class="proj-details"><summary>Receipts (' + rows.length + ')</summary>' + (lines || '<div class="entry-meta">No receipts yet.</div>') + (chairCan && rows.length ? btn('Correct amount spent', 'dlg:spent', p.id) : '') + '</details>';
   }
@@ -726,7 +724,7 @@
       return '<li class="movement-row' + (explain ? ' corrected' : '') + '"><div class="movement-heading"><strong>' + esc(entry.purpose) +
         '</strong><b class="' + (incoming ? 'cash-in' : 'cash-out') + '">' +
         (incoming ? '+' : '−') + cash(entry.cents) + '</b></div><div class="movement-meta">' +
-        direction + ' · ' + esc(date(entry.date)) + (project ? ' · ' + esc(project) : '') + '</div>' + (explain ? '<p class="correction-note">' + esc(explain) + '</p>' : '') + '</li>';
+        direction + ' · ' + esc(date(entry.date)) + (project ? ' · ' + esc(project) : '') + '</div>' + (entry.receipt ? '<button type="button" class="receipt-link" data-do="receipt" data-id="' + esc(entry.id) + '">' + icon('file', 'sm') + '<span>View receipt</span></button>' : '') + (explain ? '<p class="correction-note">' + esc(explain) + '</p>' : '') + '</li>';
     }).join('');
     const summary = '<section class="balance-card" aria-label="SPTA Cash Balance"><h2>SPTA Cash Balance</h2><strong>' + cash(fund.balance) +
       '</strong>' + (db().opening > 0 ? '<small class="balance-carry">Includes ' + cash(db().opening) + ' carried over from earlier this school year, as of ' + esc(date(db().openingAsOf)) + '.</small>' : '') + '<div class="balance-flows"><div>Money In<b>' + cash(total('in')) + '</b></div><div>Money Out<b>' +
@@ -1170,7 +1168,7 @@
     if (kind === 'attachment') {
       const f = ui.attachment,
         url = f?.url || '';
-      return ['Supporting original', para(f?.name || '') + (f?.type === 'application/pdf' ? '<object class="attachment-pdf" data="' + esc(url) + '" type="application/pdf"><p>Use the file link below to open this PDF.</p></object>' : '<img class="attachment-image" alt="Uploaded supporting document" src="' + esc(url) + '">') + '<a class="btn light" href="' + esc(url) + '" target="_blank" rel="noopener noreferrer">Open file in a new tab</a>'];
+      return [f?.title || 'Supporting original', para(f?.title ? '' : f?.name || '') + (f?.type === 'application/pdf' ? '<object class="attachment-pdf" data="' + esc(url) + '" type="application/pdf"><p>Use the file link below to open this PDF.</p></object>' : '<img class="attachment-image" alt="Uploaded supporting document" src="' + esc(url) + '">') + '<a class="btn light" href="' + esc(url) + '" target="_blank" rel="noopener noreferrer">Open file in a new tab</a>'];
     }
     if (kind === 'withdrawFinance' || kind === 'withdrawMinutes' || kind === 'withdrawRequest') {
       const what = kind === 'withdrawFinance' ? 'finance' : kind === 'withdrawMinutes' ? 'minutes' : 'request',
@@ -1350,6 +1348,23 @@
     ui.message = (action === 'minutesUpload' && me()?.role !== 'secretary' ? 'Minutes sent to the School Head.' : success[action] || 'Saved.') + (id ? ' ' + id : '');
     render();
     return id;
+  }
+  // A project receipt, opened by anyone from the funds log or the project's Details.
+  async function receiptFile(id) {
+    const line = db().ledger.find(x => x.id === id);
+    if (!line?.receipt) throw Error('This receipt is not available.');
+    const url = await S.fileURL(line.receipt);
+    cleanAttachment();
+    ui.attachment = {
+      ...line.receipt,
+      url,
+      title: 'Receipt'
+    };
+    if (ui.dialog) ui.back = {
+      kind: ui.dialog,
+      id: ui.id
+    };
+    openDialog('attachment', id);
   }
   async function attachment(type, id) {
     const item = type === 'evidence' ? db().batches.find(x => x.id === id) : db().minutes.find(x => x.id === id);
@@ -1548,6 +1563,7 @@
         return;
       }
       if (act === 'evidence' || act === 'minuteFile') return await attachment(act, id);
+      if (act === 'receipt') return await receiptFile(id);
       if (act === 'logoutAll') {
         await S.logoutAll();
         ui.tab = 'home';

@@ -6,7 +6,7 @@
     try { window.top.location = window.self.location; } catch (e) {}
   }
   var c = {
-  "api": "https://fjbmejltekdfdbvpwqnm.supabase.co/functions/v1/eces",
+  "api": "",
   "key": ""
 };
   [['eces-api', c.api], ['eces-key', c.key]].forEach(function (p) {

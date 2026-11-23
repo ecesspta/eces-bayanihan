@@ -1189,7 +1189,9 @@
         direction,
         cents,
         project: p.id,
-        chairRecord: true
+        chairRecord: true,
+        // A project receipt is public: parents and guests can open it from this line of the funds log.
+        ...(file ? {receipt: file} : {})
       });
       return batch;
     }

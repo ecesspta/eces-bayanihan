@@ -1250,7 +1250,9 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
         direction,
         cents,
         project: p.id,
-        chairRecord: true
+        chairRecord: true,
+        // A project receipt is public: parents and guests can open it from this line of the funds log.
+        ...(file ? {receipt: file} : {})
       });
       return batch;
     }
@@ -3160,7 +3162,8 @@ function visible(db, me) {
     cents,
     project,
     corrects,
-    approver
+    approver,
+    receipt
   }) => ({
     id,
     date,
@@ -3169,7 +3172,8 @@ function visible(db, me) {
     cents,
     project,
     corrects,
-    approver
+    approver,
+    receipt
   }));
   // A hidden-name case reaches its reviewer without the sender's account or name. Only the database holds them.
   out.cases = db.cases.filter(c => E.canSeeCase(me, c) || covers && c.assigned === covers).map(c => ({
@@ -3342,6 +3346,8 @@ function createApi(store, config = {}) {
   }
   async function canReadFile(db, me, key, tx) {
     if (db.projects.some(p => (p.photos || []).some(x => x.file.key === key && (x.status || 'approved') === 'approved'))) return true;
+    // Project receipts the chairperson posted are public, so families can check each line of the funds log.
+    if (db.ledger.some(x => x.receipt?.key === key)) return true;
     if (!me) return false;
     // A profile picture is seen only by the person it belongs to.
     if (key === 'avatar-' + me.id) return true;

@@ -3,6 +3,9 @@
 (function (root) {
   root.ECESFil = {
     exact: {
+ "View receipt": "Tingnan ang resibo",
+ "Receipt": "Resibo",
+ "This receipt is not available.": "Hindi available ang resibong ito.",
  "Add receipt": "Magdagdag ng resibo",
  "Post receipt": "I-post ang resibo",
  "Receipt photo or PDF": "Larawan o PDF ng resibo",
