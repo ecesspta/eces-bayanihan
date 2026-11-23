@@ -351,8 +351,26 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
     const parts = [direct ? 'KAMI, mga opisyales at miyembro ng SPTA ng East Central Elementary School, ay nagpasiya na:' : 'KAMI, mga opisyales at miyembro ng SPTA ng East Central Elementary School, sa ' + (inApp ? 'isang botohan ng mga opisyal' : 'isang pagpupulong') + (on ? ' na ginanap noong ' + on : '') + ', ay nagpasiya na:', 'SAPAGKAT, ang proyektong “' + title + '” ay iminungkahi para sa ikabubuti ng mga mag-aaral ng East Central Elementary School' + detail + ';', direct ? 'SAPAGKAT, ang panukalang ito ay napagkasunduan ng mga opisyal ng SPTA, at ang bawat lumagda sa ibaba ay pumapayag dito;' : 'SAPAGKAT, sa botohan ng mga opisyal ng SPTA, ang panukala ay nakakuha ng ' + (t ? t.yes + ' pagsang-ayon, ' + t.no + ' pagtutol at ' + t.abstain + ' hindi pumanig' + (info.officers ? ' mula sa ' + info.officers + ' na opisyal' : '') + ', at umabot sa hinihinging 51% ng lahat ng opisyal' : 'sapat na pagsang-ayon ng mga opisyal') + ';', 'SAPAGKAT, inaprubahan ng School Head ang panukala' + (info.approved ? ' noong ' + longDate(info.approved) : '') + ';', 'SAPAGKAT, ang inilaang halaga para sa proyekto ay ' + money + ', mula sa mga boluntaryong kontribusyon at pondo ng SPTA na hiwalay sa badyet ng paaralan' + (info.fundraising ? ', at ang karagdagang kakailanganin ay malilikom sa pamamagitan ng boluntaryong fundraising' : '') + ';', 'KAYA’T, SA KAPASYAHAN NG NAKARARAMI, AY NAPAGKAYARIAN NA:', 'SEKSYON 1. Ang SPTA ay pumapayag at nagpapatibay sa proyektong “' + title + '” na may inilaang halagang ' + money + '.', 'SEKSYON 2. Ang pondo ay gagamitin lamang para sa nasabing proyekto. Ang bawat gastos ay itatala at ipapakita sa mga magulang, at magkakaroon ng maayos na liquidation.', 'SEKSYON 3. Ang pagbabago sa halaga o layunin ng proyekto ay mangangailangan ng bagong botohan ng mga opisyal at bagong pag-apruba ng School Head.', 'SEKSYON 4. Ang resolusyong ito ay kusang-loob naming pinagtibay.', 'Pinagtibay ngayong araw ng ' + longDate(info.signed || today()) + ' sa San Fabian, Pangasinan.'];
     return parts.join('\n\n');
   }
+  // A fundraising resolution: no officer vote in the app, only the wording and the board's signatures.
+  // info: details (what the activity is), purpose (what the money is for), target (optional, cents), date and meeting (optional).
+  function fundraisingText(title, info = {}) {
+    const on = longDate(info.date);
+    const target = info.target > 0 ? peso(info.target) : '';
+    const details = String(info.details || '').trim().replace(/\s+/g, ' ').replace(/[.;:]+$/, '');
+    const purpose = String(info.purpose || '').trim().replace(/\s+/g, ' ').replace(/[.;:]+$/, '');
+    return ['KAMI, mga opisyales at miyembro ng SPTA ng East Central Elementary School' + (info.meeting || on ? ', sa ' + (info.meeting ? info.meeting : 'isang pagpupulong') + (on ? ' na ginanap noong ' + on : '') : '') + ', ay nagpasiya na:',
+      'SAPAGKAT, iminungkahi ang fundraising na “' + title + '”' + (details ? ': ' + details : '') + ';',
+      'SAPAGKAT, ang malilikom na pondo ay gagamitin para sa ' + (purpose || 'mga proyekto ng SPTA para sa ikabubuti ng mga mag-aaral') + (target ? ', at ang layuning malikom ay ' + target : '') + ';',
+      'SAPAGKAT, ang pakikilahok ng mga magulang at ng komunidad ay kusang-loob at hindi sapilitan;',
+      'KAYA’T, SA KAPASYAHAN NG NAKARARAMI, AY NAPAGKAYARIAN NA:',
+      'SEKSYON 1. Ang SPTA ay pumapayag at nagpapatibay sa fundraising na “' + title + '”.',
+      'SEKSYON 2. Ang lahat ng malilikom at magagastos ay itatala sa ECES Bayanihan at ipapakita sa mga magulang, at magkakaroon ng maayos na liquidation.',
+      'SEKSYON 3. Walang magulang o mag-aaral na pipilitin o pagbabayarin nang sapilitan.',
+      'SEKSYON 4. Ang resolusyong ito ay kusang-loob naming pinagtibay.',
+      'Pinagtibay ngayong araw ng ' + longDate(info.signed || today()) + ' sa San Fabian, Pangasinan.'].join('\n\n');
+  }
   // The title line of the resolution, in the school's format.
-  const resolutionHeading = r => 'ISANG RESOLUSYON NA NAGPAPATIBAY SA PROYEKTONG “' + String(r.title || '').toUpperCase() + '” AT SA PAGLALAAN NG ' + ('₱' + (r.budget / 100).toLocaleString('en-PH', {
+  const resolutionHeading = r => r.kind === 'fundraising' ? 'ISANG RESOLUSYON NA NAGPAPATIBAY SA FUNDRAISING NA “' + String(r.title || '').toUpperCase() + '”' + (r.budget > 0 ? ' NA MAY LAYUNING MALIKOM NA ' + peso(r.budget) : '') : 'ISANG RESOLUSYON NA NAGPAPATIBAY SA PROYEKTONG “' + String(r.title || '').toUpperCase() + '” AT SA PAGLALAAN NG ' + ('₱' + (r.budget / 100).toLocaleString('en-PH', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
   }));
@@ -2152,16 +2170,80 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
             check(!db.resolutions.some(x => x.id !== r.id && x.sy === r.sy && x.no === no), 'Another resolution already has number ' + no + ' this year.');
             r.no = no;
           }
-          check(sameAmount(r.clause, r.budget), 'The resolution must state the amount the officers voted (' + peso(r.budget) + '), and no other amount. A different amount needs a new officer vote through “Change project”.');
+          // A project resolution may state only the amount the officers voted. A fundraising resolution has no voted amount.
+          if (r.kind !== 'fundraising') check(sameAmount(r.clause, r.budget), 'The resolution must state the amount the officers voted (' + peso(r.budget) + '), and no other amount. A different amount needs a new officer vote through “Change project”.');
           // The Secretary may adjust the wording. The allocation stays as voted.
-          if (v.title !== undefined) r.title = words(v.title, 'Project title', 4, 100);
-          if (v.text !== undefined) r.text = words(v.text, 'Project details', 8, 700);
+          if (v.title !== undefined) r.title = words(v.title, r.kind === 'fundraising' ? 'Fundraising title' : 'Project title', 4, 100);
+          if (v.text !== undefined) r.text = words(v.text, r.kind === 'fundraising' ? 'Fundraising details' : 'Project details', 8, 700);
           r.state = 'signing';
           r.frozen = at();
           r.releasedBy = a.id;
           // Every invited officer is told that the resolution is ready to sign.
           r.signers.forEach(x => note(db, x.id, r.id + ' · The resolution for “' + r.title + '” is ready for your signature.'));
           changed('Resolution released for signatures');
+          break;
+        }
+      case 'fundraisingResolution':
+        {
+          // The Chairperson or the Secretary starts a fundraising resolution. There is no officer vote in the app:
+          // the Secretary reviews the wording and releases it, and the board signs it as with any resolution.
+          check(isChair(db, a) || holds(db, a, 'secretary'), 'The Chairperson or the Secretary starts a fundraising resolution.');
+          const title = words(v.title, 'Fundraising title', 4, 100),
+            details = words(v.text, 'Fundraising details', 8, 700),
+            purpose = words(v.purpose, 'What the money raised is for', 4, 200),
+            target = v.target === undefined || v.target === '' ? 0 : amount(v.target, true),
+            date = v.date ? dateValue(v.date) : '',
+            meeting = String(v.meeting ?? '').trim() ? words(v.meeting, 'Where it was agreed', 4, 80) : '';
+          check(!date || date <= today(), 'The date cannot be in the future.');
+          const project = v.project ? get(db.projects, v.project) : null;
+          check(!project || ['approved', 'in_progress'].includes(project.status), 'Choose an approved or ongoing project.');
+          id = newId(db, 'R');
+          db.resolutions.unshift({
+            id,
+            kind: 'fundraising',
+            proposal: null,
+            project: project ? project.id : null,
+            version: 1,
+            state: 'draft',
+            title,
+            text: details,
+            purpose,
+            budget: target,
+            category: 'Fundraising',
+            fundraising: true,
+            ga: '',
+            ballot: null,
+            meeting,
+            date,
+            officers: null,
+            direct: false,
+            tally: null,
+            approved: null,
+            created: at(),
+            startedBy: a.id,
+            signers: db.accounts.filter(x => x.active && !x.vacant && boardRoles.includes(x.role)).map(x => ({
+              id: x.id,
+              name: x.name,
+              role: x.role,
+              homeroom: x.homeroom || ''
+            })),
+            signatures: {},
+            archive: [],
+            no: nextResolutionNumber(db, Number(today().slice(0, 4))),
+            sy: Number(today().slice(0, 4)),
+            clause: fundraisingText(title, {
+              details,
+              purpose,
+              target,
+              date,
+              meeting
+            }),
+            supersedes: [],
+            published: false
+          });
+          // The Secretary reviews the draft before it goes out for signatures.
+          db.accounts.filter(x => x.active && x.role === 'secretary' && x.id !== a.id).forEach(x => note(db, x.id, id + ' · A fundraising resolution for “' + title + '” is ready for your review.'));
+          changed('Fundraising resolution drafted');
           break;
         }
       case 'reviseResolution':
@@ -2982,6 +3064,7 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
     requiredSigners,
     signaturesPending,
     resolutionText,
+    fundraisingText,
     resolutionHeading,
     longDate,
     nextResolutionNumber,
@@ -3282,6 +3365,7 @@ function visible(db, me) {
       project: r.project,
       version: r.version,
       title: r.title,
+      kind: r.kind,
       state: r.state,
       published: r.published,
       approved: r.approved,
@@ -3292,6 +3376,9 @@ function visible(db, me) {
       ...summary,
       clause: r.clause,
       text: r.text,
+      purpose: r.purpose,
+      no: r.no,
+      sy: r.sy,
       meeting: r.meeting,
       date: r.date,
       budget: r.budget,
