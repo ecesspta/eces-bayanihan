@@ -263,26 +263,29 @@
   function openStamp(batch) {
     return batch.id + '|' + (batch.submitted || '') + '|' + batch.history.length + '|' + (batch.file?.key || 'missing');
   }
-  // A board member who joins after a resolution was drafted signs it too, as long as it is not filed yet.
-  // When every officer must sign, the newcomer is added to the required signers as well.
-  function inviteToOpenResolutions(db, member, replaces = null) {
-    if (!member.active || member.vacant || !boardRoles.includes(member.role)) return;
-    // A seat the newcomer takes over leaves the open resolutions it had not signed, so it cannot hold up filing.
-    if (replaces) db.resolutions.filter(r => ['draft', 'signing'].includes(r.state) && r.signers && !r.signatures?.[replaces]).forEach(r => {
-      r.signers = r.signers.filter(x => x.id !== replaces);
-      if (r.requiredSigners) r.requiredSigners = r.requiredSigners.filter(x => x !== replaces);
-    });
-    db.resolutions.filter(r => ['draft', 'signing'].includes(r.state) && r.signers && !r.signers.some(x => x.id === member.id)).forEach(r => {
-      r.signers.push({
-        id: member.id,
-        name: member.name,
-        role: member.role,
-        homeroom: member.homeroom || ''
+  // Only board members who have signed up appear on a resolution. A section nobody has claimed, or an officer
+  // who has not used their invite yet, is left off entirely, as if the seat did not exist.
+  const signedUp = x => !!x && x.active && !x.vacant && !x.invite && boardRoles.includes(x.role);
+  const signerOf = x => ({
+    id: x.id,
+    name: x.name,
+    role: x.role,
+    homeroom: x.homeroom || ''
+  });
+  // Keeps every resolution that is not filed yet in step with who has signed up: newcomers are added (and told, once it is
+  // out for signatures), and anyone no longer signed up is dropped unless they already responded. Filed resolutions never change.
+  function syncSigners(db, notify = false) {
+    const board = db.accounts.filter(signedUp);
+    for (const r of db.resolutions) {
+      if (!['draft', 'signing'].includes(r.state) || !Array.isArray(r.signers)) continue;
+      const had = new Set(r.signers.map(x => x.id));
+      r.signers = r.signers.filter(x => r.signatures?.[x.id] || signedUp(db.accounts.find(y => y.id === x.id)));
+      board.filter(x => !r.signers.some(y => y.id === x.id)).forEach(x => {
+        r.signers.push(signerOf(x));
+        if (notify && r.state === 'signing' && !had.has(x.id)) note(db, x.id, r.id + ' · The resolution for “' + r.title + '” is ready for your signature.');
       });
-      if (r.state !== 'signing') return;
-      if (r.requiredSigners && r.signerPolicy === 'All officers') r.requiredSigners.push(member.id);
-      note(db, member.id, r.id + ' · The resolution for “' + r.title + '” is ready for your signature.');
-    });
+      if (r.requiredSigners) r.requiredSigners = r.signerPolicy === 'All officers' ? r.signers.map(x => x.id) : r.requiredSigners.filter(id => r.signers.some(x => x.id === id));
+    }
   }
   function requiredSigners(r) {
     return r.requiredSigners || r.signers.map(s => s.id);
@@ -831,6 +834,7 @@
     };
     seenOn(db, a.id, device);
     audit(db, a, 'Officer account set up', a.id);
+    syncSigners(db, true);
     db.revision = (db.revision || 0) + 1;
     return a.id;
   }
@@ -1359,12 +1363,7 @@
         } : null,
         approved: p.approved,
         created: at(),
-        signers: db.accounts.filter(x => x.active && !x.vacant && boardRoles.includes(x.role)).map(x => ({
-          id: x.id,
-          name: x.name,
-          role: x.role,
-          homeroom: x.homeroom || ''
-        })),
+        signers: db.accounts.filter(signedUp).map(signerOf),
         signatures: {},
         archive: [],
         no: nextResolutionNumber(db, Number(today().slice(0, 4))),
@@ -1486,7 +1485,6 @@
             member.boardSeat = v.voting === true;
             member.homeroom = q.homeroom;
             q.status = 'approved_bod';
-            inviteToOpenResolutions(db, member, slot && slot.id !== member.id && slot.active === false ? slot.id : null);
           } else {
             choice(v.decision, ['return'], 'decision');
             q.status = 'rejected';
@@ -2182,12 +2180,7 @@
             approved: null,
             created: at(),
             startedBy: a.id,
-            signers: db.accounts.filter(x => x.active && !x.vacant && boardRoles.includes(x.role)).map(x => ({
-              id: x.id,
-              name: x.name,
-              role: x.role,
-              homeroom: x.homeroom || ''
-            })),
+            signers: db.accounts.filter(signedUp).map(signerOf),
             signatures: {},
             archive: [],
             no: nextResolutionNumber(db, Number(today().slice(0, 4))),
@@ -3006,6 +2999,7 @@
       default:
         throw new Error('Unknown action.');
     }
+    syncSigners(db, true);
     db.revision++;
     if (key) db.receipts.push({
       key,
@@ -3023,6 +3017,8 @@
     homeroomKey,
     openStamp,
     requiredSigners,
+    syncSigners,
+    signedUp,
     signaturesPending,
     resolutionText,
     fundraisingText,
