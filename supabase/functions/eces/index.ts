@@ -2845,6 +2845,70 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
           changed('Finance posting reviewed');
           break;
         }
+      case 'recordSpent':
+        {
+          // The chairperson records money already spent on a project, for example one that was under way before it was in the app.
+          // The difference from what the app shows becomes an approved transaction in the funds log, tied to the project.
+          check(a.role === 'chair' && a.active, 'Only the chairperson records the amount already spent on a project.');
+          const p = get(db.projects, id);
+          check(['approved', 'in_progress', 'completed'].includes(p.status), 'Choose an approved, ongoing or completed project.');
+          const total = amount(v.spent, true),
+            current = projectSpend(db, p.id),
+            diff = total - current;
+          check(diff !== 0, 'This is already the amount spent on this project.');
+          const date = v.date ? dateValue(v.date) : today();
+          check(date <= today(), 'The date cannot be in the future.');
+          const purpose = words(v.purpose, 'What the money was spent on', 3, 140);
+          const over = diff > 0 ? Math.max(0, total - Math.max(current, p.budget)) : 0;
+          const overReason = String(v.overReason ?? '').trim();
+          check(!over || overReason, 'This goes ' + peso(total - p.budget) + ' over the project allocation. Explain why in “Why it is over the allocation”.');
+          const overWhy = over ? words(overReason, 'Why it is over the allocation', 6, 300) : '';
+          if (diff > 0) check(diff <= fundBalance(db), 'The SPTA cash balance (' + peso(fundBalance(db)) + ') is lower than this amount. Record the money received first.');
+          const cents = Math.abs(diff),
+            direction = diff > 0 ? 'out' : 'in';
+          id = newId(db, 'F');
+          db.batches.unshift({
+            id,
+            direction,
+            date,
+            purpose,
+            receipt: 'Recorded by the chairperson · ' + id,
+            cents,
+            items: [{
+              description: purpose,
+              cents
+            }],
+            project: p.id,
+            file: null,
+            noPaper: direction === 'out' ? 'Amount spent recorded by the chairperson.' : 'Correction to the amount spent, recorded by the chairperson.',
+            over,
+            overWhy,
+            owner: a.id,
+            status: 'posted',
+            handover: false,
+            checkedBy: '',
+            checkedAt: '',
+            history: [],
+            submitted: at(),
+            adjustment: '',
+            chairRecord: true,
+            reviewedBy: a.id,
+            reviewedAt: at()
+          });
+          db.ledger.unshift({
+            id: newId(db, 'L'),
+            batch: id,
+            date,
+            purpose,
+            direction,
+            cents,
+            project: p.id,
+            chairRecord: true
+          });
+          id = p.id;
+          changed('Chairperson recorded the amount spent on the project: ' + peso(total) + ' (was ' + peso(current) + ')');
+          break;
+        }
       case 'automationSetting':
         allows(a, ['head']);
         db.settings[choice(v.setting, ['ack', 'reminders'], 'setting')] = v.enabled === true;

@@ -415,6 +415,7 @@
     if (onRole(E.leaders) && (active || p.status === 'completed')) buttons += btn('Add photo', 'dlg:photoAdd', p.id);
     if (onRole(E.leaders) && p.status === 'completed' && !p.past) buttons += btn('Reopen project', 'dlg:reopen', p.id);
     if (canChair() && active) buttons += btn('Change project', 'dlg:amend', p.id);
+    if (me().role === 'chair' && !p.past && (active || p.status === 'completed')) buttons += btn('Update amount spent', 'dlg:spent', p.id);
     if (me().role === 'head' && active) buttons += btn('Cancel project', 'dlg:cancel', p.id, 'danger');
     const top = '<div class="proj-top"><span class="project-symbol">' + icon(p.icon || 'sprout') + '</span><div><h3>' + ut(titleCase(p.title)) + '</h3><small>' + esc(cancelled ? 'Cancelled' : p.phase || labels[p.status]) + '</small></div>' + badge(p.status) + '</div>';
     const progress = p.past ? '<div class="proj-nums"><span><b>Completed</b> before this app</span><span>No SPTA funds used</span></div>' : cancelled ? '' : '<div class="proj-bar" role="img" aria-label="' + done + '% done"><div style="width:' + done + '%"></div></div><div class="proj-nums"><span><b>' + done + '%</b> done</span><span><b>' + cash(spent) + '</b> of ' + cash(p.budget) + ' spent</span></div>' + (p.status === 'completed' || spent > p.budget ? '<div class="proj-nums cost-compare"><span>Budget <b>' + cash(p.budget) + '</b></span><span>' + (p.status === 'completed' ? 'Actual cost' : 'Spent so far') + ' <b>' + cash(spent) + '</b></span><span class="' + (spent > p.budget ? 'over' : 'under') + '">' + (spent > p.budget ? 'Over by ' : spent < p.budget ? 'Under by ' : 'On budget') + (spent === p.budget ? '' : '<b>' + cash(Math.abs(p.budget - spent)) + '</b>') + '</span></div>' : '');
@@ -822,7 +823,7 @@
   }
   // Change history: who acted, in which role, on what, what was decided and why. Only the School Head, chairperson and Vice-Chairperson see it.
   const HISTORY_AREAS = {
-    money: ['financeSubmit', 'financeCheck', 'financeReview'],
+    money: ['financeSubmit', 'financeCheck', 'financeReview', 'recordSpent'],
     projects: ['activitySave', 'activityBudget', 'activityCancel', 'projectUpdate', 'projectPhoto', 'projectPhotoRemove', 'projectReopen', 'amendProject'],
     proposals: ['screen', 'chairProposal', 'resubmit', 'withdraw', 'headDecision', 'headApproved', 'closeBallot', 'voteDeadline', 'proposalReply'],
     records: ['minutesUpload', 'minutesEdit', 'minutesReview', 'freeze', 'reviseResolution', 'sign', 'unsign', 'finalizeResolution', 'announce', 'announceEdit', 'announceRemove'],
@@ -1029,6 +1030,12 @@
     if (kind === 'project' || kind === 'cancel') {
       const proj = db().projects.find(x => x.id === id);
       return [kind === 'cancel' ? 'Cancel project' : 'Update project', para(proj.title) + form('projectUpdate', kind === 'cancel' ? hidden('status', 'cancelled') + area('reason', 'Public cancellation reason') + area('remainder', 'What happened to the remaining ' + cash(proj.budget - E.projectSpend(db(), id)) + '?') : select('status', 'Status', [['in_progress', 'In progress'], ['completed', 'Completed']]) + select('owner', 'Project lead', db().accounts.filter(x => x.active && E.leaders.includes(x.role)).map(x => [x.id, x.name]), proj.owner) + area('phase', 'Public progress update', proj.phase) + input('progress', 'Progress (%)', proj.progress, 'number', 'required min="0" max="100" step="1"'), kind === 'cancel' ? 'Publish cancellation' : 'Publish progress', id)];
+    }
+    if (kind === 'spent') {
+      const proj = db().projects.find(x => x.id === id),
+        spent = E.projectSpend(db(), id),
+        bal = E.fundBalance(db());
+      return ['Update amount spent', para(proj.title + ' · allocation ' + cash(proj.budget) + ' · spent so far ' + cash(spent)) + notice('Enter the total spent on this project so far. The difference is posted to the SPTA funds as an approved transaction for this project, and it shows in the funds log and the change history under your name.') + form('recordSpent', input('spent', 'Total amount spent so far (₱)', (spent / 100).toFixed(2), 'number', 'required min="0" step="0.01"') + input('purpose', 'What the money was spent on (shown to families)', '', 'text', 'required minlength="3" maxlength="140"') + input('date', 'Date spent', t(), 'date', 'required max="' + t() + '"') + area('overReason', 'Why it is over the allocation (only if the total is above ' + cash(proj.budget) + ')', '', 'maxlength="300"') + '<div class="entry-meta">SPTA cash balance now: ' + cash(bal) + '</div>', 'Post amount spent', id)];
     }
     if (kind === 'amend') {
       const proj = db().projects.find(x => x.id === id),
@@ -1304,6 +1311,7 @@
     projectPhoto: 'Photo added. It shows to the public once the chairperson approves it.',
     projectPhotoReview: 'Decision saved.',
     projectPhotoRemove: 'Photo removed.',
+    recordSpent: 'Amount spent posted. It now shows in the SPTA funds as an approved transaction.',
     amendProject: 'Change recorded. If it needs a new officer vote, the vote is now open.',
     withdraw: 'Withdrawn.',
     voteDeadline: 'Closing date saved.',

@@ -3,6 +3,15 @@
 (function (root) {
   root.ECESFil = {
     exact: {
+ "Update amount spent": "I-update ang nagastos",
+ "Post amount spent": "I-post ang nagastos",
+ "Enter the total spent on this project so far. The difference is posted to the SPTA funds as an approved transaction for this project, and it shows in the funds log and the change history under your name.": "Ilagay ang kabuuang nagastos sa proyektong ito hanggang ngayon. Ang diperensya ay ipo-post sa pondo ng SPTA bilang aprubadong transaksyon para sa proyektong ito, at makikita ito sa talaan ng pondo at sa kasaysayan ng pagbabago sa ilalim ng iyong pangalan.",
+ "Total amount spent so far (₱)": "Kabuuang nagastos hanggang ngayon (₱)",
+ "What the money was spent on (shown to families)": "Saan ginastos ang pera (makikita ng mga pamilya)",
+ "Date spent": "Petsa ng paggastos",
+ "Amount spent posted. It now shows in the SPTA funds as an approved transaction.": "Na-post ang nagastos. Makikita na ito sa pondo ng SPTA bilang aprubadong transaksyon.",
+ "Amount spent recorded by the chairperson.": "Ang nagastos ay itinala ng chairperson.",
+ "Correction to the amount spent, recorded by the chairperson.": "Pagwawasto sa nagastos, itinala ng chairperson.",
  "Post approved project": "I-post ang aprubadong proyekto",
  "The School Head already approved it, so it is posted as an approved project right away.": "Aprubado na ng School Head ang proyekto, kaya agad itong mai-popost bilang aprubadong proyekto.",
  "Use this for a project the officers have already agreed on, or one that you decide needs no vote or resolution.": "Gamitin ito para sa proyektong napagkasunduan na ng mga officer, o proyektong ikaw ang nagpasyang hindi nangangailangan ng botohan o resolution.",
