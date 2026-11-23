@@ -3154,7 +3154,12 @@ function visible(db, me) {
     ...p,
     photos: lead ? p.photos : p.photos.filter(x => (x.status || 'approved') === 'approved')
   } : p);
-  out.ledger = db.ledger.map(({
+  // A project receipt the chairperson posted is public. Older lines find it from their posted record.
+  const receiptOf = x => x.receipt || db.batches.find(b => b.id === x.batch && b.chairRecord && b.status === 'posted' && b.file)?.file;
+  out.ledger = db.ledger.map(x => ({
+    ...x,
+    receipt: receiptOf(x)
+  })).map(({
     id,
     date,
     direction,
@@ -3347,7 +3352,7 @@ function createApi(store, config = {}) {
   async function canReadFile(db, me, key, tx) {
     if (db.projects.some(p => (p.photos || []).some(x => x.file.key === key && (x.status || 'approved') === 'approved'))) return true;
     // Project receipts the chairperson posted are public, so families can check each line of the funds log.
-    if (db.ledger.some(x => x.receipt?.key === key)) return true;
+    if (db.ledger.some(x => x.receipt?.key === key) || db.batches.some(b => b.chairRecord && b.status === 'posted' && b.file?.key === key && db.ledger.some(x => x.batch === b.id))) return true;
     if (!me) return false;
     // A profile picture is seen only by the person it belongs to.
     if (key === 'avatar-' + me.id) return true;

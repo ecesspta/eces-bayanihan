@@ -1047,3 +1047,6 @@ img[data-photo].failed {visibility:visible}
 
 .receipt-link {display:inline-flex;align-items:center;gap:4px;margin-top:6px;padding:0;border:0;background:none;color:var(--blue,#1d4ed8);font:inherit;font-size:.85rem;font-weight:600;cursor:pointer;text-decoration:underline;text-underline-offset:2px}
 .receipt-link svg {width:14px;height:14px}
+
+/* Approved Transactions scrolls inside its card, so a long log does not make the page long. */
+.movement-list {max-height:340px;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
