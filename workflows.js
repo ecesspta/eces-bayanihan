@@ -1148,6 +1148,60 @@
         private: true
       } : trace());
     }
+    // The chairperson posts a project expense straight to the SPTA funds: a receipt, or a correction to the amount spent.
+    // It becomes an approved transaction in the funds log, tied to the project, and changes the cash balance.
+    function postProjectEntry(p, direction, cents, date, purpose, file, noPaper, over, overWhy) {
+      if (direction === 'out') check(cents <= fundBalance(db), 'The SPTA cash balance (' + peso(fundBalance(db)) + ') is lower than this amount. Record the money received first.');
+      const batch = newId(db, 'F');
+      db.batches.unshift({
+        id: batch,
+        direction,
+        date,
+        purpose,
+        receipt: (file ? 'Receipt' : 'Recorded by the chairperson') + ' · ' + batch,
+        cents,
+        items: [{
+          description: purpose,
+          cents
+        }],
+        project: p.id,
+        file,
+        noPaper,
+        over,
+        overWhy,
+        owner: a.id,
+        status: 'posted',
+        handover: false,
+        checkedBy: '',
+        checkedAt: '',
+        history: [],
+        submitted: at(),
+        adjustment: '',
+        chairRecord: true,
+        reviewedBy: a.id,
+        reviewedAt: at()
+      });
+      db.ledger.unshift({
+        id: newId(db, 'L'),
+        batch,
+        date,
+        purpose,
+        direction,
+        cents,
+        project: p.id,
+        chairRecord: true
+      });
+      return batch;
+    }
+    function chairProject(p) {
+      check(a.role === 'chair' && a.active, 'Only the chairperson records project expenses here.');
+      check(['approved', 'in_progress', 'completed'].includes(p.status) && !p.past, 'Choose an approved, ongoing or completed project.');
+    }
+    function pastDate(v) {
+      const d = dateValue(v);
+      check(d <= today(), 'The date cannot be in the future.');
+      return d;
+    }
     // Records the School Head's approval of a proposal: the project, and a draft resolution unless the project needs no vote or resolution.
     // The School Head approves in the app. The chairperson may instead record that the School Head already approved (byChair).
     function approveProposal(p, w, byChair, addedNow) {
@@ -2784,68 +2838,43 @@
           changed('Finance posting reviewed');
           break;
         }
+      case 'projectReceipt':
+        {
+          // A receipt for money already spent on a project: its photo or PDF, the amount on it, and its date.
+          const p = get(db.projects, id);
+          chairProject(p);
+          const cents = amount(v.amount),
+            date = pastDate(v.date),
+            file = photo(v.file),
+            note = String(v.note ?? '').trim(),
+            purpose = note ? words(note, 'Note', 3, 140) : p.title + ' expenses',
+            spent = projectSpend(db, p.id),
+            over = Math.max(0, spent + cents - Math.max(spent, p.budget)),
+            overReason = String(v.overReason ?? '').trim();
+          check(!over || overReason, 'This takes the project ' + peso(spent + cents - p.budget) + ' over its allocation. Explain why in “Why it is over the allocation”.');
+          postProjectEntry(p, 'out', cents, date, purpose, file, '', over, over ? words(overReason, 'Why it is over the allocation', 6, 300) : '');
+          id = p.id;
+          changed('Chairperson added a receipt to the project: ' + peso(cents));
+          break;
+        }
       case 'recordSpent':
         {
-          // The chairperson records money already spent on a project, for example one that was under way before it was in the app.
-          // The difference from what the app shows becomes an approved transaction in the funds log, tied to the project.
-          check(a.role === 'chair' && a.active, 'Only the chairperson records the amount already spent on a project.');
+          // Correct the amount spent on a project. The difference is posted as an approved transaction.
           const p = get(db.projects, id);
-          check(['approved', 'in_progress', 'completed'].includes(p.status), 'Choose an approved, ongoing or completed project.');
+          chairProject(p);
           const total = amount(v.spent, true),
             current = projectSpend(db, p.id),
             diff = total - current;
           check(diff !== 0, 'This is already the amount spent on this project.');
-          const date = v.date ? dateValue(v.date) : today();
-          check(date <= today(), 'The date cannot be in the future.');
-          const purpose = words(v.purpose, 'What the money was spent on', 3, 140);
-          const over = diff > 0 ? Math.max(0, total - Math.max(current, p.budget)) : 0;
-          const overReason = String(v.overReason ?? '').trim();
+          const date = v.date ? pastDate(v.date) : today(),
+            note = String(v.purpose ?? '').trim(),
+            purpose = note ? words(note, 'What it was spent on', 3, 140) : 'Correction to the amount spent on ' + p.title,
+            over = diff > 0 ? Math.max(0, total - Math.max(current, p.budget)) : 0,
+            overReason = String(v.overReason ?? '').trim();
           check(!over || overReason, 'This goes ' + peso(total - p.budget) + ' over the project allocation. Explain why in “Why it is over the allocation”.');
-          const overWhy = over ? words(overReason, 'Why it is over the allocation', 6, 300) : '';
-          if (diff > 0) check(diff <= fundBalance(db), 'The SPTA cash balance (' + peso(fundBalance(db)) + ') is lower than this amount. Record the money received first.');
-          const cents = Math.abs(diff),
-            direction = diff > 0 ? 'out' : 'in';
-          id = newId(db, 'F');
-          db.batches.unshift({
-            id,
-            direction,
-            date,
-            purpose,
-            receipt: 'Recorded by the chairperson · ' + id,
-            cents,
-            items: [{
-              description: purpose,
-              cents
-            }],
-            project: p.id,
-            file: null,
-            noPaper: direction === 'out' ? 'Amount spent recorded by the chairperson.' : 'Correction to the amount spent, recorded by the chairperson.',
-            over,
-            overWhy,
-            owner: a.id,
-            status: 'posted',
-            handover: false,
-            checkedBy: '',
-            checkedAt: '',
-            history: [],
-            submitted: at(),
-            adjustment: '',
-            chairRecord: true,
-            reviewedBy: a.id,
-            reviewedAt: at()
-          });
-          db.ledger.unshift({
-            id: newId(db, 'L'),
-            batch: id,
-            date,
-            purpose,
-            direction,
-            cents,
-            project: p.id,
-            chairRecord: true
-          });
+          postProjectEntry(p, diff > 0 ? 'out' : 'in', Math.abs(diff), date, purpose, null, 'Correction to the amount spent, recorded by the chairperson.', over, over ? words(overReason, 'Why it is over the allocation', 6, 300) : '');
           id = p.id;
-          changed('Chairperson recorded the amount spent on the project: ' + peso(total) + ' (was ' + peso(current) + ')');
+          changed('Chairperson corrected the amount spent on the project: ' + peso(total) + ' (was ' + peso(current) + ')');
           break;
         }
       case 'automationSetting':
