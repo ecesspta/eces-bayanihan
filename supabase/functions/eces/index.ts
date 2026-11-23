@@ -188,7 +188,7 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
     coverRoles = ['secretary', 'treasurer', 'collector'];
   // The school year is taken to start in June.
   const schoolYear = d => Number(d.slice(0, 4)) - (Number(d.slice(5, 7)) >= 6 ? 0 : 1);
-  const directUsed = db => db.proposals.filter(x => x.direct && x.status !== 'withdrawn' && schoolYear(x.created) === schoolYear(today())).length;
+  const directUsed = db => db.proposals.filter(x => x.direct && !x.noVote && x.status !== 'withdrawn' && schoolYear(x.created) === schoolYear(today())).length;
   const voteCloses = b => b.closes || plusDays(b.date, voteDays);
   // Notes each device an account signs in from, newest last. The first entry is where the account was created.
   function seenOn(db, id, device) {
@@ -1211,6 +1211,152 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
         private: true
       } : trace());
     }
+    // Records the School Head's approval of a proposal: the project, and a draft resolution unless the project needs no vote or resolution.
+    // The School Head approves in the app. The chairperson may instead record that the School Head already approved (byChair).
+    function approveProposal(p, w, byChair) {
+      const vote = p.direct || p.noVote ? null : get(db.ballots, p.ballot);
+      if (vote) check(p.status === 'awaiting_head' && vote.status === 'closed' && vote.passed && vote.rev === p.rev, 'A closed passing vote on this version is required.');else check(p.status === 'awaiting_head', 'This proposal is not waiting for the School Head.');
+      // Without a vote, the details come from the chairperson's proposal.
+      const b = vote || {
+        id: '',
+        title: p.publicTitle,
+        body: p.publicText,
+        budget: p.budget,
+        meeting: p.noVote ? '' : 'Added by the chairperson',
+        date: p.created,
+        present: [],
+        counts: null
+      };
+      const head = db.accounts.find(x => x.role === 'head' && x.active);
+      const approvedOn = byChair && w.date ? dateValue(w.date) : '';
+      if (approvedOn) {
+        check(approvedOn <= today(), 'The School Head approval cannot be in the future.');
+        check(approvedOn >= p.created, 'The School Head approval cannot be before the proposal was added.');
+      }
+      if (p.fundraising) {
+        p.ga = words(w.ga, 'General Assembly agreement reference', 3, 150);
+        check(w.concur === true, 'Record School-Head concurrence for voluntary contributions.');
+      }
+      p.status = 'approved';
+      p.approved = approvedOn ? approvedOn + at().slice(10) : at();
+      if (byChair) {
+        // The chairperson recorded that the School Head already approved. Who recorded it, and when, stays on the record.
+        p.headVia = 'chair';
+        p.headRecordedBy = a.id;
+        p.headRecordedAt = at();
+        if (head) note(db, head.id, p.id + ' · The chairperson recorded that you approved “' + b.title + '”' + (approvedOn ? ' on ' + approvedOn : '') + '.');
+      }
+      let project, replaces = [];
+      if (p.amends) {
+        // A change to an approved project: the same project continues with the new amount or purpose.
+        project = get(db.projects, p.amends);
+        check(['approved', 'in_progress'].includes(project.status), 'This project has ended.');
+        check(b.budget >= projectSpend(db, project.id), 'The new allocation is below what has already been spent.');
+        project.history = project.history || [];
+        project.history.push({
+          at: at(),
+          kind: p.change,
+          from: project.budget,
+          to: b.budget,
+          before: p.change === 'purpose' ? project.title : '',
+          reason: p.why || '',
+          proposal: p.id
+        });
+        project.budget = b.budget;
+        if (p.change === 'purpose') {
+          project.title = p.newTitle;
+          project.text = p.newText;
+        }
+        project.changed = today();
+        replaces = db.resolutions.filter(x => x.project === project.id && !x.supersededBy).map(x => x.id);
+      } else {
+        project = {
+          id: newId(db, 'PR'),
+          proposal: p.id,
+          title: b.title,
+          text: b.body,
+          budget: b.budget,
+          owner: 'chair',
+          phase: 'Awaiting project start',
+          status: 'approved',
+          progress: 0,
+          changed: today(),
+          created: at(),
+          icon: 'sprout'
+        };
+        db.projects.unshift(project);
+      }
+      if (p.noVote) {
+        // No resolution: the project carries its own approval record instead.
+        project.approval = {
+          chair: p.noVoteBy,
+          chairAt: p.noVoteAt,
+          head: byChair ? head ? head.id : '' : a.id,
+          headAt: p.approved,
+          ...(byChair ? {
+            recordedBy: a.id
+          } : {})
+        };
+        project.noVote = true;
+        tell(db, p);
+        changed(byChair ? 'School-Head approval recorded by the chairperson (no vote or resolution needed)' : 'School-Head approval recorded (no vote or resolution needed)');
+        return;
+      }
+      const res = {
+        id: newId(db, 'R'),
+        proposal: p.id,
+        project: project.id,
+        version: 1,
+        state: 'draft',
+        title: p.amends ? project.title : b.title,
+        text: p.amends ? project.text : b.body,
+        budget: b.budget,
+        category: p.category,
+        fundraising: !!p.fundraising,
+        ga: p.ga || '',
+        ballot: b.id,
+        meeting: b.meeting,
+        date: b.date,
+        officers: b.present.length,
+        direct: !!p.direct,
+        tally: b.counts ? {
+          ...b.counts
+        } : null,
+        approved: p.approved,
+        created: at(),
+        signers: db.accounts.filter(x => x.active && !x.vacant && boardRoles.includes(x.role)).map(x => ({
+          id: x.id,
+          name: x.name,
+          role: x.role,
+          homeroom: x.homeroom || ''
+        })),
+        signatures: {},
+        archive: [],
+        no: nextResolutionNumber(db, Number(today().slice(0, 4))),
+        sy: Number(today().slice(0, 4)),
+        clause: resolutionText(p.amends ? project.title : b.title, b.budget, !!p.direct, {
+          date: b.date,
+          meeting: b.meeting,
+          tally: b.counts ? {
+            ...b.counts
+          } : null,
+          officers: b.present?.length,
+          approved: String(p.approved || at()).slice(0, 10),
+          fundraising: !!p.fundraising,
+          text: p.amends ? project.text : b.body
+        }).replace(/\n\nPinagtibay ngayong araw/, replaces.length ? '\n\nPinapalitan ng resolusyong ito ang naunang resolusyon ' + replaces.join(', ') + ', na may ibang inilaang halaga.\n\nPinagtibay ngayong araw' : '\n\nPinagtibay ngayong araw'),
+        supersedes: replaces,
+        published: false
+      };
+      db.resolutions.unshift(res);
+      db.resolutions.filter(x => replaces.includes(x.id)).forEach(x => {
+        x.supersededBy = res.id;
+      });
+      // The secretary is told that a draft resolution is waiting for review.
+      db.accounts.filter(x => x.active && x.role === 'secretary').forEach(x => note(db, x.id, res.id + ' · A resolution for “' + res.title + '” was drafted. Review and publish it for signatures.'));
+      tell(db, p);
+      changed(byChair ? 'School-Head approval recorded by the chairperson' : 'School-Head decision recorded');
+    }
     switch (action) {
       case 'register':
         {
@@ -1431,7 +1577,8 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
           // Sarah's rule: the chairperson may add a proposal that skips screening and the officers' vote
           // and goes straight to the School Head. It is marked as such everywhere, including the resolution.
           financeReview(db, a);
-          check(directUsed(db) < directPerYear, 'The chairperson can add up to ' + directPerYear + ' direct proposals each school year. Send this one through the officers’ vote.');
+          // A project that needs no officers' vote or resolution (a repair, for example) does not use up one of the direct proposals.
+          if (v.noVote !== true) check(directUsed(db) < directPerYear, 'The chairperson can add up to ' + directPerYear + ' direct proposals each school year. Send this one through the officers’ vote.');
           const p = {
             id: newId(db, 'P'),
             title: words(v.title, 'Title', 4, 100),
@@ -1453,9 +1600,19 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
           };
           p.publicTitle = p.title;
           p.publicText = p.details;
+          if (v.noVote === true) {
+            p.noVote = true;
+            p.noVoteBy = a.id;
+            p.noVoteAt = at();
+          }
           db.proposals.unshift(p);
           id = p.id;
           changed('Chairperson added a proposal for School-Head approval');
+          // The School Head already approved: record it now instead of waiting for the approval in the app.
+          if (v.headApproved === true) approveProposal(p, {
+            ...v,
+            decision: 'approve'
+          }, true);
           break;
         }
       case 'resubmit':
@@ -1616,143 +1773,32 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
           break;
         }
       case 'headDecision':
+      case 'headApproved':
         {
-          allows(a, ['head']);
+          const byChair = action === 'headApproved';
+          if (byChair) {
+            // Sarah, Nov 2026: the chairperson may tick that the School Head already approved, instead of waiting for the approval in the app.
+            check(isChair(db, a), 'Only the chairperson records that the School Head already approved.');
+            check(v.approved === true, 'Tick the box to confirm that the School Head already approved this project.');
+          } else allows(a, ['head']);
+          const w = byChair ? {
+            ...v,
+            decision: 'approve'
+          } : v;
           const p = get(db.proposals, id);
-          if (v.decision === 'approve' && db.projects.some(x => x.proposal === p.id)) {
+          if (w.decision === 'approve' && db.projects.some(x => x.proposal === p.id)) {
+            break;
+          }
+          if (w.decision === 'approve') {
+            approveProposal(p, w, byChair);
             break;
           }
           const vote = p.direct || p.noVote ? null : get(db.ballots, p.ballot);
           if (vote) check(p.status === 'awaiting_head' && vote.status === 'closed' && vote.passed && vote.rev === p.rev, 'A closed passing vote on this version is required.');else check(p.status === 'awaiting_head', 'This proposal is not waiting for the School Head.');
-          // Without a vote, the details come from the chairperson's proposal.
-          const b = vote || {
-            id: '',
-            title: p.publicTitle,
-            body: p.publicText,
-            budget: p.budget,
-            meeting: p.noVote ? '' : 'Added by the chairperson',
-            date: p.created,
-            present: [],
-            counts: null
-          };
-          if (v.decision === 'approve') {
-            if (p.fundraising) {
-              p.ga = words(v.ga, 'General Assembly agreement reference', 3, 150);
-              check(v.concur === true, 'Record School-Head concurrence for voluntary contributions.');
-            }
-            p.status = 'approved';
-            p.approved = at();
-            let project, replaces = [];
-            if (p.amends) {
-              // A change to an approved project: the same project continues with the new amount or purpose.
-              project = get(db.projects, p.amends);
-              check(['approved', 'in_progress'].includes(project.status), 'This project has ended.');
-              check(b.budget >= projectSpend(db, project.id), 'The new allocation is below what has already been spent.');
-              project.history = project.history || [];
-              project.history.push({
-                at: at(),
-                kind: p.change,
-                from: project.budget,
-                to: b.budget,
-                before: p.change === 'purpose' ? project.title : '',
-                reason: p.why || '',
-                proposal: p.id
-              });
-              project.budget = b.budget;
-              if (p.change === 'purpose') {
-                project.title = p.newTitle;
-                project.text = p.newText;
-              }
-              project.changed = today();
-              replaces = db.resolutions.filter(x => x.project === project.id && !x.supersededBy).map(x => x.id);
-            } else {
-              project = {
-                id: newId(db, 'PR'),
-                proposal: p.id,
-                title: b.title,
-                text: b.body,
-                budget: b.budget,
-                owner: 'chair',
-                phase: 'Awaiting project start',
-                status: 'approved',
-                progress: 0,
-                changed: today(),
-                created: at(),
-                icon: 'sprout'
-              };
-              db.projects.unshift(project);
-            }
-            if (p.noVote) {
-              // No resolution: the project carries its own approval record instead.
-              project.approval = {
-                chair: p.noVoteBy,
-                chairAt: p.noVoteAt,
-                head: a.id,
-                headAt: p.approved
-              };
-              project.noVote = true;
-              tell(db, p);
-              changed('School-Head approval recorded (no vote or resolution needed)');
-              break;
-            }
-            const res = {
-              id: newId(db, 'R'),
-              proposal: p.id,
-              project: project.id,
-              version: 1,
-              state: 'draft',
-              title: p.amends ? project.title : b.title,
-              text: p.amends ? project.text : b.body,
-              budget: b.budget,
-              category: p.category,
-              fundraising: !!p.fundraising,
-              ga: p.ga || '',
-              ballot: b.id,
-              meeting: b.meeting,
-              date: b.date,
-              officers: b.present.length,
-              direct: !!p.direct,
-              tally: b.counts ? {
-                ...b.counts
-              } : null,
-              approved: p.approved,
-              created: at(),
-              signers: db.accounts.filter(x => x.active && !x.vacant && boardRoles.includes(x.role)).map(x => ({
-                id: x.id,
-                name: x.name,
-                role: x.role,
-                homeroom: x.homeroom || ''
-              })),
-              signatures: {},
-              archive: [],
-              no: nextResolutionNumber(db, Number(today().slice(0, 4))),
-              sy: Number(today().slice(0, 4)),
-              clause: resolutionText(p.amends ? project.title : b.title, b.budget, !!p.direct, {
-                date: b.date,
-                meeting: b.meeting,
-                tally: b.counts ? {
-                  ...b.counts
-                } : null,
-                officers: b.present?.length,
-                approved: String(p.approved || at()).slice(0, 10),
-                fundraising: !!p.fundraising,
-                text: p.amends ? project.text : b.body
-              }).replace(/\n\nPinagtibay ngayong araw/, replaces.length ? '\n\nPinapalitan ng resolusyong ito ang naunang resolusyon ' + replaces.join(', ') + ', na may ibang inilaang halaga.\n\nPinagtibay ngayong araw' : '\n\nPinagtibay ngayong araw'),
-              supersedes: replaces,
-              published: false
-            };
-            db.resolutions.unshift(res);
-            db.resolutions.filter(x => replaces.includes(x.id)).forEach(x => {
-              x.supersededBy = res.id;
-            });
-            // The secretary is told that a draft resolution is waiting for review.
-            db.accounts.filter(x => x.active && x.role === 'secretary').forEach(x => note(db, x.id, res.id + ' · A resolution for “' + res.title + '” was drafted. Review and publish it for signatures.'));
-          } else {
-            choice(v.decision, ['return', 'decline'], 'decision');
-            p.reason = words(v.reason, 'Decision reason', 3, 350);
-            p.status = v.decision === 'return' ? 'returned' : 'declined';
-            if (p.status === 'returned') p.published = false;
-          }
+          choice(w.decision, ['return', 'decline'], 'decision');
+          p.reason = words(w.reason, 'Decision reason', 3, 350);
+          p.status = w.decision === 'return' ? 'returned' : 'declined';
+          if (p.status === 'returned') p.published = false;
           tell(db, p);
           changed('School-Head decision recorded');
           break;
