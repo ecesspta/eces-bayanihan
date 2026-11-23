@@ -1860,6 +1860,8 @@
       [/^East Central Elementary School SPTA · (.+)$/, "SPTA ng East Central Elementary School · {1}"],
       [/^(\d+) parent supporters$/, "{1} magulang ang sumusuporta"],
       [/^(\d+)% done$/, "{1}% tapos na"],
+      [/^Added by the (.+)\. It is public once you approve it\.$/, "Idinagdag ng {1}. Magiging pampubliko ito kapag inaprubahan mo."],
+      [/^SPTA matter · Endorsed to the (.+) · (.+)$/, "Usapin ng SPTA · Na-endorse sa {1} · {2}"],
       [/^Receipts \((\d+)\)$/, "Mga resibo ({1})"],
       [/^(.+) expenses$/, "Mga gastos sa {1}"],
       [/^done$/, "tapos na"],
