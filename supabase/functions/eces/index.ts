@@ -94,7 +94,7 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
     completed: 'Completed',
     cancelled: 'Cancelled',
     pending: 'Awaiting review',
-    for_treasurer: 'For treasurer approval',
+    for_treasurer: 'For Treasurer approval',
     posted: 'Posted',
     draft: 'Secretary draft',
     signing: 'Open for signatures',
@@ -102,13 +102,13 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
     closed: 'Closed',
     assigned: 'Reviewed',
     action_taken: 'Action taken',
-    cp_referred: 'Referred to School',
+    cp_referred: 'Referred to school',
     cp_ack: 'Acknowledged',
-    cp_handling: 'School Handling',
+    cp_handling: 'School handling',
     cp_closed: 'Closed',
     resolved: 'Resolved',
-    for_chair: 'For chair approval',
-    for_head: 'For head notation',
+    for_chair: 'For Chairperson approval',
+    for_head: 'For School Head notation',
     filed: 'Filed',
     approved_bod: 'Verified BOD',
     parent: 'Parent',
@@ -116,18 +116,17 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
     absent: 'Absent',
     acknowledged: 'Signed',
     not_signed: 'Declined to sign',
-    withdrawn: 'Withdrawn',
-    received_funds: 'Received by treasurer'
+    received_funds: 'Received by the Treasurer'
   };
   const categories = ['Facilities', 'Learning', 'Health & Safety', 'Environment', 'Community', 'Accessibility', 'Communication', 'Other'];
   const recipients = {
     head: 'School Head',
-    chair: 'SPTA chairperson',
+    chair: 'SPTA Chairperson',
     vice: 'SPTA Vice-Chairperson'
   };
-  // Suggestions and private concerns go to the chairperson and the Vice-Chairperson only.
+  // Suggestions and private concerns go to the Chairperson and the Vice-Chairperson only.
   // They decide whether it is worth passing on to the School Head.
-  const deskName = 'SPTA chairperson and Vice-Chairperson';
+  const deskName = 'SPTA Chairperson and Vice-Chairperson';
   const duplicate = s => structuredClone(s);
   const today = () => new Intl.DateTimeFormat('en-CA', {
     timeZone: 'Asia/Manila',
@@ -178,7 +177,7 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
     return s.toLowerCase();
   }
   // Sarah's rules: two accounts a phone, a month to vote unless the date is changed,
-  // and the chairperson may stand in for three officers.
+  // and the Chairperson may stand in for three officers.
   // Anti-spam: one phone may send only a few proposals, suggestions and concerns, however many accounts it uses.
   const submissionsPerDay = 2, submissionsPerWeek = 3, photosPerCase = 2;
   const hiddenPerMonth = 2,
@@ -186,7 +185,8 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
     voteDays = 30,
     coverRoles = ['secretary', 'treasurer', 'collector'];
   // The school year is taken to start in June.
-  const schoolYear = d => Number(d.slice(0, 4)) - (Number(d.slice(5, 7)) >= 6 ? 0 : 1);
+  // The Privacy Notice version a person agrees to when they register.
+  const PRIVACY_VERSION = '2026-11c';
   const voteCloses = b => b.closes || plusDays(b.date, voteDays);
   // Notes each device an account signs in from, newest last. The first entry is where the account was created.
   function seenOn(db, id, device) {
@@ -215,7 +215,7 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
       login = mobileNumber(v.mobile);
     } catch (_) {}
     const a = db.accounts.find(x => !x.demo && x.active && x.login === login);
-    check(a && device && a.devices?.includes(device) && fold(v.lastName) && fold(a.name).endsWith(' ' + fold(v.lastName)) && fold(a.homeroom) === fold(v.homeroom), 'Those details do not match an account used on this phone. Ask the SPTA secretary for help.');
+    check(a && device && a.devices?.includes(device) && fold(v.lastName) && fold(a.name).endsWith(' ' + fold(v.lastName)) && fold(a.homeroom) === fold(v.homeroom), 'Those details do not match an account used on this phone. Ask the SPTA Secretary for help.');
     return a.id;
   }
   function account(db, id) {
@@ -354,7 +354,7 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
   }));
-  // Resolutions are numbered through the school year, as on the school's paper copies. The secretary can change the number before release.
+  // Resolutions are numbered through the school year, as on the school's paper copies. The Secretary can change the number before release.
   const nextResolutionNumber = (db, year) => 1 + db.resolutions.filter(x => x.sy === year).reduce((n, x) => Math.max(n, x.no || 0), 0);
   const peso = cents => '₱' + (cents / 100).toLocaleString('en-PH', {
     minimumFractionDigits: 2,
@@ -375,7 +375,7 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
     const moved = fixes.reduce((n, x) => n + (x.direction === orig.direction ? -x.cents : x.cents), 0),
       right = orig.cents - moved,
       back = orig.direction === 'out' ? 'returned to the SPTA funds' : 'taken back out of the SPTA funds';
-    const who = entry.corrects && entry.approver ? ' Approved by the ' + (roles[entry.approver] || 'chairperson') + '.' : '';
+    const who = entry.corrects && entry.approver ? ' Approved by the ' + (roles[entry.approver] || 'Chairperson') + '.' : '';
     if (entry.corrects) return 'Correction to “' + orig.purpose + '”. It was first recorded as ' + peso(orig.cents) + ', but the correct amount is ' + peso(right) + '. The ' + peso(moved) + ' difference is ' + back + '.' + who;
     return 'This entry was corrected. The correct amount is ' + peso(right) + ', not ' + peso(orig.cents) + '. The ' + peso(moved) + ' difference is ' + back + ' (see the correction).';
   }
@@ -456,7 +456,7 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
       if (item.status === 'action_taken') return 'Action was taken on your ' + what + '. The ' + who + ' will confirm the outcome before closing it.';
       return 'Thank you. Your ' + what + ' was received privately by the ' + who + '.';
     }
-    if (item.direct && item.status === 'awaiting_head') return 'Added by the chairperson. It is now with the School Head for approval.';
+    if (item.direct && item.status === 'awaiting_head') return 'Added by the Chairperson. It is now with the School Head for approval.';
     return proposalReplies[item.status] || '';
   }
   // Tells the sender about a status change with the automated response.
@@ -469,14 +469,14 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
   function isChair(db, a) {
     return a?.role === 'chair' || a?.role === 'vice' && hasDelegation(db);
   }
-  // The chairperson may stand in for an absent secretary, treasurer or collecting officer, one at a time, until a set date.
+  // The Chairperson may stand in for an absent secretary, treasurer or collecting officer, one at a time, until a set date.
   function covering(db, a) {
     const c = db.cover;
     return c && c.until >= today() && isChair(db, a) ? c.role : '';
   }
   const holds = (db, a, role) => !!a?.active && (a.role === role || covering(db, a) === role);
   // The final approval of a fund record comes from someone who neither sent nor checked it.
-  // When the chairperson handled it while standing in, that falls to the Vice-Chairperson.
+  // When the Chairperson handled it while standing in, that falls to the Vice-Chairperson.
   function mayPost(db, a, d) {
     const untouched = d.owner !== a?.id && d.checkedBy !== a?.id;
     if (isChair(db, a)) return untouched;
@@ -533,14 +533,14 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
     check(inLast(7 * 86400000, mine.filter(x => x.status !== 'withdrawn')) < submissionsPerWeek, 'This phone has reached this week’s limit of ' + submissionsPerWeek + ' submissions. Please try again next week.');
   }
   const onDesk = c => c.kind !== 'inspection' && ['chair', 'vice'].includes(c.assigned);
-  // Who may read a case. The sender always can. Records requests go to the secretary.
-  // A suggestion or concern is read by the chairperson and Vice-Chairperson, and by the School Head and secretary only once it is passed on.
-  // A possible child-protection concern is the school's to handle: the School Head and the secretary, who is a teacher and the School Head's
-  // acting secretary (authorized school personnel), own it. The chairperson and Vice-Chairperson only coordinate.
+  // Who may read a case. The sender always can. Records requests go to the Secretary.
+  // A suggestion or concern is read by the Chairperson and Vice-Chairperson, and by the School Head and secretary only once it is passed on.
+  // A possible child-protection concern is the school's to handle: the School Head and the Secretary, who is a teacher and the School Head's
+  // acting secretary (authorized school personnel), own it. The Chairperson and Vice-Chairperson only coordinate.
   // An SPTA matter may be endorsed to one officer, who then sees that case only.
   function canSeeCase(actor, c) {
     if (actor.id === c.owner) return true;
-    // A child-protection referral: only the school's intake roles, plus the chairperson and Vice-Chairperson if they referred it themselves.
+    // A child-protection referral: only the school's intake roles, plus the Chairperson and Vice-Chairperson if they referred it themselves.
     if (c.protection) return intakeOf(c).includes(actor.role) || !c.protection.direct && ['chair', 'vice'].includes(actor.role);
     if (actor.role === c.assigned) return true;
     if (!onDesk(c)) return false;
@@ -548,11 +548,11 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
     if (['chair', 'vice'].includes(actor.role)) return true;
     return !!c.forwarded && ['head', 'secretary'].includes(actor.role);
   }
-  // Who may change the status or reply to the sender: the desk, the endorsed officer, and once passed on the School Head and the secretary for the School Head.
+  // Who may change the status or reply to the sender: the desk, the endorsed officer, and once passed on the School Head and the Secretary for the School Head.
   function caseHandler(db, a, c) {
     if (!a?.active) return false;
     if (!onDesk(c)) return holds(db, a, c.assigned);
-    // No stand-in here: a person covering for the secretary in the SPTA is not school personnel.
+    // No stand-in here: a person covering for the Secretary in the SPTA is not school personnel.
     if (c.protection) return intakeOf(c).includes(a.role);
     if (c.endorsed?.to === a.id) return true;
     return ['chair', 'vice'].includes(a.role) || !!c.forwarded && (a.role === 'head' || holds(db, a, 'secretary'));
@@ -560,7 +560,7 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
   // The SPTA officers who coordinate a child-protection referral.
   const caseCoordinator = (db, a, c) => !!a?.active && !!c.protection && !c.protection.direct && ['chair', 'vice'].includes(a.role);
   // Who receives child-protection reports for the school. The School Head always does, once their account is set up.
-  // The secretary does only after the School Head designates her in the app (she is a teacher and the School Head's acting secretary).
+  // The Secretary does only after the School Head designates her in the app (she is a teacher and the School Head's acting secretary).
   const intakeReady = x => !!x && x.active && !x.invite && !x.vacant;
   function intakeRoles(db) {
     const roles = [];
@@ -575,7 +575,7 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
   function publicProposal(p) {
     return Boolean(p.published && p.publicTitle);
   }
-  // A proposal that is still waiting for a decision is shown only to people who are signed in. One the chairperson added for the School Head
+  // A proposal that is still waiting for a decision is shown only to people who are signed in. One the Chairperson added for the School Head
   // is shown only to the officers, the School Head and its sender: parents and guests see it once it is approved and becomes a project.
   const undecided = ['screened', 'voting', 'awaiting_head'];
   function readableProposal(p, a) {
@@ -584,8 +584,8 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
     if (undecided.includes(p.status) && (a.guest || a.role === 'guest' || p.direct && a.role === 'parent')) return false;
     return true;
   }
-  // The school's list of HPTA presidents, one seat per section. A seat waits, vacant, until that president registers and is matched to it
-  // by the School Head or chairperson. A vacant seat never votes, signs or counts toward a quorum.
+  // The school's list of HPTA Presidents, one seat per section. A seat waits, vacant, until that president registers and is matched to it
+  // by the School Head or Chairperson. A vacant seat never votes, signs or counts toward a quorum.
   function addSeats(db, list) {
     check(Array.isArray(list) && list.length && list.length <= 80, 'Send between 1 and 80 seats.');
     let n = db.accounts.filter(x => /^bod-\d+$/.test(x.id)).length;
@@ -613,7 +613,7 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
     }
     return added;
   }
-  // Money already held before the app was used. One figure from the treasurer's paper, set once and before any money is recorded here.
+  // Money already held before the app was used. One figure from the Treasurer's paper, set once and before any money is recorded here.
   function setOpening(db, v) {
     check(!db.ledger.length, 'The opening balance cannot change once money has been recorded in the app.');
     const cents = Math.round(Number(v.amount) * 100);
@@ -681,7 +681,7 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
     return id;
   }
   // A project the officers already voted on, and the School Head already approved, before the app was in use.
-  // It goes straight to a draft resolution, so the secretary can release it and the officers can sign. Returns the new record.
+  // It goes straight to a draft resolution, so the Secretary can release it and the officers can sign. Returns the new record.
   function importVoted(db, v) {
     const title = words(v.title, 'Project title', 4, 100),
       text = words(v.text, 'Project description', 8, 700),
@@ -697,7 +697,7 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
     check([yes, no, abstain].every(x => Number.isInteger(x) && x >= 0) && yes + no + abstain <= n, 'The votes cannot add up to more than the officers on the roster.');
     check(yes >= majority(n), 'Yes votes did not reach 51% of the officers (' + majority(n) + ' of ' + n + '), so this project was not adopted.');
     check(approved >= voted && approved <= today(), 'The School Head approval cannot be before the vote or in the future.');
-    check(db.accounts.some(x => x.role === 'head' && x.active) && db.accounts.some(x => x.role === 'chair' && x.active), 'The School Head and chairperson must be set up first.');
+    check(db.accounts.some(x => x.role === 'head' && x.active) && db.accounts.some(x => x.role === 'chair' && x.active), 'The School Head and Chairperson must be set up first.');
     const draft = duplicate(db);
     const proposal = {
       id: newId(draft, 'P'),
@@ -835,8 +835,8 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
   // An officer opens the app with the invite code and sets up their own sign-in.
   function officerJoin(db, v, device) {
     const a = db.accounts.find(x => x.invite && x.invite === v.invite);
-    check(a, 'That invite code is not valid. Ask the chairperson for a new one.');
-    check(!a.inviteAt || Date.now() - a.inviteAt < 14 * 86400000, 'That invite code has expired. Ask the chairperson for a new one.');
+    check(a, 'That invite code is not valid. Ask the Chairperson for a new one.');
+    check(!a.inviteAt || Date.now() - a.inviteAt < 14 * 86400000, 'That invite code has expired. Ask the Chairperson for a new one.');
     check(v.consent === true, 'Please read the Privacy Notice and tick the box to agree.');
     const login = mobileNumber(v.mobile);
     check(!db.accounts.some(x => x.login === login && x !== a), 'An account already uses this mobile number.');
@@ -847,7 +847,7 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
     delete a.inviteAt;
     a.consent = {
       at: at(),
-      version: '2026-11c'
+      version: PRIVACY_VERSION
     };
     seenOn(db, a.id, device);
     audit(db, a, 'Officer account set up', a.id);
@@ -1117,7 +1117,7 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
         if ((old.supported || []).includes(p.id)) p.supporters = ['parent'];
       }
     }
-    // Officers' practice copy: the School Head, chairperson and Vice-Chairperson profiles are switched off, so nobody can sign in as them.
+    // Officers' practice copy: the School Head, Chairperson and Vice-Chairperson profiles are switched off, so nobody can sign in as them.
     // Practice version only: a few sample activities, so the new Activities page is not empty.
     if (!old && globalThis.ECESSamplePhotos) {
       const ga = today() <= '2026-12-07' ? '2026-12-07' : plusDays(today(), 14);
@@ -1209,7 +1209,7 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
         private: true
       } : trace());
     }
-    // The chairperson posts a project expense straight to the SPTA funds: a receipt, or a correction to the amount spent.
+    // The Chairperson posts a project expense straight to the SPTA funds: a receipt, or a correction to the amount spent.
     // It becomes an approved transaction in the funds log, tied to the project, and changes the cash balance.
     function postProjectEntry(p, direction, cents, date, purpose, file, noPaper, over, overWhy) {
       if (direction === 'out') check(cents <= fundBalance(db), 'The SPTA cash balance (' + peso(fundBalance(db)) + ') is lower than this amount. Record the money received first.');
@@ -1219,7 +1219,7 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
         direction,
         date,
         purpose,
-        receipt: (file ? 'Receipt' : 'Recorded by the chairperson') + ' · ' + batch,
+        receipt: (file ? 'Receipt' : 'Recorded by the Chairperson') + ' · ' + batch,
         cents,
         items: [{
           description: purpose,
@@ -1257,7 +1257,7 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
       return batch;
     }
     function chairProject(p) {
-      check(a.role === 'chair' && a.active, 'Only the chairperson records project expenses here.');
+      check(a.role === 'chair' && a.active, 'Only the Chairperson records project expenses here.');
       check(['approved', 'in_progress', 'completed'].includes(p.status) && !p.past, 'Choose an approved, ongoing or completed project.');
     }
     function pastDate(v) {
@@ -1266,17 +1266,17 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
       return d;
     }
     // Records the School Head's approval of a proposal: the project, and a draft resolution unless the project needs no vote or resolution.
-    // The School Head approves in the app. The chairperson may instead record that the School Head already approved (byChair).
+    // The School Head approves in the app. The Chairperson may instead record that the School Head already approved (byChair).
     function approveProposal(p, w, byChair, addedNow) {
       const vote = p.direct || p.noVote ? null : get(db.ballots, p.ballot);
       if (vote) check(p.status === 'awaiting_head' && vote.status === 'closed' && vote.passed && vote.rev === p.rev, 'A closed passing vote on this version is required.');else check(p.status === 'awaiting_head', 'This proposal is not waiting for the School Head.');
-      // Without a vote, the details come from the chairperson's proposal.
+      // Without a vote, the details come from the Chairperson's proposal.
       const b = vote || {
         id: '',
         title: p.publicTitle,
         body: p.publicText,
         budget: p.budget,
-        meeting: p.noVote ? '' : 'Added by the chairperson',
+        meeting: p.noVote ? '' : 'Added by the Chairperson',
         date: p.created,
         present: [],
         counts: null
@@ -1285,7 +1285,7 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
       const approvedOn = byChair && w.date ? dateValue(w.date) : '';
       if (approvedOn) {
         check(approvedOn <= today(), 'The School Head approval cannot be in the future.');
-        // A project the chairperson adds now may have been approved by the School Head days earlier.
+        // A project the Chairperson adds now may have been approved by the School Head days earlier.
         if (!addedNow) check(approvedOn >= p.created, 'The School Head approval cannot be before the proposal was added.');
       }
       if (p.fundraising) {
@@ -1295,11 +1295,11 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
       p.status = 'approved';
       p.approved = approvedOn ? approvedOn + at().slice(10) : at();
       if (byChair) {
-        // The chairperson recorded that the School Head already approved. Who recorded it, and when, stays on the record.
+        // The Chairperson recorded that the School Head already approved. Who recorded it, and when, stays on the record.
         p.headVia = 'chair';
         p.headRecordedBy = a.id;
         p.headRecordedAt = at();
-        if (head) note(db, head.id, p.id + ' · The chairperson recorded that you approved “' + b.title + '”' + (approvedOn ? ' on ' + approvedOn : '') + '.');
+        if (head) note(db, head.id, p.id + ' · The Chairperson recorded that you approved “' + b.title + '”' + (approvedOn ? ' on ' + approvedOn : '') + '.');
       }
       let project, replaces = [];
       if (p.amends) {
@@ -1354,7 +1354,7 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
         };
         project.noVote = true;
         tell(db, p);
-        changed(byChair ? 'School-Head approval recorded by the chairperson (no vote or resolution needed)' : 'School-Head approval recorded (no vote or resolution needed)');
+        changed(byChair ? 'School-Head approval recorded by the Chairperson (no vote or resolution needed)' : 'School-Head approval recorded (no vote or resolution needed)');
         return;
       }
       const res = {
@@ -1407,10 +1407,10 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
       db.resolutions.filter(x => replaces.includes(x.id)).forEach(x => {
         x.supersededBy = res.id;
       });
-      // The secretary is told that a draft resolution is waiting for review.
+      // The Secretary is told that a draft resolution is waiting for review.
       db.accounts.filter(x => x.active && x.role === 'secretary').forEach(x => note(db, x.id, res.id + ' · A resolution for “' + res.title + '” was drafted. Review and publish it for signatures.'));
       tell(db, p);
-      changed(byChair ? 'School-Head approval recorded by the chairperson' : 'School-Head decision recorded');
+      changed(byChair ? 'School-Head approval recorded by the Chairperson' : 'School-Head decision recorded');
     }
     switch (action) {
       case 'register':
@@ -1449,7 +1449,7 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
           // Proof that the person agreed, and to which version of the notice.
           if (v.consent === true) user.consent = {
             at: at(),
-            version: '2026-11c'
+            version: PRIVACY_VERSION
           };
           if (device) user.devices = [device];
           db.accounts.push(user);
@@ -1531,7 +1531,7 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
         {
           allows(a, ['head', 'chair']);
           const user = get(db.accounts, id);
-          check(user.active && user.role === 'bod', 'Choose a current HPTA president.');
+          check(user.active && user.role === 'bod', 'Choose a current HPTA President.');
           check(v.confirm === true, 'Confirm that this officer’s term ended.');
           user.role = 'parent';
           user.boardSeat = false;
@@ -1600,10 +1600,10 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
             p.status = 'screened';
             p.reason = '';
             if (v.noVote === true) {
-              // The chairperson judges whether a project needs the officers' vote and a resolution. Nobody else can decide that.
-              check(isChair(db, a), 'Only the chairperson decides that a project needs no officers’ vote or resolution.');
+              // The Chairperson judges whether a project needs the officers' vote and a resolution. Nobody else can decide that.
+              check(isChair(db, a), 'Only the Chairperson decides that a project needs no officers’ vote or resolution.');
               // Sarah, Nov 2026: some projects (for example replacing toilet bowls) need documentation and approval, but no vote or resolution.
-              // The chairperson ticks this; it goes straight to the School Head. There is no limit on the amount.
+              // The Chairperson ticks this; it goes straight to the School Head. There is no limit on the amount.
               p.noVote = true;
               p.status = 'awaiting_head';
               p.noVoteBy = a.id;
@@ -1631,7 +1631,7 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
         }
       case 'chairProposal':
         {
-          // Sarah's rule: the chairperson may add a proposal that skips screening and the officers' vote
+          // Sarah's rule: the Chairperson may add a proposal that skips screening and the officers' vote
           // and goes straight to the School Head. It is marked as such everywhere, including the resolution.
           financeReview(db, a);
           const p = {
@@ -1681,7 +1681,7 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
           p.published = false;
           p.reason = '';
           if (p.direct) {
-            // A chairperson's direct proposal returns to the School Head after revision.
+            // A Chairperson's direct proposal returns to the School Head after revision.
             p.publicTitle = p.title;
             p.publicText = p.details;
             p.status = 'awaiting_head';
@@ -1706,7 +1706,8 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
           allows(a, boardRoles);
           check(b.status === 'open' && b.present.includes(a.id), 'Only officers on the roster for this open vote may vote.');
           check(!b.participated.includes(a.id), 'A vote has already been received from this account.');
-          const vote = choice(v.vote, ['yes', 'no', 'abstain'], 'choice');
+          check(['yes', 'no', 'abstain'].includes(v.vote), 'Choose Proceed, Do not proceed or Abstain.');
+          const vote = v.vote;
           b.participated.push(a.id);
           b.counts[vote]++;
           // The result is recorded as soon as it is decided either way.
@@ -1720,12 +1721,12 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
           check(b.status === 'open', 'This ballot is closed.');
           check(v.confirm === true, 'Confirm the voting period has ended.');
           settleVote(db, b, true);
-          changed('Officer vote closed by the chairperson');
+          changed('Officer vote closed by the Chairperson');
           break;
         }
       case 'voteDeadline':
         {
-          // The chairperson may move the closing date of an open vote.
+          // The Chairperson may move the closing date of an open vote.
           financeReview(db, a);
           const b = get(db.ballots, id);
           check(b.status === 'open', 'This ballot is closed.');
@@ -1807,7 +1808,7 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
         }
       case 'announceEdit':
         {
-          check(canAnnounce(db, a), 'The School Head, chairperson or secretary publishes announcements.');
+          check(canAnnounce(db, a), 'The School Head, Chairperson or secretary publishes announcements.');
           const n = get(db.announcements, id);
           n.title = words(v.title, 'Title', 3, 100);
           n.body = words(v.body, 'Message', 6, 1600);
@@ -1820,7 +1821,7 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
         }
       case 'announceRemove':
         {
-          check(canAnnounce(db, a), 'The School Head, chairperson or secretary publishes announcements.');
+          check(canAnnounce(db, a), 'The School Head, Chairperson or secretary publishes announcements.');
           check(v.confirm === true, 'Confirm that you want to remove this announcement.');
           const n = get(db.announcements, id);
           db.announcements = db.announcements.filter(x => x.id !== id);
@@ -1832,8 +1833,8 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
         {
           const byChair = action === 'headApproved';
           if (byChair) {
-            // Sarah, Nov 2026: the chairperson may tick that the School Head already approved, instead of waiting for the approval in the app.
-            check(isChair(db, a), 'Only the chairperson records that the School Head already approved.');
+            // Sarah, Nov 2026: the Chairperson may tick that the School Head already approved, instead of waiting for the approval in the app.
+            check(isChair(db, a), 'Only the Chairperson records that the School Head already approved.');
             check(v.approved === true, 'Tick the box to confirm that the School Head already approved this project.');
           } else allows(a, ['head']);
           const w = byChair ? {
@@ -1908,7 +1909,7 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
             stage: p.status === 'completed' ? 'completed' : 'in_progress',
             by: a.id,
             date: today(),
-            // The chairperson has the final say on what the public sees. Her own photos need no second approval.
+            // The Chairperson has the final say on what the public sees. Her own photos need no second approval.
             status: isChair(db, a) ? 'approved' : 'pending',
             ...(isChair(db, a) ? {
               approvedBy: a.id
@@ -1962,17 +1963,17 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
             check(d.owner === a.id, 'Only the person who sent this record can withdraw it.');
             check(d.status !== 'posted', 'This entry is already published. Record a correction instead.');
             check(d.status !== 'withdrawn', 'This record was already withdrawn.');
-            check(!(d.handover && d.status === 'pending'), 'The treasurer already received this handover. Ask the treasurer or chairperson to return it.');
+            check(!(d.handover && d.status === 'pending'), 'The Treasurer already received this handover. Ask the Treasurer or Chairperson to return it.');
             d.status = 'withdrawn';
             d.withdrawn = mark;
             changed('Finance record withdrawn by its sender');
           } else if (kind === 'minutes') {
             const m = get(db.minutes, id);
-            check(m.secretary === a.id || holds(db, a, 'secretary'), 'Only the secretary who uploaded these minutes can withdraw them.');
+            check(m.secretary === a.id || holds(db, a, 'secretary'), 'Only the Secretary who uploaded these minutes can withdraw them.');
             check(['for_chair', 'for_head'].includes(m.state), 'These minutes were already filed or withdrawn.');
             m.state = 'withdrawn';
             m.withdrawn = mark;
-            changed('Minutes withdrawn by the secretary');
+            changed('Minutes withdrawn by the Secretary');
           } else {
             const q = get(db.requests, id);
             check(q.user === a.id, 'Only the person who sent this request can withdraw it.');
@@ -2024,7 +2025,7 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
       case 'amendProject':
         {
           // A change to an approved project. What the officers voted on stays fixed unless they vote again.
-          //   Wording only, or a lower amount: the chairperson records it openly. No new vote.
+          //   Wording only, or a lower amount: the Chairperson records it openly. No new vote.
           //   A higher amount, or a different purpose: a new officer vote and a new School-Head decision.
           financeReview(db, a);
           const proj = get(db.projects, id);
@@ -2116,7 +2117,7 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
           db.proposals.unshift(p);
           id = p.id;
           if (proj.noVote) {
-            // The chairperson decided this project needs no officers' vote or resolution, so a change to it goes straight to the School Head too.
+            // The Chairperson decided this project needs no officers' vote or resolution, so a change to it goes straight to the School Head too.
             Object.assign(p, {
               noVote: true,
               noVoteBy: a.id,
@@ -2133,7 +2134,7 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
         }
       case 'freeze':
         {
-          check(holds(db, a, 'secretary'), 'The secretary does this. The chairperson may stand in while the secretary is away.');
+          check(holds(db, a, 'secretary'), 'The Secretary does this. The Chairperson may stand in while the Secretary is away.');
           const r = get(db.resolutions, id);
           check(r.state === 'draft' && r.version === Number(v.version), 'Reopen the current draft version.');
           check(v.confirm === true, 'Review the exact resolution before releasing it.');
@@ -2150,7 +2151,7 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
             r.no = no;
           }
           check(sameAmount(r.clause, r.budget), 'The resolution must state the amount the officers voted (' + peso(r.budget) + '), and no other amount. A different amount needs a new officer vote through “Change project”.');
-          // The secretary may adjust the wording. The allocation stays as voted.
+          // The Secretary may adjust the wording. The allocation stays as voted.
           if (v.title !== undefined) r.title = words(v.title, 'Project title', 4, 100);
           if (v.text !== undefined) r.text = words(v.text, 'Project details', 8, 700);
           r.state = 'signing';
@@ -2163,7 +2164,7 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
         }
       case 'reviseResolution':
         {
-          check(holds(db, a, 'secretary'), 'The secretary does this. The chairperson may stand in while the secretary is away.');
+          check(holds(db, a, 'secretary'), 'The Secretary does this. The Chairperson may stand in while the Secretary is away.');
           const r = get(db.resolutions, id);
           check(r.state !== 'draft' && r.version === Number(v.version), 'Reopen the current released version.');
           const reason = words(v.reason, 'Version correction reason', 5, 300);
@@ -2214,7 +2215,7 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
         }
       case 'finalizeResolution':
         {
-          check(holds(db, a, 'secretary'), 'The secretary does this. The chairperson may stand in while the secretary is away.');
+          check(holds(db, a, 'secretary'), 'The Secretary does this. The Chairperson may stand in while the Secretary is away.');
           const r = get(db.resolutions, id);
           check(r.state === 'signing' && Number(v.version) === r.version, 'This version is not open for filing.');
           check(v.confirm === true, 'Confirm that school-required signatures were checked.');
@@ -2312,9 +2313,9 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
           const c = get(db.cases, id);
           check(caseHandler(db, a, c), 'Only the assigned reviewer may update this case.');
           const next = choice(v.status, ['assigned', 'action_taken', 'resolved'], 'status');
-          // Verify before closing: on an ordinary suggestion or concern, whoever acted marks it "Action taken" and the chairperson or Vice-Chairperson checks it and closes it.
+          // Verify before closing: on an ordinary suggestion or concern, whoever acted marks it "Action taken" and the Chairperson or Vice-Chairperson checks it and closes it.
           // A child-protection case is closed by the school.
-          check(next !== 'resolved' || !onDesk(c) || c.protection || ['chair', 'vice'].includes(a.role), 'Mark it “Action taken”. The chairperson or Vice-Chairperson verifies the outcome and closes it.');
+          check(next !== 'resolved' || !onDesk(c) || c.protection || ['chair', 'vice'].includes(a.role), 'Mark it “Action taken”. The Chairperson or Vice-Chairperson verifies the outcome and closes it.');
           check(next !== 'action_taken' || onDesk(c) && !c.protection, 'Choose Reviewed or Resolved.');
           check(!c.protection || c.protection.ack, 'Acknowledge the referral first.');
           if (c.protection) c.schoolHandling = true;
@@ -2328,7 +2329,7 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
             c.reply = reply;
             c.replyBy = a.role;
             c.replyAt = at();
-            // The secretary answers for the School Head once a case is passed on.
+            // The Secretary answers for the School Head once a case is passed on.
             c.replyFor = onDesk(c) && c.forwarded && !c.protection && !['chair', 'vice', 'head'].includes(a.role) && !(c.endorsed?.to === a.id) ? 'head' : undefined;
           }
           c.history.push({
@@ -2352,9 +2353,9 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
         }
       case 'caseForward':
         {
-          // The chairperson or Vice-Chairperson decides a suggestion or concern is worth the School Head's time.
+          // The Chairperson or Vice-Chairperson decides a suggestion or concern is worth the School Head's time.
           const c = get(db.cases, id);
-          check(onDesk(c) && ['chair', 'vice'].includes(a.role) && a.active, 'The chairperson or Vice-Chairperson passes this on to the School Head.');
+          check(onDesk(c) && ['chair', 'vice'].includes(a.role) && a.active, 'The Chairperson or Vice-Chairperson passes this on to the School Head.');
           check(!c.forwarded, 'This was already passed on to the School Head.');
           const track = v.track === undefined || v.track === '' ? 'school' : choice(v.track, ['school', 'grievance'], 'kind of matter');
           check(['received', 'assigned'].includes(c.status), 'Only an open suggestion or concern can be passed on.');
@@ -2374,16 +2375,16 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
             text,
             toHead: true
           });
-          // The School Head and the secretary see it from now on.
+          // The School Head and the Secretary see it from now on.
           db.accounts.filter(x => x.active && ['head', 'secretary'].includes(x.role)).forEach(x => note(db, x.id, c.id + ' · A ' + c.kind + (track === 'grievance' ? ' about a dispute between PTA members' : '') + ' was passed on to the School Head by the ' + (roles[a.role] || a.role) + '.' + (text ? ' A note is attached.' : '')));
           changed('Private case passed on to the School Head');
           break;
         }
       case 'caseEndorse':
         {
-          // An SPTA matter: the chairperson or Vice-Chairperson asks one officer, often a section president, to handle it.
+          // An SPTA matter: the Chairperson or Vice-Chairperson asks one officer, often a section president, to handle it.
           const c = get(db.cases, id);
-          check(onDesk(c) && ['chair', 'vice'].includes(a.role) && a.active, 'The chairperson or Vice-Chairperson endorses a suggestion or concern.');
+          check(onDesk(c) && ['chair', 'vice'].includes(a.role) && a.active, 'The Chairperson or Vice-Chairperson endorses a suggestion or concern.');
           check(!c.forwarded && !c.protection, 'This was already passed on to the School Head.');
           check(['received', 'assigned'].includes(c.status), 'Only an open suggestion or concern can be endorsed.');
           if (v.back === true) {
@@ -2418,7 +2419,7 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
         {
           // A possible child-protection concern leaves the ordinary queue at once and goes to the school's intake.
           const c = get(db.cases, id);
-          check(onDesk(c) && ['chair', 'vice'].includes(a.role) && a.active, 'The chairperson or Vice-Chairperson refers this.');
+          check(onDesk(c) && ['chair', 'vice'].includes(a.role) && a.active, 'The Chairperson or Vice-Chairperson refers this.');
           check(!c.protection, 'This was already referred.');
           check(!['resolved', 'withdrawn'].includes(c.status), 'This is already closed.');
           const to = intakeRoles(db);
@@ -2483,7 +2484,7 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
         }
       case 'caseReturn':
         {
-          // Not a child-protection matter after all (for example, a false or mistaken report): send it back to the chairperson and Vice-Chairperson.
+          // Not a child-protection matter after all (for example, a false or mistaken report): send it back to the Chairperson and Vice-Chairperson.
           const c = get(db.cases, id);
           // Deciding it is not a child-protection matter is an assessment, so only the School Head records it.
           check(c.protection && a.role === 'head' && caseHandler(db, a, c), 'Only the School Head can record that this is not a child-protection matter.');
@@ -2511,11 +2512,11 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
         }
       case 'intakeSetting':
         {
-          // The School Head may designate the secretary, as authorized school personnel, to receive, acknowledge, coordinate and monitor
+          // The School Head may designate the Secretary, as authorized school personnel, to receive, acknowledge, coordinate and monitor
           // child-protection referrals. The School Head confirms the authorization; a memo reference is optional. Who and when are recorded.
           allows(a, ['head']);
           const on = v.secretary === true;
-          check(!on || v.confirm === true, 'Confirm that the school has authorized the secretary.');
+          check(!on || v.confirm === true, 'Confirm that the school has authorized the Secretary.');
           db.settings.intake = on ? {
             secretary: true,
             by: a.id,
@@ -2549,9 +2550,9 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
         }
       case 'caseVerify':
         {
-          // The chairperson or Vice-Chairperson checks the action taken: close it, or send it back for more action.
+          // The Chairperson or Vice-Chairperson checks the action taken: close it, or send it back for more action.
           const c = get(db.cases, id);
-          check(onDesk(c) && !c.protection && ['chair', 'vice'].includes(a.role) && a.active, 'The chairperson or Vice-Chairperson verifies the outcome.');
+          check(onDesk(c) && !c.protection && ['chair', 'vice'].includes(a.role) && a.active, 'The Chairperson or Vice-Chairperson verifies the outcome.');
           check(c.status === 'action_taken', 'Nothing is waiting to be verified.');
           const ok = choice(v.decision, ['close', 'more'], 'decision') === 'close';
           const text = String(v.note ?? '').trim() ? words(v.note, 'Note', 3, 500) : '';
@@ -2577,7 +2578,7 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
         }
       case 'caseNote':
         {
-          // Internal notes between the desk, the School Head and the secretary. The sender never sees them.
+          // Internal notes between the desk, the School Head and the Secretary. The sender never sees them.
           const c = get(db.cases, id);
           check(caseNoter(db, a, c), 'You cannot add a note to this case.');
           check(c.status !== 'withdrawn', 'The sender withdrew this.');
@@ -2604,8 +2605,8 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
         }
       case 'proposalReply':
         {
-          // Optional personal reply to the person who proposed, from the School Head or the chairperson.
-          check(a.role === 'head' || isChair(db, a), 'The School Head or the chairperson sends a personal reply.');
+          // Optional personal reply to the person who proposed, from the School Head or the Chairperson.
+          check(a.role === 'head' || isChair(db, a), 'The School Head or the Chairperson sends a personal reply.');
           const p = get(db.proposals, id);
           p.reply = words(v.reply, 'Personal reply', 3, 600);
           p.replyBy = a.role;
@@ -2616,8 +2617,8 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
         }
       case 'announce':
         {
-          // The School Head, the chairperson and the secretary publish SPTA announcements.
-          check(canAnnounce(db, a), 'The School Head, chairperson or secretary publishes announcements.');
+          // The School Head, the Chairperson and the Secretary publish SPTA announcements.
+          check(canAnnounce(db, a), 'The School Head, Chairperson or secretary publishes announcements.');
           id = newId(db, 'A');
           db.announcements.unshift({
             id,
@@ -2637,7 +2638,7 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
         {
           allows(a, planners);
           const edit = id ? get(db.activities, id) : null;
-          if (edit) check(edit.status === 'scheduled' && (edit.by === a.id || isChair(db, a) || a.role === 'head' || a.role === 'vice'), 'Only the person who added it, the chairperson, Vice-Chairperson or School Head can change an activity.');
+          if (edit) check(edit.status === 'scheduled' && (edit.by === a.id || isChair(db, a) || a.role === 'head' || a.role === 'vice'), 'Only the person who added it, the Chairperson, Vice-Chairperson or School Head can change an activity.');
           const day = dateValue(v.date);
           check(edit || day >= today(), 'Choose today or a later date.');
           const f = {
@@ -2669,7 +2670,7 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
         }
       case 'activityBudget':
         {
-          check(holds(db, a, 'treasurer'), 'The treasurer sets an activity’s budget. The chairperson may stand in while the treasurer is away.');
+          check(holds(db, a, 'treasurer'), 'The Treasurer sets an activity’s budget. The Chairperson may stand in while the Treasurer is away.');
           const act = get(db.activities, id);
           check(act.status === 'scheduled', 'This activity is no longer on the calendar.');
           const cents = amount(v.budget, true),
@@ -2688,7 +2689,7 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
           allows(a, planners);
           const act = get(db.activities, id);
           check(act.status === 'scheduled', 'This activity is already cancelled.');
-          check(act.by === a.id || isChair(db, a) || a.role === 'head' || a.role === 'vice', 'Only the person who added it, the chairperson, Vice-Chairperson or School Head can cancel an activity.');
+          check(act.by === a.id || isChair(db, a) || a.role === 'head' || a.role === 'vice', 'Only the person who added it, the Chairperson, Vice-Chairperson or School Head can cancel an activity.');
           act.reason = words(v.reason, 'Reason', 4, 200);
           act.status = 'cancelled';
           changed('Activity cancelled');
@@ -2696,7 +2697,7 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
         }
       case 'minutesUpload':
         {
-          check(holds(db, a, 'secretary'), 'The secretary does this. The chairperson may stand in while the secretary is away.');
+          check(holds(db, a, 'secretary'), 'The Secretary does this. The Chairperson may stand in while the Secretary is away.');
           check(v.confirm === true, 'Confirm your signature on the minutes.');
           const date = dateValue(v.date);
           check(date <= today(), 'Meeting date cannot be in the future.');
@@ -2713,7 +2714,7 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
             signed: at()
           });
           if (a.role !== 'secretary') {
-            // Uploaded by the chairperson standing in, so it goes straight to the School Head.
+            // Uploaded by the Chairperson standing in, so it goes straight to the School Head.
             Object.assign(db.minutes[0], {
               state: 'for_head',
               chair: a.id,
@@ -2727,7 +2728,7 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
       case 'minutesEdit':
         {
           const m = get(db.minutes, id);
-          check(m.secretary === a.id || holds(db, a, 'secretary'), 'Only the secretary who uploaded these minutes can correct them.');
+          check(m.secretary === a.id || holds(db, a, 'secretary'), 'Only the Secretary who uploaded these minutes can correct them.');
           check(['for_chair', 'for_head'].includes(m.state), 'These minutes are already filed or withdrawn. Ask the School Head if a correction is still needed.');
           const date = dateValue(v.date);
           check(date <= today(), 'Meeting date cannot be in the future.');
@@ -2737,7 +2738,7 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
           m.due = plusDays(date, 7);
           m.corrected = at();
           if (m.state === 'for_head' && !m.covered) {
-            // The chairperson approved the earlier wording, so the corrected minutes go back for approval.
+            // The Chairperson approved the earlier wording, so the corrected minutes go back for approval.
             m.state = 'for_chair';
             delete m.chair;
             delete m.chairAt;
@@ -2766,8 +2767,8 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
         }
       case 'financeSubmit':
         {
-          // The treasurer and the Collecting and Disbursing Officer both record from a scanned original.
-          // The officer's record goes to the treasurer first, then to the chairperson.
+          // The Treasurer and the Collecting and Disbursing Officer both record from a scanned original.
+          // The officer's record goes to the Treasurer first, then to the Chairperson.
           check(holds(db, a, 'treasurer') || holds(db, a, 'collector'), 'Your current profile cannot perform this action.');
           const collecting = a.role === 'collector' || covering(db, a) === 'collector';
           const prior = id ? get(db.batches, id) : null;
@@ -2784,13 +2785,13 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
           check(items.length > 0 && items.length <= 60, 'Add 1 to 60 checked items.');
           const cents = items.reduce((n, x) => n + x.cents, 0);
           const project = v.project || '';
-          // Actual costs can come in above the budget. An expense that goes over needs a reason, and the chairperson sees it before posting.
+          // Actual costs can come in above the budget. An expense that goes over needs a reason, and the Chairperson sees it before posting.
           let over = 0;
           const overReason = String(v.overReason ?? '').trim();
           if (project && project.startsWith('AC-')) {
             const act = get(db.activities, project);
             check(direction === 'out' && act.status === 'scheduled', 'Choose an activity that is still on the calendar.');
-            check(act.budget > 0, 'The treasurer has not set aside a budget for this activity yet.');
+            check(act.budget > 0, 'The Treasurer has not set aside a budget for this activity yet.');
             over = Math.max(0, cents - Math.max(0, act.budget - projectSpend(db, act.id)));
           } else if (project) {
             const p = get(db.projects, project);
@@ -2799,7 +2800,7 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
           }
           check(!over || overReason, 'This goes ' + peso(over) + ' over the budget. Explain why in “Why it is over budget”.');
           const overWhy = over ? words(overReason, 'Why it is over budget', 6, 300) : '';
-          if (collecting) check(direction === 'in' && !project && !v.adjustment, 'The collecting officer records collections handed over to the treasurer.');
+          if (collecting) check(direction === 'in' && !project && !v.adjustment, 'The Collecting and Disbursing Officer records collections handed over to the Treasurer.');
           if (v.adjustment) {
             check(!project, 'Use the allocation on the original entry for a correction.');
             const orig = get(db.batches, v.adjustment);
@@ -2807,9 +2808,9 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
             const booked = db.batches.filter(x => x.id !== id && x.adjustment === orig.id && !['returned', 'withdrawn'].includes(x.status)).reduce((sum, x) => sum + x.cents, 0);
             check(booked + cents <= orig.cents, 'Corrections exceed the original entry.');
           }
-          // The treasurer may record money that has no paper, such as a cash gift. She gives the reason and the chairperson sees it before posting.
+          // The Treasurer may record money that has no paper, such as a cash gift. She gives the reason and the Chairperson sees it before posting.
           const noPaper = v.noPaper === true;
-          if (noPaper) check(!collecting && holds(db, a, 'treasurer'), 'Only the treasurer can record an entry that has no paper original.');
+          if (noPaper) check(!collecting && holds(db, a, 'treasurer'), 'Only the Treasurer can record an entry that has no paper original.');
           const noPaperReason = noPaper ? words(v.noPaperReason, 'Why there is no paper original', 6, 200) : '';
           const file = noPaper ? null : photo(v.file || prior?.file);
           id = prior?.id || newId(db, 'F');
@@ -2847,15 +2848,15 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
           if (prior) Object.assign(prior, d, {
             reason: ''
           });else db.batches.unshift(d);
-          changed(collecting ? 'Collection handover sent to the treasurer' : 'Finance evidence submitted');
+          changed(collecting ? 'Collection handover sent to the Treasurer' : 'Finance evidence submitted');
           break;
         }
       case 'financeCheck':
         {
-          // Treasurer's approval of a collecting officer's handover, before the chairperson's final approval.
-          check(holds(db, a, 'treasurer'), 'The treasurer does this. The chairperson may stand in while the treasurer is away.');
+          // Treasurer's approval of a Collecting and Disbursing Officer's handover, before the Chairperson's final approval.
+          check(holds(db, a, 'treasurer'), 'The Treasurer does this. The Chairperson may stand in while the Treasurer is away.');
           const d = get(db.batches, id);
-          check(d.status === 'for_treasurer' && d.owner !== a.id, 'This record is not waiting for the treasurer.');
+          check(d.status === 'for_treasurer' && d.owner !== a.id, 'This record is not waiting for the Treasurer.');
           if (v.decision === 'return') {
             d.reason = words(v.reason, 'Reason for return', 4, 300);
             d.status = 'returned';
@@ -2875,7 +2876,7 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
           check(isChair(db, a) || a.role === 'vice', 'Chairperson posting authority is required.');
           const d = get(db.batches, id);
           if (d.status === 'posted' && v.decision === 'post') break;
-          check(d.status === 'pending' && mayPost(db, a, d), 'An independently submitted pending batch is required. The Vice-Chairperson gives the final approval on records the chairperson sent or checked.');
+          check(d.status === 'pending' && mayPost(db, a, d), 'An independently submitted pending batch is required. The Vice-Chairperson gives the final approval on records the Chairperson sent or checked.');
           check(v.stamp === openStamp(d), 'This finance submission changed. Open its latest version before reviewing.');
           if (v.decision === 'return') {
             d.reason = words(v.reason, 'Reason for return', 4, 300);
@@ -2886,10 +2887,10 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
             check(v.publicSafe === true, 'Confirm the purpose is safe to publish.');
             if (d.direction === 'out' && d.project && d.project.startsWith('AC-')) {
               const act = get(db.activities, d.project);
-              check(act.status === 'scheduled' && (d.overWhy || d.cents <= act.budget - projectSpend(db, act.id)), 'This now goes over the activity budget. Return it so the treasurer can add the reason.');
+              check(act.status === 'scheduled' && (d.overWhy || d.cents <= act.budget - projectSpend(db, act.id)), 'This now goes over the activity budget. Return it so the Treasurer can add the reason.');
             } else if (d.direction === 'out' && d.project) {
               const p = get(db.projects, d.project);
-              check(p.status !== 'cancelled' && (d.overWhy || d.cents <= p.budget - projectSpend(db, p.id)), 'This now goes over the project budget. Return it so the treasurer can add the reason.');
+              check(p.status !== 'cancelled' && (d.overWhy || d.cents <= p.budget - projectSpend(db, p.id)), 'This now goes over the project budget. Return it so the Treasurer can add the reason.');
             }
             if (d.direction === 'out') check(d.cents <= fundBalance(db), 'The verified cash balance is insufficient.');
             d.status = 'posted';
@@ -2948,7 +2949,7 @@ __defs["../dist/workflows.js"] = (module, exports, require) => {
             over = diff > 0 ? Math.max(0, total - Math.max(current, p.budget)) : 0,
             overReason = String(v.overReason ?? '').trim();
           check(!over || overReason, 'This goes ' + peso(total - p.budget) + ' over the project allocation. Explain why in “Why it is over the allocation”.');
-          postProjectEntry(p, diff > 0 ? 'out' : 'in', Math.abs(diff), date, purpose, null, 'Correction to the amount spent, recorded by the chairperson.', over, over ? words(overReason, 'Why it is over the allocation', 6, 300) : '');
+          postProjectEntry(p, diff > 0 ? 'out' : 'in', Math.abs(diff), date, purpose, null, 'Correction to the amount spent, recorded by the Chairperson.', over, over ? words(overReason, 'Why it is over the allocation', 6, 300) : '');
           id = p.id;
           changed('Chairperson corrected the amount spent on the project: ' + peso(total) + ' (was ' + peso(current) + ')');
           break;
@@ -3162,12 +3163,12 @@ function visible(db, me) {
     ballot: p.ballot,
     created: p.created
   });
-  // Photos waiting for the chairperson's approval, or returned, are seen only by the School Head, chairperson and Vice-Chairperson.
+  // Photos waiting for the Chairperson's approval, or returned, are seen only by the School Head, Chairperson and Vice-Chairperson.
   out.projects = db.projects.map(p => p.photos ? {
     ...p,
     photos: lead ? p.photos : p.photos.filter(x => (x.status || 'approved') === 'approved')
   } : p);
-  // A project receipt the chairperson posted is public. Older lines find it from their posted record.
+  // A project receipt the Chairperson posted is public. Older lines find it from their posted record.
   const receiptOf = x => x.receipt || db.batches.find(b => b.id === x.batch && b.chairRecord && b.status === 'posted' && b.file)?.file;
   out.ledger = db.ledger.map(x => ({
     ...x,
@@ -3298,7 +3299,7 @@ function visible(db, me) {
     };
   });
   out.notes = db.notes.filter(n => n.owner === me.id);
-  // The School Head, chairperson and Vice-Chairperson can trace every major change. Private case entries never leave the database.
+  // The School Head, Chairperson and Vice-Chairperson can trace every major change. Private case entries never leave the database.
   out.audit = lead ? db.audit.filter(x => !x.private && !/Private case|Hidden-name/.test(x.event)).slice(-400) : [];
   return out;
 }
@@ -3364,7 +3365,7 @@ function createApi(store, config = {}) {
   }
   async function canReadFile(db, me, key, tx) {
     if (db.projects.some(p => (p.photos || []).some(x => x.file.key === key && (x.status || 'approved') === 'approved'))) return true;
-    // Project receipts the chairperson posted are public, so families can check each line of the funds log.
+    // Project receipts the Chairperson posted are public, so families can check each line of the funds log.
     if (db.ledger.some(x => x.receipt?.key === key) || db.batches.some(b => b.chairRecord && b.status === 'posted' && b.file?.key === key && db.ledger.some(x => x.batch === b.id))) return true;
     if (!me) return false;
     // A profile picture is seen only by the person it belongs to.
@@ -3510,7 +3511,7 @@ function createApi(store, config = {}) {
           });
         }
         if (route === '/api/admin/seats' && req.method === 'POST') {
-          // The school's HPTA presidents, one vacant seat per section. Running it again only adds sections that are missing.
+          // The school's HPTA Presidents, one vacant seat per section. Running it again only adds sections that are missing.
           const v = JSON.parse((req.body || Buffer.alloc(0)).toString() || '{}');
           const added = await store.atomic(async tx => {
             const fresh = await tx.load();
@@ -3519,13 +3520,13 @@ function createApi(store, config = {}) {
             await tx.save(fresh);
             return n;
           });
-          await logAdmin('HPTA president seats added', String(added));
+          await logAdmin('HPTA President seats added', String(added));
           return send(201, {
             added
           });
         }
         if (route === '/api/admin/opening' && req.method === 'POST') {
-          // The treasurer's balance on a stated date, and optionally one project finished before the app.
+          // The Treasurer's balance on a stated date, and optionally one project finished before the app.
           const v = JSON.parse((req.body || Buffer.alloc(0)).toString() || '{}');
           const out = await store.atomic(async tx => {
             const fresh = await tx.load();
@@ -3638,7 +3639,7 @@ function createApi(store, config = {}) {
         if (route === '/api/state') return send(200, state(db, me));
         const printMatch = /^\/api\/resolutions\/([A-Za-z0-9-]+)\/print$/.exec(route);
         if (printMatch) {
-          if (!me || !E.printers.includes(me.role)) throw new HttpError(403, 'Official printing is restricted to the School Head, chairperson, Vice-Chairperson and secretary.');
+          if (!me || !E.printers.includes(me.role)) throw new HttpError(403, 'Official printing is restricted to the School Head, Chairperson, Vice-Chairperson and secretary.');
           const record = db.resolutions.find(r => r.id === printMatch[1]);
           if (!record || record.state === 'draft') throw new HttpError(409, 'Release the reviewed version before printing.');
           return send(200, record);
@@ -3695,7 +3696,7 @@ function createApi(store, config = {}) {
       }
       if (route === '/api/files') {
         const staff = me && ['secretary', 'treasurer', 'collector', ...E.leaders].includes(me.role);
-        // Parents and HPTA presidents may upload photos only, as evidence on a suggestion or concern.
+        // Parents and HPTA Presidents may upload photos only, as evidence on a suggestion or concern.
         if (!me || !staff && !['parent', 'bod'].includes(me.role)) throw new HttpError(403, 'This role cannot upload records.');
         if (!staff) {
           await brake('photo:' + me.id, 6, 86400000, 'You can add up to 6 photos a day. Please try again tomorrow.');
@@ -3721,7 +3722,7 @@ function createApi(store, config = {}) {
       const v = JSON.parse(body.toString() || '{}');
       const passOk = p => typeof p === 'string' && p.length >= 10 && p.length <= 128;
       if (route === '/api/reset') {
-        // A new password needs a one-time code from the chairperson or the School Head. Knowing the phone, name or section is not enough.
+        // A new password needs a one-time code from the Chairperson or the School Head. Knowing the phone, name or section is not enough.
         await limit();
         if (!passOk(v.password)) throw new HttpError(400, 'Use a password of 10–128 characters.');
         let login = '';
@@ -3765,7 +3766,7 @@ function createApi(store, config = {}) {
           };
         });
         // The same answer whether the number, the code or its age was wrong, so nobody can learn which numbers have accounts.
-        if (!done) throw new HttpError(400, 'That code is not valid or has expired. Ask the SPTA chairperson or the School Head for a new one.');
+        if (!done) throw new HttpError(400, 'That code is not valid or has expired. Ask the SPTA Chairperson or the School Head for a new one.');
         return send(200, {
           ...state(done.fresh, done.a),
           token: done.t,
@@ -3851,9 +3852,9 @@ function createApi(store, config = {}) {
         return send(200, state(db, null));
       }
       if (route === '/api/recovery-code') {
-        // The chairperson or the School Head, after checking the parent's identity in person, makes a one-time code.
+        // The Chairperson or the School Head, after checking the parent's identity in person, makes a one-time code.
         // The code is shown once to the officer. Only its fingerprint is kept, it lasts 30 minutes and works once.
-        if (!me || !(me.role === 'head' || E.isChair(db, me))) throw new HttpError(403, 'Only the chairperson or the School Head can make a password code.');
+        if (!me || !(me.role === 'head' || E.isChair(db, me))) throw new HttpError(403, 'Only the Chairperson or the School Head can make a password code.');
         await brake('recovery-issue:' + me.id, 10, 3600000, 'Too many codes made in the last hour. Try again later.');
         const code = newCode();
         let login = '';
@@ -3939,7 +3940,7 @@ function createApi(store, config = {}) {
           if (!active || active.id !== me.id) throw new HttpError(400, 'Sign in again to continue.');
           if (v.action === 'financeReview' && v.payload.decision === 'post') {
             const batch = fresh.batches.find(d => d.id === v.payload.id);
-            if (batch?.status === 'pending' && !batch.noPaper && !(await tx.seen(tokenH, E.openStamp(batch)))) throw new HttpError(400, 'Open the current supporting original with the chairperson’s own sign-in before posting.');
+            if (batch?.status === 'pending' && !batch.noPaper && !(await tx.seen(tokenH, E.openStamp(batch)))) throw new HttpError(400, 'Open the current supporting original with the Chairperson’s own sign-in before posting.');
           }
           if (v.payload.file) {
             const f = await tx.fileMeta(v.payload.file.key);

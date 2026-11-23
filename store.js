@@ -343,7 +343,7 @@
       throw e;
     }
   }
-  // An officer's first sign-in: the one-time invite code the chairperson gave them, their own mobile number and password.
+  // An officer's first sign-in: the one-time invite code the Chairperson gave them, their own mobile number and password.
   async function join(v) {
     password(v.password);
     if (!shared) throw Error('Officer invite codes work only on the school’s live app.');
@@ -412,7 +412,7 @@
   async function practiceBallots(id) {
     if (shared) throw Error('Practice ballots are unavailable in the shared rehearsal.');
     const fill = base => {
-      if (!E.isChair(base, E.account(base, actorId))) throw Error('The chairperson adds practice ballots.');
+      if (!E.isChair(base, E.account(base, actorId))) throw Error('The Chairperson adds practice ballots.');
       const b = base.ballots.find(x => x.id === id && x.status === 'open');
       if (!b) throw Error('This ballot is closed.');
       let db = base;
@@ -446,7 +446,7 @@
       throw e;
     }
   }
-  // Live only: the chairperson or the School Head makes a one-time password code for a parent they checked in person.
+  // Live only: the Chairperson or the School Head makes a one-time password code for a parent they checked in person.
   async function recoveryCode(mobile) {
     if (!shared) throw Error('This works in the live app only.');
     return await api('recovery-code', {

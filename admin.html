@@ -19,7 +19,7 @@ details.sec>summary::after{content:"+";font-size:22px;line-height:1}details.sec[
 .top{background:#fff;border:1px solid #cdd6e6;border-radius:10px;padding:0 14px 14px;margin-top:10px}</style></head><body>
 <h1>ECES Bayanihan · Admin</h1>
 <div id="bar"><p id="msg" role="status" aria-live="polite"></p><pre id="out" hidden></pre></div>
-<div class="top"><p class="note" style="margin-bottom:0">For the SPTA chairperson or the person who runs the app. The admin key is typed here and sent only to your own server. Never share it or save it in a file.</p>
+<div class="top"><p class="note" style="margin-bottom:0">For the SPTA Chairperson or the person who runs the app. The admin key is typed here and sent only to your own server. Never share it or save it in a file.</p>
 <label for="key">Admin key</label><input id="key" type="password" autocomplete="off">
 <button id="setup">Set up rehearsal data</button><button id="backup" class="alt">Download record (not a full backup)</button></div>
 <details class="sec"><summary>Start the real record</summary><div class="secbody">
@@ -27,13 +27,13 @@ details.sec>summary::after{content:"+";font-size:22px;line-height:1}details.sec[
 <textarea id="officers" rows="6" style="width:100%;padding:10px;font-size:16px;border:1px solid #9aa9c4;border-radius:8px;box-sizing:border-box" placeholder="chair: Full Name"></textarea>
 <button id="start">Start real record</button>
 </div></details>
-<details class="sec"><summary>Add the HPTA presidents</summary><div class="secbody">
+<details class="sec"><summary>Add the HPTA Presidents</summary><div class="secbody">
 <p class="note">One section per line, as <b>Grade · Section | President's name</b>, for example <b>Grade 1 · Ramos | Full Name</b>. For kindergarten write <b>Kindergarten · Biala A.M. | Full Name</b>. Running it again only adds sections that are missing.</p>
 <textarea id="seats" rows="8" style="width:100%;padding:10px;font-size:16px;border:1px solid #9aa9c4;border-radius:8px;box-sizing:border-box" placeholder="Grade 1 · Ramos | Full Name"></textarea>
 <button id="addseats">Add presidents</button>
 </div></details>
 <details class="sec"><summary>Opening balance and finished project</summary><div class="secbody">
-<p class="note">Use the treasurer's paper. The balance is one figure on one date and can only be set before any money is recorded in the app. The finished project is shown as Completed, with no vote, no signatures and no SPTA money used. Fill in only what you need.</p>
+<p class="note">Use the Treasurer's paper. The balance is one figure on one date and can only be set before any money is recorded in the app. The finished project is shown as Completed, with no vote, no signatures and no SPTA money used. Fill in only what you need.</p>
 <label for="obal">Balance (pesos)</label><input id="obal" inputmode="decimal" placeholder="12345.67"><label for="odate">Balance as of (date)</label><input id="odate" type="date">
 <label for="ptitle">Finished project: title</label><input id="ptitle"><label for="ptext">What was done</label><textarea id="ptext" rows="3" style="width:100%;padding:10px;font-size:16px;border:1px solid #9aa9c4;border-radius:8px;box-sizing:border-box"></textarea>
 <label for="psponsor">Paid for by</label><input id="psponsor"><label for="pdate">Completed on</label><input id="pdate" type="date">
@@ -50,12 +50,12 @@ details.sec>summary::after{content:"+";font-size:22px;line-height:1}details.sec[
 <button id="cancelled">Add cancelled project</button>
 </div></details>
 <details class="sec"><summary>New code for one officer</summary><div class="secbody">
-<p class="note">For a lost phone or forgotten sign-in, or to add the collecting officer later. Add the name only for a new officer.</p>
+<p class="note">For a lost phone or forgotten sign-in, or to add the Collecting and Disbursing Officer later. Add the name only for a new officer.</p>
 <label for="orole">Role</label><input id="orole" placeholder="collector"><label for="oname">Name (new officer only)</label><input id="oname">
 <button id="reissue" class="alt">Make a new code</button>
 </div></details>
 <details class="sec"><summary>Project already voted on</summary><div class="secbody">
-<p class="note">For a project the officers already voted on and the School Head already approved on paper. It goes straight to a draft resolution, so the secretary can release it and the officers can sign in the app. The vote needs at least 51% yes. Add one project at a time.</p>
+<p class="note">For a project the officers already voted on and the School Head already approved on paper. It goes straight to a draft resolution, so the Secretary can release it and the officers can sign in the app. The vote needs at least 51% yes. Add one project at a time.</p>
 <label for="vtitle">Project title</label><input id="vtitle"><label for="vtext">What the project is</label><textarea id="vtext" rows="3" style="width:100%;padding:10px;font-size:16px;border:1px solid #9aa9c4;border-radius:8px;box-sizing:border-box"></textarea>
 <label for="vbudget">Amount voted (pesos)</label><input id="vbudget" inputmode="decimal" placeholder="12000">
 <label for="vdate">Date of the vote</label><input id="vdate" type="date"><label for="vmeeting">Meeting (optional)</label><input id="vmeeting" placeholder="SPTA meeting">

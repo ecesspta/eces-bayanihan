@@ -1,13 +1,13 @@
 (function (root) {
   'use strict';
 
-  // Document reader for the treasurer's scan-and-check flow.
+  // Document reader for the Treasurer's scan-and-check flow.
   //
   // PROTOTYPE: this file is a practice reader. It returns fictional readings so the
   // review-and-submit flow can be rehearsed. It does not read handwriting.
   // A pilot replaces read() with a school-approved reading service (see ROADMAP.md).
   // Every reading must keep this shape, and a reading never posts by itself:
-  // the treasurer checks each line, then the chairperson reviews the original.
+  // the Treasurer checks each line, then the Chairperson reviews the original.
   //
   // reading = {
   //   engine, direction: 'in' | 'out', date: 'YYYY-MM-DD', receipt, purpose,
