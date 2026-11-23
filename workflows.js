@@ -263,6 +263,27 @@
   function openStamp(batch) {
     return batch.id + '|' + (batch.submitted || '') + '|' + batch.history.length + '|' + (batch.file?.key || 'missing');
   }
+  // A board member who joins after a resolution was drafted signs it too, as long as it is not filed yet.
+  // When every officer must sign, the newcomer is added to the required signers as well.
+  function inviteToOpenResolutions(db, member, replaces = null) {
+    if (!member.active || member.vacant || !boardRoles.includes(member.role)) return;
+    // A seat the newcomer takes over leaves the open resolutions it had not signed, so it cannot hold up filing.
+    if (replaces) db.resolutions.filter(r => ['draft', 'signing'].includes(r.state) && r.signers && !r.signatures?.[replaces]).forEach(r => {
+      r.signers = r.signers.filter(x => x.id !== replaces);
+      if (r.requiredSigners) r.requiredSigners = r.requiredSigners.filter(x => x !== replaces);
+    });
+    db.resolutions.filter(r => ['draft', 'signing'].includes(r.state) && r.signers && !r.signers.some(x => x.id === member.id)).forEach(r => {
+      r.signers.push({
+        id: member.id,
+        name: member.name,
+        role: member.role,
+        homeroom: member.homeroom || ''
+      });
+      if (r.state !== 'signing') return;
+      if (r.requiredSigners && r.signerPolicy === 'All officers') r.requiredSigners.push(member.id);
+      note(db, member.id, r.id + ' · The resolution for “' + r.title + '” is ready for your signature.');
+    });
+  }
   function requiredSigners(r) {
     return r.requiredSigners || r.signers.map(s => s.id);
   }
@@ -1465,6 +1486,7 @@
             member.boardSeat = v.voting === true;
             member.homeroom = q.homeroom;
             q.status = 'approved_bod';
+            inviteToOpenResolutions(db, member, slot && slot.id !== member.id && slot.active === false ? slot.id : null);
           } else {
             choice(v.decision, ['return'], 'decision');
             q.status = 'rejected';
